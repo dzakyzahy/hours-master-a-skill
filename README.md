@@ -1,4 +1,4 @@
-# Hours Master (Skillo)
+# Skillo
 
 Aplikasi produktivitas cross-platform (Web, Desktop Windows, dan Mobile Android) yang menggabungkan manajemen proyek, pelacak waktu (pomodoro/stopwatch), video meeting real-time (WebRTC), chat tim, dan generator tugas berbasis AI.
 
@@ -6,8 +6,9 @@ Aplikasi produktivitas cross-platform (Web, Desktop Windows, dan Mobile Android)
 
 ## Fitur Utama
 
-- **Real-Time Video Meeting**: Panggilan video/audio peer-to-peer dan *screen sharing* berbasis WebRTC dengan integrasi signaling Supabase Realtime.
-- **Manajemen Waktu & Proyek**: Timer presisi tanpa drift, status proyek, dan pelacak jam kerja.
+- **Real-Time Video Meeting**: Panggilan video/audio peer-to-peer dan *screen sharing* berbasis WebRTC dengan integrasi signaling Supabase Realtime serta equalizer soundbar.
+- **Manajemen Waktu & Proyek**: Timer presisi tanpa drift, animasi breathing ring saat aktif, status proyek, dan pelacak jam kerja.
+- **Mobile First Experience**: Mobile bottom navigation bar, penanganan hardware back button Android, dan sinkronisasi native status bar.
 - **Team Collaboration**: Direct message, chat grup tim, dan sinkronisasi status kehadiran.
 - **AI Task Generator**: Pembuatan rincian tugas cerdas memanfaatkan Google Gemini AI.
 - **Multiplatform**: Berjalan mulus di Browser Web, Desktop (Electron), dan Android (Capacitor 8).
@@ -30,7 +31,7 @@ npm run dev:electron
 npm run build:apk
 ```
 
-File APK hasil build lokal akan tersimpan di [`HoursMaster-debug.apk`](./HoursMaster-debug.apk).
+File APK hasil build lokal akan tersimpan di [`Skillo-debug.apk`](./Skillo-debug.apk).
 
 ---
 

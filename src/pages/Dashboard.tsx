@@ -179,7 +179,13 @@ export function Dashboard() {
               <Clock size={24} className="text-cyan" />
               <h3 style={{ margin: 0 }}>Track Time</h3>
             </div>
-            <div className="text-center font-bold" style={{ fontSize: '2.5rem', margin: '20px 0', fontFamily: 'monospace' }}>
+            {activeTimer && (
+              <div className="flex items-center justify-center gap-2 mb-1">
+                <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#22c55e', display: 'inline-block', boxShadow: '0 0 8px #22c55e' }} />
+                <span className="text-xs uppercase font-semibold text-cyan" style={{ letterSpacing: '0.08em' }}>Focus Active</span>
+              </div>
+            )}
+            <div className={`text-center font-bold tabular-nums ${activeTimer ? 'timer-active-pulse' : ''}`} style={{ fontSize: '2.5rem', margin: '16px 0', fontFamily: 'monospace' }}>
               {formatTime(timerSeconds)}
             </div>
           </div>

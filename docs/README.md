@@ -1,6 +1,6 @@
-# Dokumentasi Proyek Hours Master
+# Dokumentasi Proyek Skillo
 
-Selamat datang di repositori dokumentasi **Hours Master** (Skillo). Seluruh berkas panduan, rencana pengembangan, dan pembagian tugas diorganisasi secara tematik di dalam folder ini.
+Selamat datang di repositori dokumentasi resmi **Skillo**. Seluruh berkas panduan, rencana pengembangan, dan pembagian tugas diorganisasi secara tematik di dalam folder ini.
 
 ---
 
@@ -16,12 +16,12 @@ Selamat datang di repositori dokumentasi **Hours Master** (Skillo). Seluruh berk
    - Penyelarasan alur kerja (*workflow alignment*) agar tidak terjadi konflik kode.
 
 3. [**Brainstorming & Roadmap Upgrade Khusus Diky (diky_upgrade_roadmap.md)**](./diky_upgrade_roadmap.md)
-   - Evaluasi pencapaian dari langkah-langkah sebelumnya (Fase 1 hingga Fase 3).
-   - Analisis kebutuhan antarmuka native mobile, safe-area insets, dan hardware back button.
+   - Evaluasi pencapaian dari langkah-langkah sebelumnya.
+   - Realisasi integrasi Android Hardware Back Button, Status Bar sync, Safe Area insets, dan Mobile Bottom Navigation.
    - Rencana aksi bertahap (Sprint D-1 sampai Sprint D-4) khusus untuk Diky.
 
 ---
 
 > [!TIP]
 > Jika Anda ingin langsung menguji aplikasi di smartphone Android, gunakan file instalasi debug yang sudah tersedia di root:
-> [`HoursMaster-debug.apk`](../HoursMaster-debug.apk) (~5.3 MB).
+> [`Skillo-debug.apk`](../Skillo-debug.apk) (~5.5 MB).

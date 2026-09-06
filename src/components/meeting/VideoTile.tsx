@@ -153,17 +153,27 @@ export function VideoTile({ participant, isDominant = false }: VideoTileProps) {
             backdropFilter: 'var(--glass-blur)',
             padding: '4px 10px',
             borderRadius: 'var(--radius-sm)',
-            border: '1px solid var(--border-color)',
+            border: participant.isSpeaking ? '1px solid var(--accent-cyan)' : '1px solid var(--border-color)',
             fontSize: '0.8125rem',
             fontWeight: 600,
             color: 'var(--text-main)',
-            maxWidth: '75%',
+            maxWidth: '85%',
             overflow: 'hidden',
             textOverflow: 'ellipsis',
             whiteSpace: 'nowrap',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
           }}
         >
-          {participant.name} {participant.isLocal ? '(You)' : ''}
+          <span>{participant.name} {participant.isLocal ? '(You)' : ''}</span>
+          {participant.isSpeaking && (
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '2px', marginLeft: '4px' }}>
+              <span className="sound-bar" style={{ animationDelay: '0ms' }} />
+              <span className="sound-bar" style={{ animationDelay: '180ms' }} />
+              <span className="sound-bar" style={{ animationDelay: '360ms' }} />
+            </span>
+          )}
         </div>
 
         {/* Audio Muted Indicator */}

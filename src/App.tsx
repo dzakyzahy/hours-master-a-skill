@@ -4,6 +4,9 @@ import { useStore } from './store';
 import { Login } from './pages/Login';
 import { Home } from './pages/Home';
 import { BackgroundClock } from './components/BackgroundClock';
+import { App as CapApp } from '@capacitor/app';
+import { StatusBar, Style } from '@capacitor/status-bar';
+import { Capacitor } from '@capacitor/core';
 import './index.css';
 
 const Dashboard = lazy(() => import('./pages/Dashboard').then(m => ({ default: m.Dashboard })));
@@ -41,6 +44,27 @@ export default function App() {
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
+
+  // Native Capacitor Integration (Android Back Button & Status Bar)
+  useEffect(() => {
+    if (Capacitor.isNativePlatform()) {
+      StatusBar.setStyle({ style: theme === 'dark' ? Style.Dark : Style.Light }).catch(() => {});
+      StatusBar.setBackgroundColor({ color: theme === 'dark' ? '#090d16' : '#f8fafc' }).catch(() => {});
+
+      const backListener = CapApp.addListener('backButton', () => {
+        const hash = window.location.hash;
+        if (hash && hash !== '#/' && hash !== '#/login') {
+          window.history.back();
+        } else {
+          CapApp.exitApp();
+        }
+      });
+
+      return () => {
+        backListener.then(l => l.remove()).catch(() => {});
+      };
+    }
   }, [theme]);
 
   return (

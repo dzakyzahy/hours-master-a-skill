@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Trash2, Moon, Sun, Eye, EyeOff, LogOut, Plus, User, MessageSquare, RefreshCcw, Video } from 'lucide-react';
+import { Trash2, Moon, Sun, Eye, EyeOff, LogOut, Plus, User, MessageSquare, RefreshCcw, Video, Layers } from 'lucide-react';
 import { useStore } from '../store';
 import { AiGenerator } from '../AiGenerator';
 import { ManualProjectModal } from '../components/ManualProjectModal';
@@ -21,13 +21,15 @@ export function Home() {
   };
 
   return (
-    <div style={{ padding: '32px', flex: 1, zIndex: 10, position: 'relative' }} className="no-drag">
+    <div style={{ padding: '32px', flex: 1, zIndex: 10, position: 'relative' }} className="no-drag mobile-content-container">
       <div className="flex justify-between items-center mb-8">
         <div className="flex items-center gap-3">
-          <img src={logoMark} alt="Hours Master" style={{ width: '36px', height: '36px', borderRadius: '10px' }} />
-          <h1 style={{ margin: 0, fontSize: '1.75rem', fontWeight: 800, letterSpacing: '-0.03em' }}>Hours <span className="text-cyan">Master</span></h1>
+          <img src={logoMark} alt="Skillo" style={{ width: '36px', height: '36px', borderRadius: '10px' }} />
+          <h1 style={{ margin: 0, fontSize: '1.75rem', fontWeight: 800, letterSpacing: '-0.03em' }}>Skil<span className="text-cyan">lo</span></h1>
         </div>
-        <div className="flex gap-2">
+        
+        {/* Desktop Header Actions */}
+        <div className="desktop-header-actions flex gap-2">
           <button className="btn btn-primary" onClick={() => navigate('/meeting')} title="Enter Video Meeting Room">
             <Video size={16} /> Focus Room
           </button>
@@ -53,6 +55,16 @@ export function Home() {
           </button>
           <button className="btn" onClick={logout} title="Logout">
             <LogOut size={18} />
+          </button>
+        </div>
+
+        {/* Mobile-Only Header Quick Toggles */}
+        <div className="flex gap-2 sm:hidden">
+          <button className="btn" style={{ padding: '8px' }} onClick={toggleTheme} title="Toggle Theme">
+            {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+          </button>
+          <button className="btn" style={{ padding: '8px' }} onClick={() => setShowRecycleBin(!showRecycleBin)} title="Recycle Bin">
+            <Trash2 size={16} />
           </button>
         </div>
       </div>
@@ -120,6 +132,30 @@ export function Home() {
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)} 
       />
+
+      {/* Mobile Bottom Navigation Bar */}
+      <nav className="mobile-bottom-nav">
+        <button className="nav-item active" onClick={() => navigate('/')} title="Projects">
+          <Layers size={20} className="text-cyan" />
+          <span>Projects</span>
+        </button>
+        <button className="nav-item" onClick={() => navigate('/meeting')} title="Focus Room">
+          <Video size={20} />
+          <span>Focus</span>
+        </button>
+        <button className="nav-item" onClick={() => setIsModalOpen(true)} title="New Project">
+          <Plus size={22} className="text-cyan" />
+          <span>Add</span>
+        </button>
+        <button className="nav-item" onClick={() => navigate('/chat')} title="Collaboration & Chat">
+          <MessageSquare size={20} className="text-purple" />
+          <span>Chat</span>
+        </button>
+        <button className="nav-item" onClick={() => navigate('/profile')} title="Profile">
+          <User size={20} />
+          <span>Profile</span>
+        </button>
+      </nav>
     </div>
   );
 }

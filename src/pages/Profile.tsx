@@ -129,7 +129,7 @@ export function Profile() {
           <div className="mb-6">
             <h3 className="text-sm text-muted mb-2">Application Updates</h3>
             <p className="text-xs text-muted mb-4">
-              Hours Master will automatically check for updates in the background. 
+              Skillo will automatically check for updates in the background. 
               You can also force a manual check below (Desktop only).
             </p>
             <button 

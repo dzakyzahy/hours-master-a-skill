@@ -1,5 +1,5 @@
 {
-  "name": "hoursappcounter",
+  "name": "skillo",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -13,11 +13,13 @@
     "preview": "vite preview",
     "cap:sync": "cap sync",
     "cap:android": "npm run build && cap sync android && cap open android",
-    "build:apk": "npm run build && npx cap sync android && cmd /c \"cd android && gradlew.bat assembleDebug\" && copy android\\app\\build\\outputs\\apk\\debug\\app-debug.apk HoursMaster-debug.apk"
+    "build:apk": "npm run build && npx cap sync android && cmd /c \"cd android && gradlew.bat assembleDebug\" && copy android\\app\\build\\outputs\\apk\\debug\\app-debug.apk Skillo-debug.apk"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.1",
+    "@capacitor/app": "^8.1.1",
     "@capacitor/core": "^8.5.1",
+    "@capacitor/status-bar": "^8.0.3",
     "@google/genai": "^2.21.0",
     "@supabase/supabase-js": "^2.115.0",
     "dotenv": "^17.4.2",
@@ -47,7 +49,7 @@
   },
   "build": {
     "appId": "com.hoursmaster.app",
-    "productName": "Hours Master",
+    "productName": "Skillo",
     "directories": {
       "output": "dist_electron"
     },

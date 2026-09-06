@@ -60,7 +60,7 @@ export function Login() {
         const cred = await navigator.credentials.create({
           publicKey: {
             challenge,
-            rp: { name: "Hours Master" }, // Removing explicit ID forces browser to safely infer it
+            rp: { name: "Skillo" }, // Removing explicit ID forces browser to safely infer it
             user: { id: userId, name: "zahy", displayName: "Zahy" },
             pubKeyCredParams: [
               { type: "public-key", alg: -7 },
@@ -102,7 +102,7 @@ export function Login() {
         <div className="flex flex-col items-center mb-6">
           <img 
             src={logoMark} 
-            alt="Hours Master" 
+            alt="Skillo" 
             style={{ 
               width: '64px', 
               height: '64px', 
@@ -111,7 +111,7 @@ export function Login() {
               boxShadow: '0 8px 24px -4px rgba(0, 229, 255, 0.25)' 
             }} 
           />
-          <h2 style={{ fontSize: '1.75rem', fontWeight: 800, letterSpacing: '-0.03em', margin: '0 0 6px 0' }}>Hours <span className="text-cyan">Master</span></h2>
+          <h2 style={{ fontSize: '1.75rem', fontWeight: 800, letterSpacing: '-0.03em', margin: '0 0 6px 0' }}>Skil<span className="text-cyan">lo</span></h2>
           <p className="text-muted" style={{ margin: 0, fontSize: '0.9375rem' }}>Track your mastery journey</p>
         </div>
         <form onSubmit={handleLogin} className="flex flex-col gap-4">

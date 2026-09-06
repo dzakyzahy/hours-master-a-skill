@@ -1,6 +1,6 @@
 # Panduan Pengembangan & Build (Untuk Diky & Tim)
 
-Dokumen ini berisi panduan lengkap untuk menjalankan, mengembangkan, dan mem-build aplikasi **Hours Master** di berbagai platform (Web, Desktop Windows, dan Mobile Android).
+Dokumen ini berisi panduan lengkap untuk menjalankan, mengembangkan, dan mem-build aplikasi **Skillo** di berbagai platform (Web, Desktop Windows, dan Mobile Android).
 
 ---
 
@@ -61,7 +61,7 @@ npm run build:apk
 ```
 Hasil APK debug akan berada di:
 - `android/app/build/outputs/apk/debug/app-debug.apk`
-- Salinan root: `HoursMaster-debug.apk` (~5.3 MB)
+- Salinan root: `Skillo-debug.apk` (~5.5 MB)
 
 Jika ingin membuka proyek Android di **Android Studio**:
 ```bash
@@ -79,6 +79,6 @@ Hasil file installer `.exe` akan berada di dalam folder `dist_electron/`.
 ## 5. Tips Debugging & Testing Khusus Diky
 
 1. **Simulasi Meeting Room**:
-   Di halaman *Meeting Room*, sudah disediakan panel **Dev Tools Drawer** (di bagian bawah). Diky bisa menambah simulasi peserta (*mock participants*) seperti Zahy dan Sarah untuk menguji layout grid video, tombol mute/video, dan tampilan mobile tanpa butuh 2 laptop atau akun lain.
+   Di halaman *Focus Room* (`/meeting`), sudah disediakan panel **Dev Tools Drawer** (di bagian bawah). Diky bisa menambah simulasi peserta (*mock participants*) seperti Zahy dan Sarah untuk menguji layout grid video, animasi equalizing soundbar, tombol mute/video, dan tampilan mobile tanpa butuh 2 laptop atau akun lain.
 2. **Device Emulation**:
    Gunakan inspect element browser (F12) → klik ikon *Toggle device toolbar* (Ctrl + Shift + M) untuk menguji tampilan di layar ponsel (iPhone 14, Pixel 7, Samsung Galaxy) secara langsung sebelum build APK.

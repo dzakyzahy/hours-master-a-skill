@@ -295,3 +295,92 @@ h1, h2, h3, h4 {
   width: 100%;
   max-width: 400px;
 }
+
+/* Sound Bar Equalizer Animation (Meeting Room) */
+.sound-bar {
+  display: inline-block;
+  width: 3px;
+  height: 12px;
+  background-color: var(--accent-cyan);
+  border-radius: 2px;
+  animation: soundWave 0.7s ease-in-out infinite alternate;
+}
+@keyframes soundWave {
+  0% { height: 3px; opacity: 0.6; }
+  100% { height: 14px; opacity: 1; }
+}
+
+/* Timer Active Breathing Glow (Dashboard) */
+@keyframes timerGlow {
+  0%, 100% {
+    text-shadow: 0 0 12px rgba(0, 229, 255, 0.4), 0 0 24px rgba(0, 229, 255, 0.2);
+    color: var(--accent-cyan);
+    transform: scale(1);
+  }
+  50% {
+    text-shadow: 0 0 24px rgba(0, 229, 255, 0.8), 0 0 40px rgba(0, 229, 255, 0.4);
+    color: var(--accent-cyan-hover);
+    transform: scale(1.02);
+  }
+}
+.timer-active-pulse {
+  animation: timerGlow 2.2s ease-in-out infinite;
+}
+
+/* Mobile Responsive Layout & Native Touch Polish */
+button, a {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.mobile-bottom-nav {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .mobile-bottom-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: calc(56px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    background: var(--bg-panel);
+    backdrop-filter: var(--glass-blur);
+    border-top: 1px solid var(--border-color);
+    justify-content: space-around;
+    align-items: center;
+    z-index: 50;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
+  }
+
+  .mobile-bottom-nav .nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 0.6875rem;
+    font-weight: 500;
+    padding: 6px 12px;
+    cursor: pointer;
+    transition: color 0.15s ease;
+  }
+
+  .mobile-bottom-nav .nav-item:active,
+  .mobile-bottom-nav .nav-item.active {
+    color: var(--accent-cyan);
+  }
+
+  .desktop-header-actions {
+    display: none !important;
+  }
+
+  .mobile-content-container {
+    padding: 16px 16px 80px 16px !important;
+  }
+}
