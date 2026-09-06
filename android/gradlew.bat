@@ -59,6 +59,24 @@ set JAVA_EXE=%JAVA_HOME%/bin/java.exe
 
 if exist "%JAVA_EXE%" goto execute
 
+if exist "C:\Program Files\Microsoft\jdk-21.0.12.101-hotspot\bin\java.exe" (
+    set "JAVA_HOME=C:\Program Files\Microsoft\jdk-21.0.12.101-hotspot"
+    set "JAVA_EXE=C:\Program Files\Microsoft\jdk-21.0.12.101-hotspot\bin\java.exe"
+    goto execute
+)
+
+if exist "C:\Program Files\Microsoft\jdk-17.0.20.101-hotspot\bin\java.exe" (
+    set "JAVA_HOME=C:\Program Files\Microsoft\jdk-17.0.20.101-hotspot"
+    set "JAVA_EXE=C:\Program Files\Microsoft\jdk-17.0.20.101-hotspot\bin\java.exe"
+    goto execute
+)
+
+if exist "C:\Program Files\Android Studio\jbr\bin\java.exe" (
+    set "JAVA_HOME=C:\Program Files\Android Studio\jbr"
+    set "JAVA_EXE=C:\Program Files\Android Studio\jbr\bin\java.exe"
+    goto execute
+)
+
 echo. 1>&2
 echo ERROR: JAVA_HOME is set to an invalid directory: %JAVA_HOME% 1>&2
 echo. 1>&2
