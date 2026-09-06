@@ -13,6 +13,10 @@ export function AiGenerator() {
 
   const handleGenerate = async () => {
     if (!topic.trim()) return;
+    if (!API_KEY) {
+      setError('Gemini API Key is not configured. Please add VITE_GEMINI_API_KEY to your .env file.');
+      return;
+    }
     setLoading(true);
     setError('');
 

@@ -21,17 +21,22 @@ export function Dashboard() {
   }, [project, navigate]);
 
   useEffect(() => {
-    let interval: any;
+    let interval: ReturnType<typeof setInterval> | undefined;
     if (activeTimer) {
       interval = setInterval(() => {
-        setTimerSeconds(s => s + 1);
-        if (timerSeconds > 0 && timerSeconds % 60 === 0) {
-          addHours(1/60);
-        }
+        setTimerSeconds(s => {
+          const next = s + 1;
+          if (next > 0 && next % 60 === 0) {
+            addHours(1 / 60);
+          }
+          return next;
+        });
       }, 1000);
     }
-    return () => clearInterval(interval);
-  }, [activeTimer, timerSeconds, addHours]);
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [activeTimer, addHours]);
 
   if (!project) return null;
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, UserPlus, Users, MessageSquare, Send, Video } from 'lucide-react';
 import { supabase } from '../supabaseClient';
@@ -22,25 +22,60 @@ export function Chat() {
   
   const [myUserId, setMyUserId] = useState<string>('');
 
+  const fetchFriendRequests = useCallback(async (uid: string) => {
+    try {
+      const { data } = await supabase.from('friend_requests')
+        .select('*, sender:profiles!sender_id(username, email)')
+        .eq('receiver_id', uid)
+        .eq('status', 'pending');
+      if (data) setFriendRequests(data);
+    } catch (err) {
+      console.warn("Could not fetch friend requests:", err);
+    }
+  }, []);
+
+  const fetchFriends = useCallback(async (uid: string) => {
+    try {
+      const { data } = await supabase.from('friends').select('*').or(`user_id_1.eq.${uid},user_id_2.eq.${uid}`);
+      if (data) {
+        const friendIds = data.map(f => f.user_id_1 === uid ? f.user_id_2 : f.user_id_1);
+        if (friendIds.length > 0) {
+          const { data: profiles } = await supabase.from('profiles').select('id, username').in('id', friendIds);
+          if (profiles) setFriends(profiles);
+        }
+      }
+    } catch (err) {
+      console.warn("Could not fetch friends:", err);
+    }
+  }, []);
+
   useEffect(() => {
+    let active = true;
+
     async function loadData() {
       const { data: authData } = await supabase.auth.getUser();
-      if (!authData?.user) return;
-      setMyUserId(authData.user.id);
+      if (!active) return;
+      const uid = authData?.user?.id || '';
+      setMyUserId(uid);
 
-      fetchFriendRequests(authData.user.id);
-      fetchFriends(authData.user.id);
+      if (uid) {
+        fetchFriendRequests(uid);
+        fetchFriends(uid);
+      }
     }
     loadData();
 
     const friendSub = supabase.channel('friends_updates')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'friend_requests' }, () => {
-         if (myUserId) fetchFriendRequests(myUserId);
+        if (myUserId) fetchFriendRequests(myUserId);
       })
       .subscribe();
 
-    return () => { supabase.removeChannel(friendSub); };
-  }, [myUserId]);
+    return () => {
+      active = false;
+      supabase.removeChannel(friendSub);
+    };
+  }, [fetchFriendRequests, fetchFriends, myUserId]);
 
   useEffect(() => {
     if (!activeRoom) return;
@@ -59,26 +94,6 @@ export function Chat() {
 
     return () => { supabase.removeChannel(msgSub); };
   }, [activeRoom]);
-
-  const fetchFriendRequests = async (uid: string) => {
-    const { data } = await supabase.from('friend_requests')
-      .select('*, sender:profiles!sender_id(username, email)')
-      .eq('receiver_id', uid)
-      .eq('status', 'pending');
-    if (data) setFriendRequests(data);
-  };
-
-  const fetchFriends = async (uid: string) => {
-    const { data } = await supabase.from('friends').select('*').or(`user_id_1.eq.${uid},user_id_2.eq.${uid}`);
-    if (data) {
-       // Fetch profiles for these friends
-       const friendIds = data.map(f => f.user_id_1 === uid ? f.user_id_2 : f.user_id_1);
-       if (friendIds.length > 0) {
-         const { data: profiles } = await supabase.from('profiles').select('id, username').in('id', friendIds);
-         if (profiles) setFriends(profiles);
-       }
-    }
-  };
 
   const searchUsers = async (e: React.FormEvent) => {
     e.preventDefault();

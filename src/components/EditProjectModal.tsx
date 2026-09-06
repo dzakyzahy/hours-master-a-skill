@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { X, Plus, Trash2, Clock } from 'lucide-react';
 import { useStore, type SkillPhase, type Project } from '../store';
 
@@ -12,15 +12,15 @@ export function EditProjectModal({ project, isOpen, onClose }: EditProjectModalP
   const [name, setName] = useState(project.name);
   const [phases, setPhases] = useState<SkillPhase[]>(project.phases);
   const { updateProject, addManualTime } = useStore();
-  
   const [addMinutes, setAddMinutes] = useState('');
 
-  // Reset form when opened with a new project
-  useEffect(() => {
+  const [prevProjectId, setPrevProjectId] = useState(project.id);
+  if (project.id !== prevProjectId) {
+    setPrevProjectId(project.id);
     setName(project.name);
     setPhases(project.phases);
     setAddMinutes('');
-  }, [project, isOpen]);
+  }
 
   if (!isOpen) return null;
 

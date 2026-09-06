@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { supabase } from '../supabaseClient';
 import { useStore } from '../store';
 import { Mic, MicOff, Video, VideoOff, MonitorUp, PhoneOff, Users } from 'lucide-react';
@@ -9,9 +9,16 @@ interface MeetingRoomProps {
   onLeave: () => void;
 }
 
+const ICE_SERVERS: RTCConfiguration = {
+  iceServers: [
+    { urls: 'stun:stun.l.google.com:19302' },
+    { urls: 'stun:global.stun.twilio.com:3478' }
+  ]
+};
+
 export function MeetingRoom({ roomId, roomName, onLeave }: MeetingRoomProps) {
   const { username } = useStore();
-  const [localStream, setLocalStream] = useState<MediaStream | null>(null);
+  const [, setLocalStream] = useState<MediaStream | null>(null);
   const [remoteStreams, setRemoteStreams] = useState<{ [userId: string]: MediaStream }>({});
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoOff, setIsVideoOff] = useState(false);
@@ -19,73 +26,63 @@ export function MeetingRoom({ roomId, roomName, onLeave }: MeetingRoomProps) {
   const [myUserId, setMyUserId] = useState<string>('');
   
   const localVideoRef = useRef<HTMLVideoElement>(null);
+  const localStreamRef = useRef<MediaStream | null>(null);
   const peersRef = useRef<{ [userId: string]: RTCPeerConnection }>({});
   const channelRef = useRef<any>(null);
 
-  const servers = {
-    iceServers: [
-      { urls: 'stun:stun.l.google.com:19302' },
-      { urls: 'stun:global.stun.twilio.com:3478' }
-    ]
-  };
-
-  useEffect(() => {
-    async function init() {
-      const { data: authData } = await supabase.auth.getUser();
-      if (!authData?.user) return;
-      const uid = authData.user.id;
-      setMyUserId(uid);
-
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-        setLocalStream(stream);
-        if (localVideoRef.current) localVideoRef.current.srcObject = stream;
-
-        // Setup Signaling Channel
-        const channel = supabase.channel(`webrtc_${roomId}`);
-        channelRef.current = channel;
-
-        channel.on('broadcast', { event: 'webrtc_signal' }, (payload) => {
-          handleSignalingData(payload.payload, stream, uid);
-        });
-
-        channel.subscribe(async (status) => {
-          if (status === 'SUBSCRIBED') {
-            // Announce presence to room
-            channel.send({
-              type: 'broadcast',
-              event: 'webrtc_signal',
-              payload: { type: 'join', from: uid }
-            });
-          }
-        });
-
-      } catch (err) {
-        console.error("Failed to access media devices:", err);
-        alert("Could not access camera/microphone.");
-      }
-    }
-    
-    init();
-
-    return () => {
-      cleanup();
-    };
-  }, [roomId]);
-
-  const cleanup = () => {
+  const cleanup = useCallback(() => {
     Object.values(peersRef.current).forEach(peer => peer.close());
     peersRef.current = {};
-    if (localStream) {
-      localStream.getTracks().forEach(track => track.stop());
+    if (localStreamRef.current) {
+      localStreamRef.current.getTracks().forEach(track => track.stop());
+      localStreamRef.current = null;
     }
     if (channelRef.current) {
       supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
     }
-  };
+  }, []);
 
-  const handleSignalingData = async (data: any, stream: MediaStream, myId: string) => {
-    if (data.from === myId) return; // Ignore my own messages
+  const createPeer = useCallback((partnerId: string, stream: MediaStream, isInitiator: boolean, myId: string) => {
+    const peer = new RTCPeerConnection(ICE_SERVERS);
+    
+    stream.getTracks().forEach(track => peer.addTrack(track, stream));
+
+    peer.ontrack = (event) => {
+      setRemoteStreams(prev => ({
+        ...prev,
+        [partnerId]: event.streams[0]
+      }));
+    };
+
+    peer.onicecandidate = (event) => {
+      if (event.candidate && channelRef.current) {
+        channelRef.current.send({
+          type: 'broadcast',
+          event: 'webrtc_signal',
+          payload: { type: 'candidate', candidate: event.candidate, from: myId, to: partnerId }
+        });
+      }
+    };
+
+    if (isInitiator) {
+      peer.createOffer().then(offer => {
+        peer.setLocalDescription(offer);
+        if (channelRef.current) {
+          channelRef.current.send({
+            type: 'broadcast',
+            event: 'webrtc_signal',
+            payload: { type: 'offer', offer, from: myId, to: partnerId }
+          });
+        }
+      });
+    }
+
+    return peer;
+  }, []);
+
+  const handleSignalingData = useCallback(async (data: any, stream: MediaStream, myId: string) => {
+    if (!data || data.from === myId) return; // Ignore my own messages
 
     // 1. Someone joined, I need to create an offer to them
     if (data.type === 'join') {
@@ -100,11 +97,13 @@ export function MeetingRoom({ roomId, roomName, onLeave }: MeetingRoomProps) {
       await peer.setRemoteDescription(new RTCSessionDescription(data.offer));
       const answer = await peer.createAnswer();
       await peer.setLocalDescription(answer);
-      channelRef.current.send({
-        type: 'broadcast',
-        event: 'webrtc_signal',
-        payload: { type: 'answer', answer, from: myId, to: data.from }
-      });
+      if (channelRef.current) {
+        channelRef.current.send({
+          type: 'broadcast',
+          event: 'webrtc_signal',
+          payload: { type: 'answer', answer, from: myId, to: data.from }
+        });
+      }
     }
 
     // 3. Someone answered my offer
@@ -132,55 +131,89 @@ export function MeetingRoom({ roomId, roomName, onLeave }: MeetingRoomProps) {
         });
       }
     }
-  };
+  }, [createPeer]);
 
-  const createPeer = (partnerId: string, stream: MediaStream, isInitiator: boolean, myId: string) => {
-    const peer = new RTCPeerConnection(servers);
-    
-    stream.getTracks().forEach(track => peer.addTrack(track, stream));
+  useEffect(() => {
+    let active = true;
 
-    peer.ontrack = (event) => {
-      setRemoteStreams(prev => ({
-        ...prev,
-        [partnerId]: event.streams[0]
-      }));
-    };
+    async function init() {
+      const { data: authData } = await supabase.auth.getUser();
+      const uid = authData?.user?.id || (username ? `user_${username}` : `guest_${Date.now().toString(36)}`);
+      if (!active) return;
+      setMyUserId(uid);
 
-    peer.onicecandidate = (event) => {
-      if (event.candidate) {
-        channelRef.current.send({
-          type: 'broadcast',
-          event: 'webrtc_signal',
-          payload: { type: 'candidate', candidate: event.candidate, from: myId, to: partnerId }
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        if (!active) {
+          stream.getTracks().forEach(t => t.stop());
+          return;
+        }
+        localStreamRef.current = stream;
+        setLocalStream(stream);
+        if (localVideoRef.current) localVideoRef.current.srcObject = stream;
+
+        // Setup Signaling Channel
+        const channel = supabase.channel(`webrtc_${roomId}`);
+        channelRef.current = channel;
+
+        channel.on('broadcast', { event: 'webrtc_signal' }, (payload) => {
+          handleSignalingData(payload.payload, stream, uid);
         });
+
+        channel.subscribe(async (status) => {
+          if (status === 'SUBSCRIBED' && channelRef.current) {
+            channelRef.current.send({
+              type: 'broadcast',
+              event: 'webrtc_signal',
+              payload: { type: 'join', from: uid }
+            });
+          }
+        });
+
+      } catch (err) {
+        console.warn("Could not access camera/microphone:", err);
       }
-    };
-
-    if (isInitiator) {
-      peer.createOffer().then(offer => {
-        peer.setLocalDescription(offer);
-        channelRef.current.send({
-          type: 'broadcast',
-          event: 'webrtc_signal',
-          payload: { type: 'offer', offer, from: myId, to: partnerId }
-        });
-      });
     }
+    
+    init();
 
-    return peer;
-  };
+    return () => {
+      active = false;
+      cleanup();
+    };
+  }, [roomId, username, handleSignalingData, cleanup]);
 
   const toggleMute = () => {
-    if (localStream) {
-      localStream.getAudioTracks()[0].enabled = isMuted;
-      setIsMuted(!isMuted);
+    if (localStreamRef.current) {
+      const audio = localStreamRef.current.getAudioTracks()[0];
+      if (audio) {
+        audio.enabled = isMuted;
+        setIsMuted(!isMuted);
+      }
     }
   };
 
   const toggleVideo = () => {
-    if (localStream) {
-      localStream.getVideoTracks()[0].enabled = isVideoOff;
-      setIsVideoOff(!isVideoOff);
+    if (localStreamRef.current) {
+      const video = localStreamRef.current.getVideoTracks()[0];
+      if (video) {
+        video.enabled = isVideoOff;
+        setIsVideoOff(!isVideoOff);
+      }
+    }
+  };
+
+  const stopScreenShare = () => {
+    if (localStreamRef.current) {
+      const videoTrack = localStreamRef.current.getVideoTracks()[0];
+      if (videoTrack) {
+        Object.values(peersRef.current).forEach(peer => {
+          const sender = peer.getSenders().find(s => s.track?.kind === 'video');
+          if (sender) sender.replaceTrack(videoTrack);
+        });
+      }
+      if (localVideoRef.current) localVideoRef.current.srcObject = localStreamRef.current;
+      setIsScreenSharing(false);
     }
   };
 
@@ -189,6 +222,7 @@ export function MeetingRoom({ roomId, roomName, onLeave }: MeetingRoomProps) {
       try {
         const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
         const screenTrack = screenStream.getVideoTracks()[0];
+        if (!screenTrack) return;
         
         // Replace video track in all peers
         Object.values(peersRef.current).forEach(peer => {
@@ -204,22 +238,10 @@ export function MeetingRoom({ roomId, roomName, onLeave }: MeetingRoomProps) {
         };
         setIsScreenSharing(true);
       } catch (err) {
-        console.error("Screen sharing failed", err);
+        console.warn("Screen sharing cancelled or failed:", err);
       }
     } else {
       stopScreenShare();
-    }
-  };
-
-  const stopScreenShare = () => {
-    if (localStream) {
-      const videoTrack = localStream.getVideoTracks()[0];
-      Object.values(peersRef.current).forEach(peer => {
-        const sender = peer.getSenders().find(s => s.track?.kind === 'video');
-        if (sender) sender.replaceTrack(videoTrack);
-      });
-      if (localVideoRef.current) localVideoRef.current.srcObject = localStream;
-      setIsScreenSharing(false);
     }
   };
 
