@@ -1,32 +1,44 @@
-# React + TypeScript + Vite
+# Hours Master (Skillo)
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Aplikasi produktivitas cross-platform (Web, Desktop Windows, dan Mobile Android) yang menggabungkan manajemen proyek, pelacak waktu (pomodoro/stopwatch), video meeting real-time (WebRTC), chat tim, dan generator tugas berbasis AI.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Fitur Utama
 
-## React Compiler
+- **Real-Time Video Meeting**: Panggilan video/audio peer-to-peer dan *screen sharing* berbasis WebRTC dengan integrasi signaling Supabase Realtime.
+- **Manajemen Waktu & Proyek**: Timer presisi tanpa drift, status proyek, dan pelacak jam kerja.
+- **Team Collaboration**: Direct message, chat grup tim, dan sinkronisasi status kehadiran.
+- **AI Task Generator**: Pembuatan rincian tugas cerdas memanfaatkan Google Gemini AI.
+- **Multiplatform**: Berjalan mulus di Browser Web, Desktop (Electron), dan Android (Capacitor 8).
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+---
 
-## Expanding the Oxlint configuration
+## Mulai Cepat
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+```bash
+# 1. Install dependensi
+npm install
 
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+# 2. Jalankan mode Web Development
+npm run dev
+
+# 3. Jalankan mode Desktop (Electron)
+npm run dev:electron
+
+# 4. Build Android Debug APK
+npm run build:apk
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+File APK hasil build lokal akan tersimpan di [`HoursMaster-debug.apk`](./HoursMaster-debug.apk).
+
+---
+
+## Dokumentasi Lengkap
+
+Dokumentasi pengembangan, pembagian tugas, dan panduan teknis tersimpan di dalam folder [`docs/`](./docs/):
+
+- [Indeks Dokumentasi (`docs/README.md`)](./docs/README.md)
+- [Panduan Pengembangan & Build (`docs/development_guide.md`)](./docs/development_guide.md)
+- [Pembagian Tugas Tim (`docs/division_of_work.md`)](./docs/division_of_work.md)
+- [Brainstorming & Roadmap Upgrade Khusus Diky (`docs/diky_upgrade_roadmap.md`)](./docs/diky_upgrade_roadmap.md)
