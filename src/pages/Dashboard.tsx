@@ -1,16 +1,20 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Clock, Activity, Target, Trophy, Play, Square, Plus, Edit2, Check, ArrowLeft } from 'lucide-react';
-import { useStore } from '../store';
+import { Clock, Activity, Target, Trophy, Play, Square, Plus, Trash2, Edit, ArrowLeft } from 'lucide-react';
+import { useStore, type Project } from '../store';
+import { ManualProjectModal } from '../components/ManualProjectModal';
+import { EditProjectModal } from '../components/EditProjectModal';
 
 export function Dashboard() {
-  const { projects, activeProjectId, addHours, toggleTimer, activeTimer, setTotalHours } = useStore();
+  const { projects, activeProjectId, addHours, toggleTimer, activeTimer, setTotalHours, deleteProject, restoreProject, hardDeleteProject } = useStore();
   const navigate = useNavigate();
   
   const [manualInput, setManualInput] = useState('');
   const [timerSeconds, setTimerSeconds] = useState(0);
   const [isEditingTotal, setIsEditingTotal] = useState(false);
   const [editTotalInput, setEditTotalInput] = useState('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editProject, setEditProject] = useState<Project | null>(null);
 
   const project = projects.find(p => p.id === activeProjectId);
 
@@ -75,6 +79,22 @@ export function Dashboard() {
             <Activity size={32} className="text-cyan" />
             <h1 style={{ margin: 0 }}>{project.name}</h1>
           </div>
+        </div>
+        <div className="flex gap-2">
+            <button 
+              className="btn p-2 hover:text-cyan-400"
+              onClick={() => setEditProject(project)}
+              title="Edit Project"
+            >
+              <Edit size={18} />
+            </button>
+            <button 
+              className="btn p-2 hover:text-red-500"
+              onClick={() => { deleteProject(project.id); navigate('/'); }}
+              title="Move to Recycle Bin"
+            >
+              <Trash2 size={18} />
+            </button>
         </div>
       </div>
 

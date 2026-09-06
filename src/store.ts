@@ -17,6 +17,7 @@ export interface Project {
   hoursToday: number;
   phases: SkillPhase[];
   lastUpdated: number;
+  deletedAt?: number;
 }
 
 interface AppState {
@@ -43,7 +44,10 @@ interface AppState {
   addProject: (name: string, phases: SkillPhase[]) => void;
   updateProject: (id: string, name: string, phases: SkillPhase[]) => void;
   deleteProject: (id: string) => void;
+  restoreProject: (id: string) => void;
+  hardDeleteProject: (id: string) => void;
   addHours: (h: number) => void;
+  addManualTime: (id: string, minutes: number) => void;
   setTotalHours: (h: number) => void;
   setDailyGoal: (h: number) => void;
   activeTimer: boolean;
@@ -153,9 +157,34 @@ export const useStore = create<AppState>()(
       })),
 
       deleteProject: (id) => set((state) => ({
+        projects: state.projects.map(p => p.id === id ? { ...p, deletedAt: Date.now() } : p),
+        activeProjectId: state.activeProjectId === id ? null : state.activeProjectId
+      })),
+
+      restoreProject: (id) => set((state) => ({
+        projects: state.projects.map(p => p.id === id ? { ...p, deletedAt: undefined } : p)
+      })),
+
+      hardDeleteProject: (id) => set((state) => ({
         projects: state.projects.filter(p => p.id !== id),
         activeProjectId: state.activeProjectId === id ? null : state.activeProjectId
       })),
+
+      addManualTime: (id, minutes) => set((state) => {
+        const hoursToAdd = minutes / 60;
+        return {
+          projects: state.projects.map(p => 
+            p.id === id
+              ? { 
+                  ...p, 
+                  totalHours: p.totalHours + hoursToAdd,
+                  hoursToday: p.hoursToday + hoursToAdd,
+                  lastUpdated: Date.now()
+                }
+              : p
+          )
+        };
+      }),
 
       addHours: (h) => set((state) => {
         const id = state.activeProjectId;

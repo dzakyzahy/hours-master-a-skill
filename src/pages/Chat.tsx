@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, UserPlus, Users, MessageSquare, Send } from 'lucide-react';
+import { ArrowLeft, UserPlus, Users, MessageSquare, Send, Video } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { useStore } from '../store';
+import { MeetingRoom } from '../components/MeetingRoom';
 
 export function Chat() {
   const navigate = useNavigate();
@@ -15,6 +16,7 @@ export function Chat() {
   const [friends, setFriends] = useState<any[]>([]);
   
   const [activeRoom, setActiveRoom] = useState<any>(null);
+  const [inMeeting, setInMeeting] = useState(false);
   const [messages, setMessages] = useState<any[]>([]);
   const [newMessage, setNewMessage] = useState('');
   
@@ -195,11 +197,20 @@ export function Chat() {
 
         {activeTab === 'chat' && (
           <div className="flex flex-col h-full">
-            {!activeRoom ? (
+            {inMeeting && activeRoom ? (
+               <div className="flex-1">
+                 <MeetingRoom roomId={activeRoom.id} roomName={activeRoom.name} onLeave={() => setInMeeting(false)} />
+               </div>
+            ) : !activeRoom ? (
               <div className="flex-1 flex items-center justify-center text-muted">Select a friend to start chatting</div>
             ) : (
               <>
-                <h3 className="mb-4 pb-2 border-b border-gray-700">{activeRoom.name}</h3>
+                <div className="flex justify-between items-center mb-4 pb-2 border-b border-gray-700">
+                  <h3 className="m-0">{activeRoom.name}</h3>
+                  <button className="btn btn-primary bg-purple-600 hover:bg-purple-700" onClick={() => setInMeeting(true)}>
+                    <Video size={18} className="mr-2"/> Start Meeting
+                  </button>
+                </div>
                 <div className="flex-1 overflow-y-auto mb-4 flex flex-col gap-2 pr-2">
                   {messages.map(m => (
                     <div key={m.id} className={`p-2 rounded max-w-[80%] ${m.sender_id === myUserId ? 'bg-cyan text-black self-end' : 'bg-gray-800 self-start'}`}>
