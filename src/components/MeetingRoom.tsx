@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { supabase } from '../supabaseClient';
 import { useStore } from '../store';
 import { Mic, MicOff, Video, VideoOff, MonitorUp, PhoneOff, Users } from 'lucide-react';
@@ -271,7 +271,7 @@ export function MeetingRoom({ roomId, roomName, onLeave }: MeetingRoomProps) {
             style={{ transform: isScreenSharing ? 'none' : 'scaleX(-1)' }}
           />
           <div className="absolute bottom-4 left-4 bg-black/60 backdrop-blur px-3 py-1.5 rounded-lg text-sm text-white font-medium flex items-center gap-2 border border-white/10">
-            You {isScreenSharing && '(Sharing Screen)'}
+            {username || 'You'} {isScreenSharing && '(Sharing Screen)'}
             {(isMuted || isVideoOff) && (
               <div className="flex gap-1 ml-1 text-red-400">
                 {isMuted && <MicOff size={14} />}

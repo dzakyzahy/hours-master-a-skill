@@ -25,15 +25,37 @@ export function EditProjectModal({ project, isOpen, onClose }: EditProjectModalP
   if (!isOpen) return null;
 
   const handleAddPhase = () => {
-    setPhases([...phases, { id: Date.now().toString(), name: '', hoursRequired: 20, isCompleted: false }]);
+    const lastPhase = phases[phases.length - 1];
+    const prevEnd = lastPhase?.hoursEnd ?? 0;
+    setPhases([
+      ...phases,
+      {
+        id: Date.now().toString(),
+        name: '',
+        title: '',
+        hoursRequired: 20,
+        hoursStart: prevEnd,
+        hoursEnd: prevEnd + 20,
+        desc: '',
+        isCompleted: false,
+      },
+    ]);
   };
 
-  const handleUpdatePhase = (id: string, field: keyof SkillPhase, value: string | number) => {
-    setPhases(phases.map(p => p.id === id ? { ...p, [field]: value } : p));
+  const handleUpdatePhase = (id: string, field: 'name' | 'hoursRequired', value: string | number) => {
+    setPhases(phases.map(p => {
+      const pId = p.id || p.title;
+      if (pId !== id) return p;
+      if (field === 'name') {
+        return { ...p, name: String(value), title: String(value) };
+      }
+      const hrs = Number(value) || 0;
+      return { ...p, hoursRequired: hrs, hoursEnd: p.hoursStart + hrs };
+    }));
   };
 
   const handleRemovePhase = (id: string) => {
-    setPhases(phases.filter(p => p.id !== id));
+    setPhases(phases.filter(p => (p.id || p.title) !== id));
   };
 
   const handleManualTimeAdd = (e: React.FormEvent) => {
@@ -74,14 +96,19 @@ export function EditProjectModal({ project, isOpen, onClose }: EditProjectModalP
             </div>
             
             <div className="flex flex-col gap-3">
-              {phases.map((phase) => (
-                <div key={phase.id} className="flex gap-2 items-center bg-slate-900/50 p-2 rounded-lg border border-slate-700">
-                  <input type="text" className="input-field flex-1" value={phase.name} onChange={e => handleUpdatePhase(phase.id, 'name', e.target.value)} placeholder="Phase Name (e.g., Basics)" />
-                  <input type="number" className="input-field w-24" value={phase.hoursRequired} onChange={e => handleUpdatePhase(phase.id, 'hoursRequired', Number(e.target.value))} min="1" />
-                  <span className="text-muted text-sm">hrs</span>
-                  <button type="button" onClick={() => handleRemovePhase(phase.id)} className="btn p-2 text-red-400 hover:bg-red-400/20"><Trash2 size={16} /></button>
-                </div>
-              ))}
+              {phases.map((phase, idx) => {
+                const phaseId = phase.id || phase.title || `phase-${idx}`;
+                const phaseName = phase.name ?? phase.title ?? '';
+                const phaseHours = phase.hoursRequired ?? (phase.hoursEnd - phase.hoursStart);
+                return (
+                  <div key={phaseId} className="flex gap-2 items-center bg-slate-900/50 p-2 rounded-lg border border-slate-700">
+                    <input type="text" className="input-field flex-1" value={phaseName} onChange={e => handleUpdatePhase(phaseId, 'name', e.target.value)} placeholder="Phase Name (e.g., Basics)" />
+                    <input type="number" className="input-field w-24" value={phaseHours} onChange={e => handleUpdatePhase(phaseId, 'hoursRequired', Number(e.target.value))} min="1" />
+                    <span className="text-muted text-sm">hrs</span>
+                    <button type="button" onClick={() => handleRemovePhase(phaseId)} className="btn p-2 text-red-400 hover:bg-red-400/20"><Trash2 size={16} /></button>
+                  </div>
+                );
+              })}
               {phases.length === 0 && <div className="text-center p-4 border border-dashed border-slate-700 rounded-lg text-muted text-sm">No phases defined. Add a phase to break down your goal.</div>}
             </div>
           </div>

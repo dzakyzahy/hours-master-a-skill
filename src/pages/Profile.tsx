@@ -14,7 +14,7 @@ declare global {
 }
 
 export function Profile() {
-  const { username, logout } = useStore();
+  const { username } = useStore();
   const navigate = useNavigate();
   const [newUsername, setNewUsername] = useState(username);
   const [email, setEmail] = useState('');

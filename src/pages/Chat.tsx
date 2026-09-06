@@ -129,9 +129,16 @@ export function Chat() {
 
   return (
     <div style={{ padding: '32px', flex: 1, display: 'flex', flexDirection: 'column', height: '100vh' }} className="no-drag">
-      <div className="flex items-center mb-6 gap-4">
-        <button className="btn" onClick={() => navigate('/')}><ArrowLeft size={20} /></button>
-        <h1 style={{ margin: 0 }}>Collaboration Hub</h1>
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-4">
+          <button className="btn" onClick={() => navigate('/')}><ArrowLeft size={20} /></button>
+          <h1 style={{ margin: 0 }}>Collaboration Hub</h1>
+        </div>
+        {username && (
+          <div className="text-xs text-muted font-mono px-3 py-1.5 rounded-lg border border-slate-700 bg-slate-900/60">
+            Signed in as: <span className="text-cyan font-bold">{username}</span>
+          </div>
+        )}
       </div>
 
       <div className="flex gap-4 mb-6">

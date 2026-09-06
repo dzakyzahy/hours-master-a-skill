@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <!-- Rounded Squircle Base with Precision Chamfer -->
+  <rect width="512" height="512" rx="128" fill="#090D16" />
+  <rect x="8" y="8" width="496" height="496" rx="120" stroke="#1E293B" stroke-width="4" stroke-opacity="0.6" />
+  
+  <!-- Subtle Top Edge Light Specular -->
+  <path d="M128 12 H384" stroke="white" stroke-width="2" stroke-opacity="0.1" stroke-linecap="round" />
+
+  <!-- Monolithic Architectural Hourglass / 'H' Geometry -->
+  <!-- Left Upper Wing -->
+  <polygon points="176,144 246,144 246,248 206,248" fill="#F8FAFC" />
+  <!-- Right Upper Wing -->
+  <polygon points="266,144 336,144 306,248 266,248" fill="#F8FAFC" />
+  
+  <!-- Left Lower Wing -->
+  <polygon points="206,264 246,264 246,368 176,368" fill="#F8FAFC" />
+  <!-- Right Lower Wing -->
+  <polygon points="266,264 306,264 336,368 266,368" fill="#F8FAFC" />
+
+  <!-- Central Laser Seam in Electric Cyan -->
+  <rect x="251" y="132" width="10" height="248" rx="5" fill="#00E5FF" />
+  
+  <!-- Precision Vertex Focal Ring -->
+  <circle cx="256" cy="256" r="4" fill="#FFFFFF" />
+</svg>

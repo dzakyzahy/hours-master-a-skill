@@ -1,19 +1,17 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Clock, Activity, Target, Trophy, Play, Square, Plus, Trash2, Edit, ArrowLeft } from 'lucide-react';
+import { Clock, Activity, Target, Trophy, Play, Square, Plus, Trash2, Edit, Check, Edit2, ArrowLeft } from 'lucide-react';
 import { useStore, type Project } from '../store';
-import { ManualProjectModal } from '../components/ManualProjectModal';
 import { EditProjectModal } from '../components/EditProjectModal';
 
 export function Dashboard() {
-  const { projects, activeProjectId, addHours, toggleTimer, activeTimer, setTotalHours, deleteProject, restoreProject, hardDeleteProject } = useStore();
+  const { projects, activeProjectId, addHours, toggleTimer, activeTimer, setTotalHours, deleteProject } = useStore();
   const navigate = useNavigate();
   
   const [manualInput, setManualInput] = useState('');
   const [timerSeconds, setTimerSeconds] = useState(0);
   const [isEditingTotal, setIsEditingTotal] = useState(false);
   const [editTotalInput, setEditTotalInput] = useState('');
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [editProject, setEditProject] = useState<Project | null>(null);
 
   const project = projects.find(p => p.id === activeProjectId);
@@ -223,6 +221,14 @@ export function Dashboard() {
           );
         })}
       </div>
+
+      {editProject && (
+        <EditProjectModal
+          project={editProject}
+          isOpen={Boolean(editProject)}
+          onClose={() => setEditProject(null)}
+        />
+      )}
     </div>
   );
 }

@@ -10,7 +10,9 @@
     "build": "tsc -b && vite build",
     "build:electron": "npm run build && electron-builder",
     "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "cap:sync": "cap sync",
+    "cap:android": "npm run build && cap sync android && cap open android"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.1",

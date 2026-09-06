@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Trash2, Activity, Moon, Sun, Eye, EyeOff, LogOut, Plus, User, MessageSquare, RefreshCcw } from 'lucide-react';
+import { Trash2, Moon, Sun, Eye, EyeOff, LogOut, Plus, User, MessageSquare, RefreshCcw, Video } from 'lucide-react';
 import { useStore } from '../store';
 import { AiGenerator } from '../AiGenerator';
 import { ManualProjectModal } from '../components/ManualProjectModal';
+import logoMark from '../assets/logo.svg';
 
 export function Home() {
-  const { theme, toggleTheme, projects, activeProjectId, setActiveProject, deleteProject, logout, setDailyGoal, restoreProject, hardDeleteProject, clockEnabled, toggleClock } = useStore();
+  const { theme, toggleTheme, projects, setActiveProject, deleteProject, logout, restoreProject, hardDeleteProject, clockEnabled, toggleClock } = useStore();
   const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showRecycleBin, setShowRecycleBin] = useState(false);
@@ -22,11 +23,14 @@ export function Home() {
   return (
     <div style={{ padding: '32px', flex: 1, zIndex: 10, position: 'relative' }} className="no-drag">
       <div className="flex justify-between items-center mb-8">
-        <div className="flex items-center gap-2">
-          <Activity size={32} className="text-cyan" />
-          <h1 style={{ margin: 0 }}>Your <span className="text-cyan">Projects</span></h1>
+        <div className="flex items-center gap-3">
+          <img src={logoMark} alt="Hours Master" style={{ width: '36px', height: '36px', borderRadius: '10px' }} />
+          <h1 style={{ margin: 0, fontSize: '1.75rem', fontWeight: 800, letterSpacing: '-0.03em' }}>Hours <span className="text-cyan">Master</span></h1>
         </div>
         <div className="flex gap-2">
+          <button className="btn btn-primary" onClick={() => navigate('/meeting')} title="Enter Video Meeting Room">
+            <Video size={16} /> Focus Room
+          </button>
           <button className="btn" onClick={() => setShowRecycleBin(!showRecycleBin)}>
             {showRecycleBin ? 'Back to Projects' : `Recycle Bin (${deletedProjects.length})`}
           </button>

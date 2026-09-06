@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogIn, Activity, Fingerprint } from 'lucide-react';
+import { LogIn, Fingerprint } from 'lucide-react';
 import { useStore } from '../store';
+import logoMark from '../assets/logo.svg';
 
 export function Login() {
   const [user, setUser] = useState('');
@@ -99,9 +100,19 @@ export function Login() {
     <div className="login-container">
       <div className="glass-panel login-card no-drag" style={{ position: 'relative', zIndex: 10 }}>
         <div className="flex flex-col items-center mb-6">
-          <Activity size={48} className="text-cyan mb-2" />
-          <h2>Hours <span className="text-cyan">Master</span></h2>
-          <p className="text-muted">Track your mastery journey</p>
+          <img 
+            src={logoMark} 
+            alt="Hours Master" 
+            style={{ 
+              width: '64px', 
+              height: '64px', 
+              borderRadius: '16px', 
+              marginBottom: '16px', 
+              boxShadow: '0 8px 24px -4px rgba(0, 229, 255, 0.25)' 
+            }} 
+          />
+          <h2 style={{ fontSize: '1.75rem', fontWeight: 800, letterSpacing: '-0.03em', margin: '0 0 6px 0' }}>Hours <span className="text-cyan">Master</span></h2>
+          <p className="text-muted" style={{ margin: 0, fontSize: '0.9375rem' }}>Track your mastery journey</p>
         </div>
         <form onSubmit={handleLogin} className="flex flex-col gap-4">
           <div>

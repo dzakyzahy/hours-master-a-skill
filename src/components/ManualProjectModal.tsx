@@ -2,13 +2,14 @@ import { useState } from 'react';
 import { Plus, X, Save } from 'lucide-react';
 import { useStore, type SkillPhase } from '../store';
 
-export function ManualProjectModal({ onClose }: { onClose: () => void }) {
+export function ManualProjectModal({ isOpen = true, onClose }: { isOpen?: boolean; onClose: () => void }) {
   const addProject = useStore(state => state.addProject);
-  
   const [name, setName] = useState('');
   const [phases, setPhases] = useState<SkillPhase[]>([
     { title: 'Beginner Phase', hoursStart: 0, hoursEnd: 100, desc: 'Learning the basics' }
   ]);
+
+  if (!isOpen) return null;
 
   const handleAddPhase = () => {
     const lastPhase = phases[phases.length - 1];
