@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Trash2, Activity, Moon, Sun, Eye, EyeOff, LogOut, Plus } from 'lucide-react';
+import { Trash2, Activity, Moon, Sun, Eye, EyeOff, LogOut, Plus, User, MessageSquare } from 'lucide-react';
 import { useStore } from '../store';
 import { AiGenerator } from '../AiGenerator';
 import { ManualProjectModal } from '../components/ManualProjectModal';
@@ -28,6 +28,9 @@ export function Home() {
           </button>
           <button className="btn" onClick={toggleTheme} title="Toggle Theme">
             {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+          </button>
+          <button className="btn" onClick={() => navigate('/chat')} title="Collaboration & Chat">
+            <MessageSquare size={18} className="text-purple" />
           </button>
           <button className="btn" onClick={() => navigate('/profile')} title="Profile Settings">
             <User size={18} />

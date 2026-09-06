@@ -40,7 +40,30 @@ app.whenReady().then(() => {
   createWindow();
   
   autoUpdater.checkForUpdatesAndNotify();
+  
+  ipcMain.on('check-for-updates', (event) => {
+    event.reply('update-status', 'Checking for updates...');
+    autoUpdater.checkForUpdates();
+  });
 
+  autoUpdater.on('update-available', () => {
+    if (mainWindow) mainWindow.webContents.send('update-status', 'Update available. Downloading...');
+  });
+
+  autoUpdater.on('update-not-available', () => {
+    if (mainWindow) mainWindow.webContents.send('update-status', 'You are on the latest version.');
+  });
+
+  autoUpdater.on('error', (err) => {
+    if (mainWindow) mainWindow.webContents.send('update-status', 'Error: ' + err.message);
+  });
+
+  autoUpdater.on('update-downloaded', () => {
+    if (mainWindow) mainWindow.webContents.send('update-status', 'Update downloaded. Restarting...');
+    setTimeout(() => {
+      autoUpdater.quitAndInstall();
+    }, 2000);
+  });
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });

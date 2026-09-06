@@ -28,3 +28,4 @@ dist_electron/
 release/
 applicationHours/
 .env
+dist_electron.zip

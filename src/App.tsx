@@ -5,6 +5,7 @@ import { Login } from './pages/Login';
 import { Home } from './pages/Home';
 import { Dashboard } from './pages/Dashboard';
 import { Profile } from './pages/Profile';
+import { Chat } from './pages/Chat';
 import { BackgroundClock } from './components/BackgroundClock';
 import './index.css';
 
@@ -51,6 +52,14 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <Profile />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/chat" 
+            element={
+              <ProtectedRoute>
+                <Chat />
               </ProtectedRoute>
             } 
           />

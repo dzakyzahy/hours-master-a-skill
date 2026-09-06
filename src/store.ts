@@ -41,6 +41,7 @@ interface AppState {
   // Actions
   setActiveProject: (id: string | null) => void;
   addProject: (name: string, phases: SkillPhase[]) => void;
+  updateProject: (id: string, name: string, phases: SkillPhase[]) => void;
   deleteProject: (id: string) => void;
   addHours: (h: number) => void;
   setTotalHours: (h: number) => void;
@@ -141,6 +142,14 @@ export const useStore = create<AppState>()(
           phases,
           lastUpdated: Date.now()
         }]
+      })),
+
+      updateProject: (id, name, phases) => set((state) => ({
+        projects: state.projects.map(p => 
+          p.id === id 
+            ? { ...p, name, phases, lastUpdated: Date.now() }
+            : p
+        )
       })),
 
       deleteProject: (id) => set((state) => ({
