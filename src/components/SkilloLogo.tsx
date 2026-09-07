@@ -1,4 +1,3 @@
-
 interface SkilloLogoProps {
   size?: number;
   animated?: boolean;
@@ -13,7 +12,7 @@ export function SkilloLogo({
   className = '',
 }: SkilloLogoProps) {
   return (
-    <div className={`inline-flex items-center gap-3 ${className}`}>
+    <div className={`inline-flex items-center gap-2.5 skillo-logo-wrap ${className}`}>
       <div
         style={{
           width: size,
@@ -29,17 +28,17 @@ export function SkilloLogo({
           viewBox="0 0 400 400"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
+          className={animated ? 'skillo-logo-animated' : ''}
           style={{
             width: '100%',
             height: '100%',
             overflow: 'visible',
-            filter: animated ? 'drop-shadow(0 0 12px rgba(0, 229, 255, 0.35))' : 'none',
             transition: 'filter 0.3s ease',
           }}
         >
           <defs>
-            <filter id="skilloCyanGlow" x="-20%" y="-20%" width="140%" height="140%">
-              <feGaussianBlur stdDeviation="6" result="blur" />
+            <filter id="skilloLaserGlow" x="-30%" y="-20%" width="160%" height="140%">
+              <feGaussianBlur stdDeviation="5" result="blur" />
               <feMerge>
                 <feMergeNode in="blur" />
                 <feMergeNode in="SourceGraphic" />
@@ -50,29 +49,29 @@ export function SkilloLogo({
           {/* Left Upper Wing */}
           <polygon
             points="76,40 186,40 186,200"
-            fill="#FFFFFF"
-            style={{ transition: 'opacity 0.2s ease' }}
+            fill="currentColor"
+            style={{ transition: 'fill 0.2s ease, opacity 0.2s ease' }}
           />
 
           {/* Left Lower Wing */}
           <polygon
             points="186,200 186,360 76,360"
-            fill="#FFFFFF"
-            style={{ transition: 'opacity 0.2s ease' }}
+            fill="currentColor"
+            style={{ transition: 'fill 0.2s ease, opacity 0.2s ease' }}
           />
 
           {/* Right Upper Wing */}
           <polygon
             points="214,40 324,40 214,200"
-            fill="#FFFFFF"
-            style={{ transition: 'opacity 0.2s ease' }}
+            fill="currentColor"
+            style={{ transition: 'fill 0.2s ease, opacity 0.2s ease' }}
           />
 
           {/* Right Lower Wing */}
           <polygon
             points="214,200 324,360 214,360"
-            fill="#FFFFFF"
-            style={{ transition: 'opacity 0.2s ease' }}
+            fill="currentColor"
+            style={{ transition: 'fill 0.2s ease, opacity 0.2s ease' }}
           />
 
           {/* Central Laser Beam */}
@@ -81,8 +80,8 @@ export function SkilloLogo({
             y="40"
             width="8"
             height="320"
-            fill="#00E5FF"
-            filter="url(#skilloCyanGlow)"
+            fill="var(--accent-cyan)"
+            filter="url(#skilloLaserGlow)"
             className={animated ? 'animate-pulse' : ''}
           />
         </svg>
@@ -91,14 +90,15 @@ export function SkilloLogo({
       {showText && (
         <span
           style={{
-            fontSize: `${size * 0.7}px`,
-            fontWeight: 800,
+            fontSize: `${size * 0.65}px`,
+            fontWeight: 700,
             letterSpacing: '-0.035em',
             lineHeight: 1,
-            color: 'var(--text-main)',
+            color: 'var(--text-primary)',
+            fontFamily: 'Geist, sans-serif',
           }}
         >
-          Skil<span className="text-cyan">lo</span>
+          Skil<span style={{ color: 'var(--accent-cyan)' }}>lo</span>
         </span>
       )}
     </div>

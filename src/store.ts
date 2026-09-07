@@ -55,6 +55,7 @@ interface AppState {
   // Settings
   theme: 'dark' | 'light';
   toggleTheme: () => void;
+  setTheme: (t: 'dark' | 'light') => void;
   clockEnabled: boolean;
   toggleClock: () => void;
   geminiApiKey: string;
@@ -266,6 +267,7 @@ export const useStore = create<AppState>()(
       
       theme: 'dark',
       toggleTheme: () => set((state) => ({ theme: state.theme === 'dark' ? 'light' : 'dark' })),
+      setTheme: (t: 'dark' | 'light') => set({ theme: t }),
       clockEnabled: true,
       toggleClock: () => set((state) => ({ clockEnabled: !state.clockEnabled })),
 

@@ -1,9 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Save, ArrowLeft, Shield, CheckCircle2, Key, Fingerprint } from 'lucide-react';
+import { 
+  User, 
+  FloppyDisk, 
+  ArrowLeft, 
+  Shield, 
+  CheckCircle, 
+  Key, 
+  Fingerprint 
+} from '@phosphor-icons/react';
 import { supabase } from '../supabaseClient';
 import { useStore } from '../store';
 import { ApiKeyModal } from '../components/ApiKeyModal';
+import { ThemeSwitcher } from '../components/ThemeSwitcher';
 
 declare global {
   interface Window {
@@ -94,21 +103,28 @@ export function Profile() {
   };
 
   return (
-    <div className="no-drag mobile-content-container" style={{ padding: '32px 20px 80px', flex: 1, maxWidth: '920px', margin: '0 auto', width: '100%' }}>
-      {/* Header */}
-      <div className="flex items-center gap-3 mb-8">
-        <button className="btn" onClick={() => navigate('/')} style={{ padding: '0 12px', height: '36px' }}>
-          <ArrowLeft size={16} />
-        </button>
-        <div>
-          <h1 style={{ margin: 0, fontFamily: 'Instrument Serif, Georgia, serif', fontSize: '1.75rem', fontWeight: 400, color: 'var(--text-primary)' }}>
-            Profile & Settings
-          </h1>
-          <p style={{ margin: '2px 0 0', fontSize: '13px', color: 'var(--text-secondary)' }}>
-            Manage your account credentials and team identity
-          </p>
+    <div className="no-drag mobile-content-container" style={{ padding: '32px 20px 80px', flex: 1, maxWidth: '960px', margin: '0 auto', width: '100%' }}>
+      {/* Header with Symmetrical Back & Theme Switcher */}
+      <header className="header-topbar mb-8">
+        <div className="flex items-center gap-3">
+          <button className="btn" onClick={() => navigate('/')} style={{ padding: '0 12px', height: '36px' }} title="Kembali ke Beranda">
+            <ArrowLeft size={16} /> Kembali
+          </button>
+          <div>
+            <h1 style={{ margin: 0, fontSize: '20px', fontWeight: 700, letterSpacing: '-0.025em', color: 'var(--text-primary)', fontFamily: 'Geist, sans-serif' }}>
+              Profil & Pengaturan
+            </h1>
+            <p style={{ margin: '2px 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>
+              Kelola kredensial akun dan identitas kolaborasi tim
+            </p>
+          </div>
         </div>
-      </div>
+
+        <div className="flex items-center gap-2">
+          {/* Dedicated Isolated Theme Switcher */}
+          <ThemeSwitcher compact={true} />
+        </div>
+      </header>
 
       {/* User Identity Banner Card */}
       <div className="glass-panel mb-6" style={{ padding: '24px', display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
@@ -116,14 +132,14 @@ export function Profile() {
           style={{ 
             width: '56px', 
             height: '56px', 
-            borderRadius: '4px', 
+            borderRadius: '8px', 
             background: 'var(--surface-input)', 
             border: '1px solid var(--border-hairline-strong)', 
             display: 'flex', 
             alignItems: 'center', 
             justifyContent: 'center',
             fontSize: '1.25rem',
-            fontWeight: 600,
+            fontWeight: 700,
             fontFamily: 'Geist Mono, monospace',
             color: 'var(--text-primary)',
           }}
@@ -132,13 +148,13 @@ export function Profile() {
         </div>
         <div style={{ flex: 1, minWidth: '200px' }}>
           <div className="flex items-center gap-2 mb-1">
-            <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 600 }} className="capitalize">{newUsername}</h2>
-            <span style={{ fontFamily: 'Geist Mono, monospace', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.04em', padding: '2px 8px', borderRadius: '3px', border: '1px solid rgba(255,255,255,0.12)', background: 'var(--surface-input)', color: '#4ade80' }} className="inline-flex items-center gap-1.5">
-              <span style={{ width: '5px', height: '5px', borderRadius: '50%', backgroundColor: '#4ade80' }} /> Online
+            <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 600, letterSpacing: '-0.015em' }} className="capitalize">{newUsername}</h2>
+            <span style={{ fontFamily: 'Geist Mono, monospace', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.04em', padding: '2px 8px', borderRadius: '4px', border: '1px solid rgba(34,197,94,0.3)', background: 'rgba(34,197,94,0.08)', color: '#22c55e' }} className="inline-flex items-center gap-1.5">
+              <span style={{ width: '5px', height: '5px', borderRadius: '50%', backgroundColor: '#22c55e' }} /> Online
             </span>
           </div>
           <p style={{ margin: '0 0 6px', fontSize: '12px', color: 'var(--text-secondary)', fontFamily: 'Geist Mono, monospace' }}>{email}</p>
-          <span style={{ fontSize: '11px', fontFamily: 'Geist Mono, monospace', color: 'var(--text-secondary)', background: 'var(--surface-input)', padding: '3px 8px', borderRadius: '3px', border: '1px solid var(--border-hairline)' }} className="inline-block">
+          <span style={{ fontSize: '11px', fontFamily: 'Geist Mono, monospace', color: 'var(--text-secondary)', background: 'var(--surface-input)', padding: '3px 8px', borderRadius: '4px', border: '1px solid var(--border-hairline)' }} className="inline-block">
             {roleTitle}
           </span>
         </div>
@@ -149,8 +165,8 @@ export function Profile() {
         {/* Account Form */}
         <div className="glass-panel flex-1" style={{ padding: '28px' }}>
           <div className="flex items-center gap-2 mb-5">
-            <User size={16} style={{ color: 'var(--text-secondary)' }} />
-            <h2 style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
+            <User size={16} weight="regular" style={{ color: 'var(--text-secondary)' }} />
+            <h2 style={{ margin: 0, fontSize: '14.5px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.015em' }}>
               Pengaturan Akun
             </h2>
           </div>
@@ -158,44 +174,47 @@ export function Profile() {
           <form onSubmit={handleUpdate} className="flex flex-col gap-4">
             <div>
               <label style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-secondary)', marginBottom: '6px', display: 'block' }}>
-                Username
+                Nama Pengguna
               </label>
-              <input 
-                type="text" 
-                className="input-field" 
-                value={newUsername} 
-                onChange={e => setNewUsername(e.target.value)}
+              <input
+                type="text"
+                className="input-field"
+                value={newUsername}
+                onChange={(e) => setNewUsername(e.target.value)}
+                required
               />
             </div>
 
             <div>
               <label style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-secondary)', marginBottom: '6px', display: 'block' }}>
-                Alamat Email
+                Email Akun
               </label>
-              <input 
-                type="email" 
-                className="input-field" 
-                value={email} 
-                onChange={e => setEmail(e.target.value)}
+              <input
+                type="email"
+                className="input-field"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
               />
             </div>
 
             <div>
               <label style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-secondary)', marginBottom: '6px', display: 'block' }}>
-                Ganti Password <span style={{ color: 'var(--text-placeholder)', fontWeight: 400 }}>(kosongkan jika tidak diubah)</span>
+                Ubah Kata Sandi (Opsional)
               </label>
-              <input 
-                type="password" 
-                className="input-field" 
-                value={password} 
-                onChange={e => setPassword(e.target.value)} 
-                placeholder="••••••••" 
+              <input
+                type="password"
+                className="input-field"
+                placeholder="Kosongkan jika tidak ingin mengubah"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
               />
             </div>
-            
+
             {msg && (
-              <div style={{ padding: '10px 12px', borderRadius: '4px', background: 'rgba(74, 222, 128, 0.08)', border: '1px solid rgba(74, 222, 128, 0.2)', color: '#4ade80', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <CheckCircle2 size={15} /> {msg}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: '#22c55e', padding: '8px 12px', background: 'rgba(34, 197, 94, 0.08)', borderRadius: '4px', border: '1px solid rgba(34, 197, 94, 0.2)' }}>
+                <CheckCircle size={15} weight="fill" />
+                <span>{msg}</span>
               </div>
             )}
 
@@ -205,7 +224,7 @@ export function Profile() {
               disabled={loading}
               style={{ height: '40px' }}
             >
-              <Save size={15} /> {loading ? 'Menyimpan...' : 'Simpan Perubahan'}
+              <FloppyDisk size={16} weight="bold" /> {loading ? 'Menyimpan...' : 'Simpan Perubahan'}
             </button>
           </form>
         </div>
@@ -213,8 +232,8 @@ export function Profile() {
         {/* System & Update Info */}
         <div className="glass-panel" style={{ width: '100%', maxWidth: '100%', padding: '28px', flex: '0 1 360px' }}>
           <div className="flex items-center gap-2 mb-5">
-            <Shield size={16} style={{ color: 'var(--text-secondary)' }} />
-            <h2 style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
+            <Shield size={16} weight="regular" style={{ color: 'var(--text-secondary)' }} />
+            <h2 style={{ margin: 0, fontSize: '14.5px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.015em' }}>
               Informasi Sistem
             </h2>
           </div>
@@ -222,14 +241,14 @@ export function Profile() {
           {/* Gemini AI Key & Biometrics Section */}
           <div style={{ marginBottom: '24px', paddingBottom: '20px', borderBottom: '1px solid var(--border-hairline)' }}>
             <h3 style={{ margin: '0 0 6px', fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Key size={14} style={{ color: geminiApiKey ? '#4ade80' : 'var(--accent-cyan)' }} />
+              <Key size={14} weight="regular" style={{ color: geminiApiKey ? '#22c55e' : 'var(--accent-cyan)' }} />
               Kunci API Gemini (AI Mastery)
             </h3>
             <p style={{ margin: '0 0 12px', fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
               Tersimpan privat di database akun Supabase Anda dengan proteksi Row Level Security.
             </p>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--surface-input)', border: '1px solid var(--border-hairline)', borderRadius: '4px', marginBottom: '12px' }}>
-              <span style={{ fontSize: '11px', fontFamily: 'Geist Mono, monospace', color: geminiApiKey ? '#4ade80' : 'var(--text-secondary)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--surface-input)', border: '1px solid var(--border-hairline)', borderRadius: '6px', marginBottom: '12px' }}>
+              <span style={{ fontSize: '11px', fontFamily: 'Geist Mono, monospace', color: geminiApiKey ? '#22c55e' : 'var(--text-secondary)' }}>
                 {geminiApiKey ? `${geminiApiKey.substring(0, 8)}••••••••••••` : 'Belum Dikonfigurasi'}
               </span>
               <button 
@@ -243,7 +262,7 @@ export function Profile() {
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', color: 'var(--text-secondary)', fontFamily: 'Geist Mono, monospace' }}>
-              <Fingerprint size={14} style={{ color: 'var(--accent-cyan)' }} />
+              <Fingerprint size={15} weight="regular" style={{ color: 'var(--accent-cyan)' }} />
               <span>Biometric Sensor: Siap Digunakan</span>
             </div>
           </div>
@@ -269,7 +288,7 @@ export function Profile() {
               Periksa Pembaruan Sistem
             </button>
             {updateStatus && (
-              <p style={{ margin: '12px 0 0', fontSize: '12px', color: 'var(--text-primary)', padding: '8px 12px', borderRadius: '4px', background: 'var(--surface-input)', border: '1px solid var(--border-hairline)' }}>
+              <p style={{ margin: '12px 0 0', fontSize: '12px', color: 'var(--text-primary)', padding: '8px 12px', borderRadius: '6px', background: 'var(--surface-input)', border: '1px solid var(--border-hairline)' }}>
                 {updateStatus}
               </p>
             )}
@@ -282,7 +301,7 @@ export function Profile() {
             </div>
             <div className="flex justify-between">
               <span>Status Koneksi</span>
-              <span style={{ color: '#4ade80' }}>Active (Real-time P2P)</span>
+              <span style={{ color: '#22c55e' }}>Active (Real-time P2P)</span>
             </div>
           </div>
         </div>

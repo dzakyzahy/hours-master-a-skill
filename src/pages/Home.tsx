@@ -1,14 +1,41 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Trash2, Moon, Sun, Eye, EyeOff, LogOut, Plus, User, MessageSquare, RefreshCcw, Video, Layers, Users, Key } from 'lucide-react';
+import { 
+  Trash, 
+  Eye, 
+  EyeSlash, 
+  SignOut, 
+  Plus, 
+  User, 
+  ChatTeardropText, 
+  ArrowsClockwise, 
+  VideoCamera, 
+  Stack, 
+  Users, 
+  Key 
+} from '@phosphor-icons/react';
 import { useStore } from '../store';
 import { AiGenerator } from '../AiGenerator';
 import { ManualProjectModal } from '../components/ManualProjectModal';
 import { ApiKeyModal } from '../components/ApiKeyModal';
 import { SkilloLogo } from '../components/SkilloLogo';
+import { ThemeSwitcher } from '../components/ThemeSwitcher';
 
 export function Home() {
-  const { theme, toggleTheme, projects, setActiveProject, deleteProject, logout, restoreProject, hardDeleteProject, clockEnabled, toggleClock, username, friends, geminiApiKey } = useStore();
+  const { 
+    projects, 
+    setActiveProject, 
+    deleteProject, 
+    logout, 
+    restoreProject, 
+    hardDeleteProject, 
+    clockEnabled, 
+    toggleClock, 
+    username, 
+    friends, 
+    geminiApiKey 
+  } = useStore();
+  
   const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
@@ -26,66 +53,97 @@ export function Home() {
 
   return (
     <div style={{ padding: '32px 20px 80px', flex: 1, zIndex: 10, position: 'relative', maxWidth: '1120px', margin: '0 auto', width: '100%' }} className="no-drag mobile-content-container">
-      {/* Top Bar */}
-      <div className="flex justify-between items-center mb-8">
-        <div className="flex items-center gap-3">
-          <SkilloLogo size={30} animated={true} />
+      {/* Top Bar with Clear Symmetrical Alignment */}
+      <header className="header-topbar">
+        {/* Left: Brand + Identity */}
+        <div className="header-brand-wrap">
+          <SkilloLogo size={34} animated={true} />
           <div>
-            <h1 style={{ margin: 0, fontFamily: 'Instrument Serif, Georgia, serif', fontSize: '24px', fontWeight: 400, letterSpacing: 0, lineHeight: 1.1, color: 'var(--text-primary)' }}>
+            <h1 className="header-brand-title">
               Skillo
             </h1>
-            <span style={{ fontSize: '11px', color: 'var(--text-secondary)', fontFamily: 'Geist Mono, monospace' }}>
-              Halo, <span style={{ color: 'var(--text-primary)', fontWeight: 600 }} className="capitalize">{username || 'Diky'}</span>
+            <span className="header-brand-subtitle">
+              Halo, <strong style={{ color: 'var(--text-primary)', fontWeight: 600 }} className="capitalize">{username || 'Diky'}</strong>
             </span>
           </div>
         </div>
         
-        {/* Desktop Header Actions */}
-        <div className="desktop-header-actions flex gap-2">
-          <button className="btn" onClick={() => navigate('/meeting')} title="Enter Focus Room">
-            <Video size={14} /> Focus Room
+        {/* Desktop Header Actions: Workspace Group, Utility Icons, and Separated Theme Switcher */}
+        <div className="desktop-header-actions header-actions-cluster">
+          {/* Workspace Primary Controls */}
+          <button className="btn" onClick={() => navigate('/meeting')} title="Masuk Focus Room">
+            <VideoCamera size={15} weight="regular" /> Focus Room
           </button>
-          <button className="btn" onClick={() => setShowRecycleBin(!showRecycleBin)}>
-            {showRecycleBin ? 'Back to Projects' : `Recycle Bin (${deletedProjects.length})`}
+          <button className="btn" onClick={() => setShowRecycleBin(!showRecycleBin)} title="Lihat item yang dihapus">
+            <Trash size={15} weight="regular" />
+            <span>{showRecycleBin ? 'Kembali' : `Recycle Bin (${deletedProjects.length})`}</span>
           </button>
           {!showRecycleBin && (
-            <button className="btn-primary" onClick={() => setIsModalOpen(true)}>
-              <Plus size={15} /> New Project
+            <button className="btn-primary" onClick={() => setIsModalOpen(true)} title="Buat Proyek Baru">
+              <Plus size={15} weight="bold" /> Proyek Baru
             </button>
           )}
-          <button className="btn" onClick={() => setIsApiKeyModalOpen(true)} title="Pengaturan Kunci API Gemini" style={{ width: '38px', padding: 0 }}>
-            <Key size={15} style={{ color: geminiApiKey ? '#4ade80' : 'var(--text-secondary)' }} />
+
+          {/* Symmetrical Vertical Separator */}
+          <div className="header-divider" aria-hidden="true" />
+
+          {/* Quick Utility Icon Group */}
+          <button 
+            className="btn-icon" 
+            onClick={() => setIsApiKeyModalOpen(true)} 
+            title={geminiApiKey ? 'Kunci API Gemini: Terhubung' : 'Konfigurasi Kunci API Gemini'}
+            style={{ position: 'relative' }}
+          >
+            <Key size={16} weight={geminiApiKey ? 'fill' : 'regular'} style={{ color: geminiApiKey ? '#22c55e' : 'var(--text-secondary)' }} />
+            {geminiApiKey && (
+              <span 
+                style={{ 
+                  position: 'absolute', 
+                  top: '6px', 
+                  right: '6px', 
+                  width: '5px', 
+                  height: '5px', 
+                  borderRadius: '50%', 
+                  backgroundColor: '#22c55e' 
+                }} 
+              />
+            )}
           </button>
-          <button className="btn" onClick={toggleClock} title="Toggle Background Clock" style={{ width: '38px', padding: 0 }}>
-            {clockEnabled ? <Eye size={15} /> : <EyeOff size={15} />}
+
+          <button className="btn-icon" onClick={toggleClock} title="Toggle Jam Ambient Latar Belakang">
+            {clockEnabled ? <Eye size={16} weight="regular" /> : <EyeSlash size={16} weight="regular" />}
           </button>
-          <button className="btn" onClick={toggleTheme} title="Toggle Theme" style={{ width: '38px', padding: 0 }}>
-            {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
+
+          <button className="btn-icon" onClick={() => navigate('/chat')} title="Kolaborasi & Chat Tim">
+            <ChatTeardropText size={16} weight="regular" />
           </button>
-          <button className="btn" onClick={() => navigate('/chat')} title="Collaboration & Chat" style={{ width: '38px', padding: 0 }}>
-            <MessageSquare size={15} />
+
+          <button className="btn-icon" onClick={() => navigate('/profile')} title="Pengaturan Profil Pengguna">
+            <User size={16} weight="regular" />
           </button>
-          <button className="btn" onClick={() => navigate('/profile')} title="Profile Settings" style={{ width: '38px', padding: 0 }}>
-            <User size={15} />
+
+          <button className="btn-icon" onClick={logout} title="Keluar dari Akun">
+            <SignOut size={16} weight="regular" />
           </button>
-          <button className="btn" onClick={logout} title="Logout" style={{ width: '38px', padding: 0 }}>
-            <LogOut size={15} />
-          </button>
+
+          {/* Symmetrical Vertical Separator */}
+          <div className="header-divider" aria-hidden="true" />
+
+          {/* Dedicated Isolated Theme Switcher */}
+          <ThemeSwitcher />
         </div>
 
         {/* Mobile-Only Header Quick Toggles */}
-        <div className="mobile-only-header flex gap-2">
-          <button className="btn" style={{ padding: '0 10px', height: '36px' }} onClick={() => setIsApiKeyModalOpen(true)} title="API Key">
-            <Key size={15} style={{ color: geminiApiKey ? '#4ade80' : 'var(--text-secondary)' }} />
+        <div className="mobile-only-header flex items-center gap-2">
+          <button className="btn-icon" onClick={() => setIsApiKeyModalOpen(true)} title="API Key">
+            <Key size={16} style={{ color: geminiApiKey ? '#22c55e' : 'var(--text-secondary)' }} />
           </button>
-          <button className="btn" style={{ padding: '0 10px', height: '36px' }} onClick={toggleTheme} title="Toggle Theme">
-            {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
-          </button>
-          <button className="btn" style={{ padding: '0 10px', height: '36px' }} onClick={() => setShowRecycleBin(!showRecycleBin)} title="Recycle Bin">
-            <Trash2 size={15} />
+          <ThemeSwitcher compact={true} />
+          <button className="btn-icon" onClick={() => setShowRecycleBin(!showRecycleBin)} title="Recycle Bin">
+            <Trash size={16} />
           </button>
         </div>
-      </div>
+      </header>
 
       {/* Live Friends Online Bar */}
       <div 
@@ -100,8 +158,8 @@ export function Home() {
         }}
       >
         <div className="flex items-center gap-2">
-          <Users size={15} style={{ color: 'var(--text-secondary)' }} />
-          <span style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-primary)' }}>Rekan Tim:</span>
+          <Users size={16} weight="regular" style={{ color: 'var(--text-secondary)' }} />
+          <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>Rekan Tim:</span>
           <span style={{ fontSize: '11px', fontFamily: 'Geist Mono, monospace', color: 'var(--text-secondary)' }}>
             ({onlineFriendsCount} Online)
           </span>
@@ -118,7 +176,7 @@ export function Home() {
                 border: '1px solid var(--border-hairline)',
                 fontSize: '11px',
                 fontFamily: 'Geist Mono, monospace',
-                borderRadius: '4px'
+                borderRadius: '5px'
               }}
               title={`Klik untuk chat dengan ${f.name}`}
             >
@@ -127,7 +185,7 @@ export function Home() {
                   width: '6px', 
                   height: '6px', 
                   borderRadius: '50%', 
-                  backgroundColor: f.isOnline ? '#4ade80' : '#64748b',
+                  backgroundColor: f.isOnline ? '#22c55e' : '#94a3b8',
                 }} 
               />
               <span style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{f.name}</span>
@@ -164,13 +222,13 @@ export function Home() {
               <p className="text-sm text-muted mb-4">Deleted on: {new Date(p.deletedAt!).toLocaleDateString()}</p>
               <div className="flex gap-2">
                 <button className="btn flex-1 text-cyan-400 hover:bg-cyan-400/20 border border-cyan-400/30" onClick={(e) => { e.stopPropagation(); restoreProject(p.id); }}>
-                  <RefreshCcw size={16} className="mr-2"/> Restore
+                  <ArrowsClockwise size={15} className="mr-2" /> Restore
                 </button>
                 <button className="btn flex-1 text-red-500 hover:bg-red-500/20 border border-red-500/30" onClick={(e) => {
                   e.stopPropagation();
                   if(confirm("Permanently delete this project?")) hardDeleteProject(p.id);
                 }}>
-                  <Trash2 size={16} className="mr-2"/> Delete Forever
+                  <Trash size={15} className="mr-2" /> Delete Forever
                 </button>
               </div>
             </div>
@@ -181,39 +239,45 @@ export function Home() {
           {activeProjects.map(p => (
             <div 
               key={p.id} 
-              className="glass-panel project-card-interactive" 
+              className="project-card-interactive" 
               style={{ cursor: 'pointer', position: 'relative', padding: '20px' }} 
               onClick={() => handleOpenProject(p.id)}
             >
               <button 
-                className="btn" 
-                style={{ position: 'absolute', top: 12, right: 12, width: '28px', height: '28px', padding: 0, color: 'var(--text-placeholder)', borderColor: 'transparent' }}
+                className="btn-icon" 
+                style={{ position: 'absolute', top: 12, right: 12, width: '28px', height: '28px', color: 'var(--text-placeholder)', borderColor: 'transparent' }}
                 onClick={(e) => { e.stopPropagation(); deleteProject(p.id); }}
-                title="Move to Recycle Bin"
+                title="Pindahkan ke Recycle Bin"
               >
-                <Trash2 size={14} />
+                <Trash size={14} />
               </button>
               <h3 
                 style={{ 
-                  margin: '0 0 12px 0', 
-                  paddingRight: '24px',
+                  margin: '0 0 14px 0', 
+                  paddingRight: '28px',
                   whiteSpace: 'nowrap',
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
                   display: 'block',
-                  fontSize: '14px',
-                  fontWeight: 500,
+                  fontSize: '15px',
+                  fontWeight: 600,
+                  letterSpacing: '-0.015em',
                   color: 'var(--text-primary)'
                 }}
                 title={p.name}
               >
                 {p.name}
               </h3>
-              <div style={{ fontSize: '28px', fontFamily: 'Instrument Serif, Georgia, serif', color: 'var(--text-primary)', lineHeight: 1 }}>
-                {p.totalHours.toFixed(1)} <span style={{ fontSize: '11px', fontFamily: 'Geist Mono, monospace', color: 'var(--text-secondary)' }}>hrs</span>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: '5px', lineHeight: 1 }}>
+                <span style={{ fontSize: '30px', fontWeight: 700, letterSpacing: '-0.03em', fontVariantNumeric: 'tabular-nums', color: 'var(--text-primary)', fontFamily: 'Geist, sans-serif' }}>
+                  {p.totalHours.toFixed(1)}
+                </span>
+                <span style={{ fontSize: '12px', fontFamily: 'Geist Mono, monospace', color: 'var(--text-secondary)', fontWeight: 500 }}>
+                  hrs
+                </span>
               </div>
-              <div className="progress-track mt-3" style={{ height: '3px' }}>
-                <div className="progress-fill" style={{ width: `${Math.min((p.totalHours / (p.phases[p.phases.length-1]?.hoursEnd || 10000))*100, 100)}%`, background: '#00E5FF' }}></div>
+              <div className="progress-track mt-3" style={{ height: '4px' }}>
+                <div className="progress-fill" style={{ width: `${Math.min((p.totalHours / (p.phases[p.phases.length-1]?.hoursEnd || 10000))*100, 100)}%` }}></div>
               </div>
             </div>
           ))}
@@ -233,23 +297,23 @@ export function Home() {
       {/* Mobile Bottom Navigation Bar */}
       <nav className="mobile-bottom-nav">
         <button className="nav-item active" onClick={() => navigate('/')} title="Projects">
-          <Layers size={20} className="text-cyan" />
+          <Stack size={20} weight="regular" className="text-cyan" />
           <span>Projects</span>
         </button>
         <button className="nav-item" onClick={() => navigate('/meeting')} title="Focus Room">
-          <Video size={20} />
+          <VideoCamera size={20} weight="regular" />
           <span>Focus</span>
         </button>
         <button className="nav-item" onClick={() => setIsModalOpen(true)} title="New Project">
-          <Plus size={22} className="text-cyan" />
+          <Plus size={22} weight="bold" className="text-cyan" />
           <span>Add</span>
         </button>
         <button className="nav-item" onClick={() => navigate('/chat')} title="Collaboration & Chat">
-          <MessageSquare size={20} className="text-purple" />
+          <ChatTeardropText size={20} weight="regular" className="text-purple" />
           <span>Chat</span>
         </button>
         <button className="nav-item" onClick={() => navigate('/profile')} title="Profile">
-          <User size={20} />
+          <User size={20} weight="regular" />
           <span>Profile</span>
         </button>
       </nav>
