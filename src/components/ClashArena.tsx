@@ -5,7 +5,9 @@ import {
   faTrophy, 
   faCrown, 
   faMedal, 
-  faAward 
+  faAward,
+  faFire,
+  faBolt
 } from '@fortawesome/free-solid-svg-icons';
 import type { FriendUser } from '../store';
 
@@ -39,6 +41,12 @@ export function ClashArena({ friends, myUsername, myTotalHours }: ClashArenaProp
   const maxHours = Math.max(me.totalHours, opp?.totalHours || 0, 1); // prevent division by zero
   const mePercentage = Math.min(100, (me.totalHours / maxHours) * 100);
   const oppPercentage = Math.min(100, ((opp?.totalHours || 0) / maxHours) * 100);
+
+  // Duel dynamic calculations
+  const diffHours = me.totalHours - (opp?.totalHours || 0);
+  const isMeLeading = diffHours > 0.05;
+  const isOppLeading = diffHours < -0.05;
+  const isTied = Math.abs(diffHours) <= 0.05;
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
@@ -136,7 +144,7 @@ export function ClashArena({ friends, myUsername, myTotalHours }: ClashArenaProp
           {/* Opponent Selector */}
           <div className="mb-6">
             <label style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-secondary)', marginBottom: '8px', display: 'block' }}>
-              Select Opponent
+              Pilih Lawan Tanding
             </label>
             <select 
               className="input-field" 
@@ -147,56 +155,130 @@ export function ClashArena({ friends, myUsername, myTotalHours }: ClashArenaProp
                 if (friend) setSelectedOpponent(friend);
               }}
             >
-              {friends.length === 0 && <option value="">No friends available</option>}
+              {friends.length === 0 && <option value="">Belum ada teman</option>}
               {friends.map(f => (
                 <option key={f.username} value={f.username}>{(f.username || '').replace(/^@+/, '')}</option>
               ))}
             </select>
           </div>
 
-          {/* VS Arena: Left (You/Aku) - Center (VS) - Right (Opponent/Musuh) */}
+          {/* VS Arena: Diagonal Layout (Left-Top: Aku -> Center: VS -> Right-Bottom: Musuh) */}
           {friends.length > 0 && opp ? (
-            <div className="flex-1 flex flex-col md:flex-row items-center md:items-stretch justify-center gap-4 md:gap-6 my-auto py-4">
+            <div className="flex-1 flex flex-col justify-between relative py-6 px-1 sm:px-4 md:px-6 my-auto" style={{ minHeight: '520px', gap: '24px' }}>
               
-              {/* Left Card: YOU (Aku) */}
+              {/* Background Diagonal Guideline */}
               <div 
+                aria-hidden="true"
                 style={{
-                  flex: 1,
-                  width: '100%',
-                  maxWidth: '380px',
+                  position: 'absolute',
+                  top: '12%',
+                  left: '6%',
+                  width: '88%',
+                  height: '76%',
+                  pointerEvents: 'none',
+                  border: '1px dashed var(--border-hairline)',
+                  borderRadius: '24px',
+                  opacity: 0.6,
+                  zIndex: 0
+                }}
+              />
+
+              {/* Top-Left Card: Aku (YOU) */}
+              <div 
+                className="self-start w-full sm:w-[86%] md:w-[410px] relative z-10 transition-all duration-300"
+                style={{
                   background: 'var(--surface-input)',
-                  border: '1px solid var(--border-color)',
-                  borderRadius: '14px',
-                  padding: '24px 20px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  textAlign: 'center'
+                  border: isMeLeading 
+                    ? '1.5px solid rgba(34, 197, 94, 0.45)' 
+                    : '1px solid var(--border-color)',
+                  borderRadius: '16px',
+                  padding: '24px 22px',
+                  boxShadow: isMeLeading 
+                    ? '0 10px 28px -6px rgba(34, 197, 94, 0.14)' 
+                    : '0 2px 10px rgba(0, 0, 0, 0.04)'
                 }}
               >
-                <span style={{ 
-                  fontSize: '11px', 
-                  fontWeight: 700, 
-                  letterSpacing: '0.08em', 
-                  textTransform: 'uppercase', 
-                  color: 'var(--color-success)', 
-                  background: 'rgba(34, 197, 94, 0.12)', 
-                  padding: '3px 12px', 
-                  borderRadius: '9999px',
-                  marginBottom: '10px'
-                }}>
-                  YOU
-                </span>
-                <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '16px' }}>
-                  {(myUsername || 'You').replace(/^@+/, '')}
+                {/* Leading Crown Badge */}
+                {isMeLeading && (
+                  <div 
+                    style={{ 
+                      position: 'absolute', 
+                      top: '-12px', 
+                      left: '20px', 
+                      background: 'linear-gradient(135deg, #fbbf24, #f59e0b)', 
+                      color: '#000', 
+                      padding: '3px 12px', 
+                      borderRadius: '9999px', 
+                      fontSize: '10.5px', 
+                      fontWeight: 800, 
+                      letterSpacing: '0.04em',
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '5px', 
+                      boxShadow: '0 4px 12px rgba(245, 158, 11, 0.35)' 
+                    }}
+                  >
+                    <FontAwesomeIcon icon={faCrown} /> MEMIMPIN
+                  </div>
+                )}
+
+                {/* Header: Avatar + Username + Tag */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div 
+                      style={{ 
+                        width: '38px', 
+                        height: '38px', 
+                        borderRadius: '10px', 
+                        background: 'rgba(34, 197, 94, 0.12)', 
+                        border: '1.5px solid var(--color-success)', 
+                        color: 'var(--color-success)', 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        justifyContent: 'center', 
+                        fontWeight: 700, 
+                        fontSize: '15px' 
+                      }}
+                    >
+                      {(myUsername || 'Y').slice(0, 1).toUpperCase()}
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '15.5px', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.2 }}>
+                        {(myUsername || 'You').replace(/^@+/, '')}
+                      </div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                        Pemain Utama
+                      </div>
+                    </div>
+                  </div>
+                  <span 
+                    style={{ 
+                      fontSize: '10.5px', 
+                      fontWeight: 800, 
+                      letterSpacing: '0.08em', 
+                      textTransform: 'uppercase', 
+                      color: 'var(--color-success)', 
+                      background: 'rgba(34, 197, 94, 0.12)', 
+                      padding: '3px 10px', 
+                      borderRadius: '9999px' 
+                    }}
+                  >
+                    YOU
+                  </span>
                 </div>
-                <div style={{ fontSize: '2.75rem', fontWeight: 800, fontFamily: 'Geist Mono, monospace', color: 'var(--color-success)', letterSpacing: '-0.02em', lineHeight: 1 }}>
-                  {me.totalHours.toFixed(1)}
+
+                {/* Big Counter */}
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '4px' }}>
+                  <div style={{ fontSize: '3rem', fontWeight: 800, fontFamily: 'Geist Mono, monospace', color: 'var(--color-success)', letterSpacing: '-0.03em', lineHeight: 1 }}>
+                    {me.totalHours.toFixed(1)}
+                  </div>
+                  <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>
+                    HRS
+                  </div>
                 </div>
-                <div style={{ fontSize: '10.5px', fontWeight: 600, color: 'var(--text-secondary)', letterSpacing: '0.06em', marginTop: '6px', marginBottom: '20px' }}>
-                  HOURS
-                </div>
-                <div style={{ width: '100%', height: '10px', background: 'var(--surface-card)', borderRadius: '9999px', border: '1px solid var(--border-hairline)', overflow: 'hidden' }}>
+
+                {/* Progress bar */}
+                <div style={{ width: '100%', height: '10px', background: 'var(--surface-card)', borderRadius: '9999px', border: '1px solid var(--border-hairline)', overflow: 'hidden', marginTop: '14px' }}>
                   <div 
                     style={{ 
                       height: '100%', 
@@ -207,69 +289,196 @@ export function ClashArena({ friends, myUsername, myTotalHours }: ClashArenaProp
                     }} 
                   />
                 </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px', fontSize: '11px', color: 'var(--text-secondary)' }}>
+                  <span>Progres Duel</span>
+                  <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{mePercentage.toFixed(0)}%</span>
+                </div>
               </div>
 
-              {/* Center Separator Badge (In-flow, Zero Overlap) */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '4px 0', flexShrink: 0 }}>
-                <div style={{ 
-                  width: '46px', 
-                  height: '46px', 
-                  background: 'var(--surface-card)', 
-                  border: '1.5px solid var(--border-color)',
-                  borderRadius: '50%',
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  justifyContent: 'center',
-                  fontFamily: 'Instrument Serif, serif', 
-                  fontSize: '18px', 
-                  fontWeight: 'bold', 
-                  fontStyle: 'italic',
-                  color: 'var(--accent-primary)',
-                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)'
-                }}>
+              {/* Center VS Emblem & Dynamic Matchup Status */}
+              <div className="self-center my-4 md:my-0 flex flex-col items-center justify-center relative z-10">
+                <div 
+                  style={{ 
+                    width: '54px', 
+                    height: '54px', 
+                    background: 'var(--surface-card)', 
+                    border: '2px solid var(--accent-primary)',
+                    borderRadius: '50%',
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center',
+                    fontFamily: 'Instrument Serif, serif', 
+                    fontSize: '22px', 
+                    fontWeight: 'bold', 
+                    fontStyle: 'italic',
+                    color: 'var(--accent-primary)',
+                    boxShadow: '0 4px 18px rgba(0, 0, 0, 0.1)'
+                  }}
+                >
                   VS
                 </div>
+
+                {/* Dynamic Matchup Pill */}
+                {isMeLeading && (
+                  <div 
+                    style={{ 
+                      marginTop: '10px', 
+                      padding: '6px 14px', 
+                      borderRadius: '9999px', 
+                      fontSize: '11.5px', 
+                      fontWeight: 700, 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '6px',
+                      background: 'rgba(34, 197, 94, 0.12)', 
+                      border: '1px solid rgba(34, 197, 94, 0.35)', 
+                      color: 'var(--color-success)',
+                      boxShadow: '0 2px 8px rgba(34, 197, 94, 0.1)'
+                    }}
+                  >
+                    <FontAwesomeIcon icon={faFire} style={{ color: '#f59e0b' }} />
+                    <span>Kamu memimpin +{diffHours.toFixed(1)} jam!</span>
+                  </div>
+                )}
+                {isOppLeading && (
+                  <div 
+                    style={{ 
+                      marginTop: '10px', 
+                      padding: '6px 14px', 
+                      borderRadius: '9999px', 
+                      fontSize: '11.5px', 
+                      fontWeight: 700, 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '6px',
+                      background: 'rgba(239, 68, 68, 0.1)', 
+                      border: '1px solid rgba(239, 68, 68, 0.25)', 
+                      color: 'var(--color-danger)',
+                      boxShadow: '0 2px 8px rgba(239, 68, 68, 0.1)'
+                    }}
+                  >
+                    <FontAwesomeIcon icon={faBolt} style={{ color: '#ef4444' }} />
+                    <span>Tertinggal {Math.abs(diffHours).toFixed(1)} jam • Kejar!</span>
+                  </div>
+                )}
+                {isTied && (
+                  <div 
+                    style={{ 
+                      marginTop: '10px', 
+                      padding: '6px 14px', 
+                      borderRadius: '9999px', 
+                      fontSize: '11.5px', 
+                      fontWeight: 700, 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '6px',
+                      background: 'var(--surface-input)', 
+                      border: '1px solid var(--border-color)', 
+                      color: 'var(--text-secondary)' 
+                    }}
+                  >
+                    <FontAwesomeIcon icon={faHandFist} />
+                    <span>Skor seimbang • Pertarungan sengit!</span>
+                  </div>
+                )}
               </div>
 
-              {/* Right Card: OPPONENT (Musuh) */}
+              {/* Bottom-Right Card: Musuh (OPPONENT) */}
               <div 
+                className="self-end w-full sm:w-[86%] md:w-[410px] relative z-10 transition-all duration-300"
                 style={{
-                  flex: 1,
-                  width: '100%',
-                  maxWidth: '380px',
                   background: 'var(--surface-input)',
-                  border: '1px solid var(--border-color)',
-                  borderRadius: '14px',
-                  padding: '24px 20px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  textAlign: 'center'
+                  border: isOppLeading 
+                    ? '1.5px solid rgba(245, 158, 11, 0.45)' 
+                    : '1px solid var(--border-color)',
+                  borderRadius: '16px',
+                  padding: '24px 22px',
+                  boxShadow: isOppLeading 
+                    ? '0 10px 28px -6px rgba(245, 158, 11, 0.14)' 
+                    : '0 2px 10px rgba(0, 0, 0, 0.04)'
                 }}
               >
-                <span style={{ 
-                  fontSize: '11px', 
-                  fontWeight: 700, 
-                  letterSpacing: '0.08em', 
-                  textTransform: 'uppercase', 
-                  color: 'var(--text-secondary)', 
-                  background: 'var(--border-hairline)', 
-                  padding: '3px 12px', 
-                  borderRadius: '9999px',
-                  marginBottom: '10px'
-                }}>
-                  OPPONENT
-                </span>
-                <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '16px' }}>
-                  {(opp.username || '').replace(/^@+/, '')}
+                {/* Leading Crown Badge */}
+                {isOppLeading && (
+                  <div 
+                    style={{ 
+                      position: 'absolute', 
+                      top: '-12px', 
+                      right: '20px', 
+                      background: 'linear-gradient(135deg, #fbbf24, #f59e0b)', 
+                      color: '#000', 
+                      padding: '3px 12px', 
+                      borderRadius: '9999px', 
+                      fontSize: '10.5px', 
+                      fontWeight: 800, 
+                      letterSpacing: '0.04em',
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '5px', 
+                      boxShadow: '0 4px 12px rgba(245, 158, 11, 0.35)' 
+                    }}
+                  >
+                    <FontAwesomeIcon icon={faCrown} /> MEMIMPIN
+                  </div>
+                )}
+
+                {/* Header: Avatar + Username + Tag */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div 
+                      style={{ 
+                        width: '38px', 
+                        height: '38px', 
+                        borderRadius: '10px', 
+                        background: 'rgba(14, 165, 233, 0.12)', 
+                        border: '1.5px solid var(--accent-primary)', 
+                        color: 'var(--accent-primary)', 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        justifyContent: 'center', 
+                        fontWeight: 700, 
+                        fontSize: '15px' 
+                      }}
+                    >
+                      {((opp?.username || 'O').slice(0, 1).toUpperCase())}
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '15.5px', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.2 }}>
+                        {(opp.username || '').replace(/^@+/, '')}
+                      </div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                        Lawan Tanding
+                      </div>
+                    </div>
+                  </div>
+                  <span 
+                    style={{ 
+                      fontSize: '10.5px', 
+                      fontWeight: 800, 
+                      letterSpacing: '0.08em', 
+                      textTransform: 'uppercase', 
+                      color: 'var(--text-secondary)', 
+                      background: 'var(--border-hairline)', 
+                      padding: '3px 10px', 
+                      borderRadius: '9999px' 
+                    }}
+                  >
+                    OPPONENT
+                  </span>
                 </div>
-                <div style={{ fontSize: '2.75rem', fontWeight: 800, fontFamily: 'Geist Mono, monospace', color: 'var(--text-primary)', letterSpacing: '-0.02em', lineHeight: 1 }}>
-                  {opp.totalHours.toFixed(1)}
+
+                {/* Big Counter */}
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '4px' }}>
+                  <div style={{ fontSize: '3rem', fontWeight: 800, fontFamily: 'Geist Mono, monospace', color: 'var(--text-primary)', letterSpacing: '-0.03em', lineHeight: 1 }}>
+                    {opp.totalHours.toFixed(1)}
+                  </div>
+                  <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>
+                    HRS
+                  </div>
                 </div>
-                <div style={{ fontSize: '10.5px', fontWeight: 600, color: 'var(--text-secondary)', letterSpacing: '0.06em', marginTop: '6px', marginBottom: '20px' }}>
-                  HOURS
-                </div>
-                <div style={{ width: '100%', height: '10px', background: 'var(--surface-card)', borderRadius: '9999px', border: '1px solid var(--border-hairline)', overflow: 'hidden' }}>
+
+                {/* Progress bar */}
+                <div style={{ width: '100%', height: '10px', background: 'var(--surface-card)', borderRadius: '9999px', border: '1px solid var(--border-hairline)', overflow: 'hidden', marginTop: '14px' }}>
                   <div 
                     style={{ 
                       height: '100%', 
@@ -280,13 +489,17 @@ export function ClashArena({ friends, myUsername, myTotalHours }: ClashArenaProp
                     }} 
                   />
                 </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px', fontSize: '11px', color: 'var(--text-secondary)' }}>
+                  <span>Progres Duel</span>
+                  <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{oppPercentage.toFixed(0)}%</span>
+                </div>
               </div>
 
             </div>
           ) : (
             <div className="flex-1 flex flex-col items-center justify-center text-center opacity-50 py-12">
               <FontAwesomeIcon icon={faHandFist} style={{ fontSize: '42px' }} className="mb-4" />
-              <p>Add some friends to start clashing!</p>
+              <p>Tambahkan teman untuk memulai clash 1 VS 1!</p>
             </div>
           )}
         </div>
