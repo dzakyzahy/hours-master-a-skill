@@ -107,8 +107,12 @@ interface AppState {
   setTotalHours: (h: number) => void;
   setDailyGoal: (h: number) => void;
   activeTimer: boolean;
-  toggleTimer: () => void;
+  timerStartedAt: number | null;
+  timerProjectId: string | null;
+  lastTimerTick: number | null;
+  toggleTimer: (targetProjectId?: string) => Promise<void>;
   setRemoteTimerState: (isActive: boolean) => void;
+  tickTimer: () => void;
   syncTotalHoursToSupabase: () => Promise<void>;
 }
 
@@ -701,27 +705,139 @@ export const useStore = create<AppState>()(
         };
       }),
       activeTimer: false,
-      toggleTimer: async () => {
+      timerStartedAt: null,
+      timerProjectId: null,
+      lastTimerTick: null,
+
+      toggleTimer: async (targetProjectId?: string) => {
         const state = get();
-        const newState = !state.activeTimer;
-        set({ activeTimer: newState });
-        
-        // Push state to Supabase timer_state if configured
-        if (isSupabaseConfigured && state.activeProjectId) {
-          try {
-            const { data: authData } = await supabase.auth.getUser();
-            if (authData?.user) {
-              await supabase.from('timer_state').upsert({
-                project_id: state.activeProjectId,
-                user_id: authData.user.id,
-                is_active: newState,
-                updated_at: new Date().toISOString()
-              }, { onConflict: 'project_id, user_id' });
+        const now = Date.now();
+
+        if (state.activeTimer) {
+          // Stopping timer: credit remaining fractional hours
+          const projId = state.timerProjectId || state.activeProjectId;
+          if (state.lastTimerTick && projId) {
+            const diffMs = Math.min(now - state.lastTimerTick, 12 * 3600 * 1000);
+            const hoursToAdd = diffMs / 3600000;
+            if (hoursToAdd > 0) {
+              set((s) => ({
+                projects: s.projects.map(p => {
+                  if (p.id !== projId) return p;
+                  const currentToday = isSameCalendarDay(p.lastUpdated) ? p.hoursToday : 0;
+                  return {
+                    ...p,
+                    totalHours: Math.max(0, p.totalHours + hoursToAdd),
+                    hoursToday: Math.max(0, currentToday + hoursToAdd),
+                    lastUpdated: now
+                  };
+                })
+              }));
             }
-          } catch(e) { console.error("Failed to sync timer state", e); }
+          }
+
+          set({
+            activeTimer: false,
+            timerStartedAt: null,
+            timerProjectId: null,
+            lastTimerTick: null
+          });
+
+          get().syncTotalHoursToSupabase();
+
+          // Sync timer_state to Supabase
+          if (isSupabaseConfigured && projId) {
+            try {
+              const { data: authData } = await supabase.auth.getUser();
+              if (authData?.user) {
+                await supabase.from('timer_state').upsert({
+                  project_id: projId,
+                  user_id: authData.user.id,
+                  is_active: false,
+                  updated_at: new Date().toISOString()
+                }, { onConflict: 'project_id, user_id' });
+              }
+            } catch (e) {
+              console.error("Failed to sync timer state", e);
+            }
+          }
+        } else {
+          // Starting timer
+          const projId = targetProjectId || state.activeProjectId;
+          if (!projId) return;
+
+          set({
+            activeTimer: true,
+            timerStartedAt: now,
+            timerProjectId: projId,
+            lastTimerTick: now
+          });
+
+          if (isSupabaseConfigured) {
+            try {
+              const { data: authData } = await supabase.auth.getUser();
+              if (authData?.user) {
+                await supabase.from('timer_state').upsert({
+                  project_id: projId,
+                  user_id: authData.user.id,
+                  is_active: true,
+                  updated_at: new Date().toISOString()
+                }, { onConflict: 'project_id, user_id' });
+              }
+            } catch (e) {
+              console.error("Failed to sync timer state", e);
+            }
+          }
         }
       },
-      setRemoteTimerState: (isActive) => set({ activeTimer: isActive }),
+
+      tickTimer: () => {
+        const state = get();
+        if (!state.activeTimer || !state.lastTimerTick) return;
+
+        const now = Date.now();
+        const diffMs = now - state.lastTimerTick;
+        if (diffMs < 1000) return;
+
+        const projId = state.timerProjectId || state.activeProjectId;
+        if (!projId) return;
+
+        const safeDiffMs = Math.min(diffMs, 12 * 3600 * 1000);
+        const hoursToAdd = safeDiffMs / 3600000;
+
+        set((s) => ({
+          lastTimerTick: now,
+          projects: s.projects.map(p => {
+            if (p.id !== projId) return p;
+            const currentToday = isSameCalendarDay(p.lastUpdated) ? p.hoursToday : 0;
+            return {
+              ...p,
+              totalHours: Math.max(0, p.totalHours + hoursToAdd),
+              hoursToday: Math.max(0, currentToday + hoursToAdd),
+              lastUpdated: now
+            };
+          })
+        }));
+      },
+
+      setRemoteTimerState: (isActive) => {
+        const state = get();
+        const now = Date.now();
+        if (isActive && !state.activeTimer) {
+          set({
+            activeTimer: true,
+            timerStartedAt: now,
+            timerProjectId: state.activeProjectId,
+            lastTimerTick: now
+          });
+        } else if (!isActive && state.activeTimer) {
+          set({
+            activeTimer: false,
+            timerStartedAt: null,
+            timerProjectId: null,
+            lastTimerTick: null
+          });
+        }
+      },
       
       syncTotalHoursToSupabase: async () => {
         const state = get();
@@ -742,6 +858,10 @@ export const useStore = create<AppState>()(
         theme: state.theme,
         projects: state.projects,
         activeProjectId: state.activeProjectId,
+        activeTimer: state.activeTimer,
+        timerStartedAt: state.timerStartedAt,
+        timerProjectId: state.timerProjectId,
+        lastTimerTick: state.lastTimerTick,
       }),
     }
   )

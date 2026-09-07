@@ -1054,4 +1054,20 @@ button, a {
   animation: biometricRadar 2s ease-in-out infinite;
 }
 
+/* Global Floating Timer Widget */
+.global-floating-timer {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 85;
+}
+
+@media (max-width: 768px) {
+  .global-floating-timer {
+    bottom: calc(68px + env(safe-area-inset-bottom, 0px));
+    right: 16px;
+  }
+}
+
+
 

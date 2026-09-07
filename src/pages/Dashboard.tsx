@@ -15,15 +15,16 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { useStore, type Project } from '../store';
 import { supabase } from '../supabaseClient';
+import { useGlobalTimer } from '../hooks/useGlobalTimer';
 import { EditProjectModal } from '../components/EditProjectModal';
 import { ThemeSwitcher } from '../components/ThemeSwitcher';
 
 export function Dashboard() {
   const { projects, activeProjectId, addHours, toggleTimer, activeTimer, setRemoteTimerState, setTotalHours, deleteProject } = useStore();
+  const { elapsedSeconds, formatTime } = useGlobalTimer();
   const navigate = useNavigate();
   
   const [manualInput, setManualInput] = useState('');
-  const [timerSeconds, setTimerSeconds] = useState(0);
   const [isEditingTotal, setIsEditingTotal] = useState(false);
   const [editTotalInput, setEditTotalInput] = useState('');
   const [editProject, setEditProject] = useState<Project | null>(null);
@@ -33,24 +34,6 @@ export function Dashboard() {
   useEffect(() => {
     if (!project) navigate('/');
   }, [project, navigate]);
-
-  useEffect(() => {
-    let interval: ReturnType<typeof setInterval> | undefined;
-    if (activeTimer) {
-      interval = setInterval(() => {
-        setTimerSeconds(s => {
-          const next = s + 1;
-          if (next > 0 && next % 60 === 0) {
-            addHours(1 / 60);
-          }
-          return next;
-        });
-      }, 1000);
-    }
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [activeTimer, addHours]);
 
   // Live Timer Sync
   useEffect(() => {
@@ -96,13 +79,6 @@ export function Dashboard() {
       setTotalHours(h);
     }
     setIsEditingTotal(false);
-  };
-
-  const formatTime = (totalSecs: number) => {
-    const h = Math.floor(totalSecs / 3600);
-    const m = Math.floor((totalSecs % 3600) / 60);
-    const s = totalSecs % 60;
-    return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
 
   return (
@@ -247,7 +223,7 @@ export function Dashboard() {
               </div>
             )}
             <div style={{ textAlign: 'center', fontSize: '32px', fontFamily: 'Geist Mono, monospace', margin: '14px 0', color: 'var(--text-primary)', fontWeight: 600 }}>
-              {formatTime(timerSeconds)}
+              {formatTime(elapsedSeconds)}
             </div>
           </div>
           
@@ -255,7 +231,7 @@ export function Dashboard() {
             <button 
               className={activeTimer ? "btn" : "btn-primary"} 
               style={{ width: '100%', height: '38px', color: activeTimer ? '#ef4444' : undefined, borderColor: activeTimer ? 'rgba(239, 68, 68, 0.3)' : undefined, gap: '6px' }} 
-              onClick={toggleTimer}
+              onClick={() => toggleTimer()}
             >
               {activeTimer ? <><FontAwesomeIcon icon={faSquare} style={{ fontSize: '13px' }} /> Hentikan Timer</> : <><FontAwesomeIcon icon={faPlay} style={{ fontSize: '12px' }} /> Mulai Fokus</>}
             </button>
