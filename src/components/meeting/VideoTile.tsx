@@ -31,17 +31,17 @@ export function VideoTile({ participant, isDominant = false }: VideoTileProps) {
         position: 'relative',
         width: '100%',
         height: '100%',
-        minHeight: isDominant ? '360px' : '180px',
+        minHeight: isDominant ? '360px' : '200px',
         backgroundColor: '#0a0e17',
-        borderRadius: 'var(--radius-md)',
+        borderRadius: '16px',
         overflow: 'hidden',
         border: participant.isSpeaking
-          ? '1.5px solid var(--accent-cyan)'
-          : '1px solid var(--border-color)',
+          ? '2px solid var(--accent-cyan)'
+          : '1px solid rgba(255, 255, 255, 0.1)',
         boxShadow: participant.isSpeaking
-          ? '0 0 16px var(--accent-cyan-glow)'
-          : 'inset 0 1px 0 var(--border-highlight), 0 8px 24px -4px rgba(0, 0, 0, 0.4)',
-        transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
+          ? '0 0 24px rgba(0, 229, 255, 0.35)'
+          : '0 20px 40px -10px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
+        transition: 'border-color 0.25s ease, box-shadow 0.25s ease',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -74,17 +74,17 @@ export function VideoTile({ participant, isDominant = false }: VideoTileProps) {
         >
           <div
             style={{
-              width: isDominant ? '80px' : '56px',
-              height: isDominant ? '80px' : '56px',
-              borderRadius: 'var(--radius-pill)',
-              backgroundColor: 'rgba(255, 255, 255, 0.06)',
-              border: '1px solid var(--border-highlight)',
+              width: isDominant ? '80px' : '64px',
+              height: isDominant ? '80px' : '64px',
+              borderRadius: '50%',
+              backgroundColor: 'rgba(255, 255, 255, 0.08)',
+              border: '1px solid rgba(255, 255, 255, 0.15)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: isDominant ? '1.5rem' : '1.125rem',
+              fontSize: isDominant ? '1.5rem' : '1.25rem',
               fontWeight: 700,
-              color: 'var(--text-main)',
+              color: '#ffffff',
               letterSpacing: '0.05em',
             }}
           >
@@ -96,9 +96,9 @@ export function VideoTile({ participant, isDominant = false }: VideoTileProps) {
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '6px',
-                padding: '3px 10px',
-                borderRadius: 'var(--radius-pill)',
-                backgroundColor: 'rgba(0, 229, 255, 0.1)',
+                padding: '4px 12px',
+                borderRadius: '9999px',
+                backgroundColor: 'rgba(0, 229, 255, 0.15)',
                 border: '1px solid var(--accent-cyan)',
                 color: 'var(--accent-cyan)',
                 fontSize: '0.75rem',
@@ -116,19 +116,20 @@ export function VideoTile({ participant, isDominant = false }: VideoTileProps) {
         <div
           style={{
             position: 'absolute',
-            top: 12,
-            left: 12,
-            backgroundColor: 'rgba(0, 0, 0, 0.7)',
-            backdropFilter: 'var(--glass-blur)',
-            padding: '4px 10px',
-            borderRadius: 'var(--radius-sm)',
-            border: '1px solid var(--border-color)',
+            top: 14,
+            left: 14,
+            backgroundColor: 'rgba(10, 14, 23, 0.8)',
+            backdropFilter: 'blur(12px)',
+            padding: '5px 12px',
+            borderRadius: '9999px',
+            border: '1px solid rgba(255, 255, 255, 0.15)',
             display: 'inline-flex',
             alignItems: 'center',
             gap: '6px',
             fontSize: '0.75rem',
             fontWeight: 600,
             color: 'var(--accent-cyan)',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.35)',
           }}
         >
           <FontAwesomeIcon icon={faDesktop} style={{ fontSize: '12px' }} /> Screen Share
@@ -139,9 +140,9 @@ export function VideoTile({ participant, isDominant = false }: VideoTileProps) {
       <div
         style={{
           position: 'absolute',
-          bottom: 12,
-          left: 12,
-          right: 12,
+          bottom: 14,
+          left: 14,
+          right: 14,
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
@@ -150,14 +151,14 @@ export function VideoTile({ participant, isDominant = false }: VideoTileProps) {
       >
         <div
           style={{
-            backgroundColor: 'rgba(9, 13, 22, 0.75)',
-            backdropFilter: 'var(--glass-blur)',
-            padding: '4px 10px',
-            borderRadius: 'var(--radius-sm)',
-            border: participant.isSpeaking ? '1px solid var(--accent-cyan)' : '1px solid var(--border-color)',
+            backgroundColor: 'rgba(10, 14, 23, 0.85)',
+            backdropFilter: 'blur(12px)',
+            padding: '5px 14px',
+            borderRadius: '9999px',
+            border: participant.isSpeaking ? '1px solid var(--accent-cyan)' : '1px solid rgba(255, 255, 255, 0.15)',
             fontSize: '0.8125rem',
             fontWeight: 600,
-            color: 'var(--text-main)',
+            color: '#ffffff',
             maxWidth: '85%',
             overflow: 'hidden',
             textOverflow: 'ellipsis',
@@ -165,9 +166,10 @@ export function VideoTile({ participant, isDominant = false }: VideoTileProps) {
             display: 'flex',
             alignItems: 'center',
             gap: '6px',
+            boxShadow: '0 4px 14px rgba(0,0,0,0.4)',
           }}
         >
-          <span>{participant.name} {participant.isLocal ? '(You)' : ''}</span>
+          <span style={{ color: '#ffffff' }}>{participant.name} {participant.isLocal ? '(You)' : ''}</span>
           {participant.isSpeaking && (
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '2px', marginLeft: '4px' }}>
               <span className="sound-bar" style={{ animationDelay: '0ms' }} />
@@ -181,14 +183,16 @@ export function VideoTile({ participant, isDominant = false }: VideoTileProps) {
         {participant.isAudioMuted && (
           <div
             style={{
-              backgroundColor: 'rgba(239, 68, 68, 0.2)',
-              border: '1px solid rgba(239, 68, 68, 0.4)',
-              color: '#f87171',
-              padding: '4px 8px',
-              borderRadius: 'var(--radius-sm)',
+              backgroundColor: 'rgba(239, 68, 68, 0.25)',
+              border: '1px solid rgba(239, 68, 68, 0.5)',
+              color: '#fca5a5',
+              padding: '6px 10px',
+              borderRadius: '9999px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
+              backdropFilter: 'blur(10px)',
+              boxShadow: '0 4px 14px rgba(0,0,0,0.4)',
             }}
             title="Microphone muted"
           >

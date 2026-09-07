@@ -167,8 +167,8 @@ export function MeetingRoom() {
         flexDirection: 'column',
         height: '100vh',
         width: '100vw',
-        backgroundColor: 'var(--bg-canvas)',
-        color: 'var(--text-main)',
+        backgroundColor: '#090b10',
+        color: '#f8fafc',
         overflow: 'hidden',
       }}
       className="no-drag"
@@ -179,37 +179,55 @@ export function MeetingRoom() {
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          padding: '12px 16px',
-          borderBottom: '1px solid var(--border-color)',
-          backgroundColor: 'var(--bg-panel)',
-          backdropFilter: 'var(--glass-blur)',
+          padding: '12px 24px',
+          borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+          backgroundColor: 'rgba(10, 13, 20, 0.9)',
+          backdropFilter: 'blur(16px)',
           zIndex: 20,
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <button className="btn" onClick={handleLeave} title="Kembali ke Beranda" style={{ padding: '8px 12px', gap: '6px' }}>
-            <FontAwesomeIcon icon={faArrowLeft} style={{ fontSize: '14px' }} /> Exit
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+          <button 
+            type="button"
+            className="btn" 
+            onClick={handleLeave} 
+            title="Kembali ke Beranda" 
+            style={{ 
+              padding: '6px 14px', 
+              borderRadius: '8px', 
+              background: 'rgba(255, 255, 255, 0.08)', 
+              border: '1px solid rgba(255, 255, 255, 0.15)', 
+              color: '#ffffff', 
+              fontSize: '12.5px',
+              fontWeight: 500,
+              gap: '6px' 
+            }}
+          >
+            <FontAwesomeIcon icon={faArrowLeft} style={{ fontSize: '13px' }} /> Exit
           </button>
           <div>
-            <h2 style={{ margin: 0, fontSize: '1rem', fontWeight: 700 }}>Mastery Focus Room</h2>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.6875rem', color: 'var(--text-muted)' }}>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: '#4ade80' }}>
+            <h2 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: '#ffffff', letterSpacing: '-0.01em' }}>
+              Mastery Focus Room
+            </h2>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.6875rem', color: '#94a3b8', marginTop: '2px' }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: '#4ade80', fontWeight: 500 }}>
                 <FontAwesomeIcon icon={faWifi} style={{ fontSize: '10px' }} /> P2P Live
               </span>
               <span>•</span>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                <FontAwesomeIcon icon={faShieldHalved} className="text-cyan" style={{ fontSize: '10px' }} /> E2E Encrypted
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: 'var(--accent-cyan)', fontWeight: 500 }}>
+                <FontAwesomeIcon icon={faShieldHalved} style={{ fontSize: '10px' }} /> E2E Encrypted
               </span>
               <span>•</span>
               <button 
+                type="button"
                 onClick={() => {
                   navigator.clipboard.writeText(window.location.href);
                   toast.success('Link meeting disalin!');
                 }}
                 style={{ 
-                  background: 'var(--surface-input)', 
-                  border: '1px solid var(--border-color)', 
-                  color: 'var(--text-primary)', 
+                  background: 'rgba(255, 255, 255, 0.08)', 
+                  border: '1px solid rgba(255, 255, 255, 0.15)', 
+                  color: '#e2e8f0', 
                   cursor: 'pointer', 
                   padding: '2px 8px', 
                   borderRadius: '4px', 
@@ -220,13 +238,36 @@ export function MeetingRoom() {
                   fontSize: '0.6875rem',
                   fontFamily: 'Geist Mono, monospace'
                 }}
-                title="Salin Link"
-                onMouseOver={e => e.currentTarget.style.background = 'var(--surface-hover)'}
-                onMouseOut={e => e.currentTarget.style.background = 'var(--surface-input)'}
+                title="Salin Link Room"
+                onMouseOver={e => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.14)'}
+                onMouseOut={e => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)'}
               >
                 <FontAwesomeIcon icon={faCopy} style={{ fontSize: '10px' }} />
                 {roomId || 'skillo-global-room'}
               </button>
+
+              {participantCount === 1 && (
+                <>
+                  <span>•</span>
+                  <span 
+                    style={{ 
+                      display: 'inline-flex', 
+                      alignItems: 'center', 
+                      gap: '5px', 
+                      color: '#f59e0b', 
+                      fontSize: '11px', 
+                      fontWeight: 500,
+                      background: 'rgba(245, 158, 11, 0.1)',
+                      border: '1px solid rgba(245, 158, 11, 0.25)',
+                      padding: '2px 8px',
+                      borderRadius: '9999px'
+                    }}
+                  >
+                    <span style={{ width: '5px', height: '5px', borderRadius: '50%', backgroundColor: '#f59e0b' }} />
+                    Menunggu rekan bergabung
+                  </span>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -234,21 +275,30 @@ export function MeetingRoom() {
         {/* Status Indicator */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <button 
+            type="button"
             className="btn" 
-            style={{ padding: '8px 12px', fontSize: '0.75rem', gap: '6px' }}
+            style={{ 
+              padding: '6px 14px', 
+              fontSize: '12px', 
+              fontWeight: 500,
+              gap: '6px',
+              borderRadius: '8px',
+              background: 'rgba(255, 255, 255, 0.08)',
+              border: '1px solid rgba(255, 255, 255, 0.15)',
+              color: '#ffffff'
+            }}
             onClick={() => {
               navigator.clipboard.writeText(window.location.href);
-              // Simple visual feedback
               const btn = document.getElementById('copy-link-btn');
               if (btn) {
                 const originalText = btn.innerText;
-                btn.innerText = 'Copied!';
+                btn.innerText = 'Tersalin!';
                 setTimeout(() => { btn.innerText = originalText; }, 2000);
               }
             }}
             id="copy-link-btn"
           >
-            <FontAwesomeIcon icon={faCopy} style={{ fontSize: '12px' }} /> Copy Link ({roomId || 'Main'})
+            <FontAwesomeIcon icon={faCopy} style={{ fontSize: '12px' }} /> Salin Link ({roomId || 'Main'})
           </button>
           <div
             style={{
@@ -256,14 +306,15 @@ export function MeetingRoom() {
               alignItems: 'center',
               gap: '8px',
               padding: '6px 14px',
-              borderRadius: 'var(--radius-pill)',
-              backgroundColor: 'rgba(255, 255, 255, 0.05)',
-              border: '1px solid var(--border-color)',
+              borderRadius: '9999px',
+              backgroundColor: 'rgba(255, 255, 255, 0.08)',
+              border: '1px solid rgba(255, 255, 255, 0.12)',
               fontSize: '0.8125rem',
               fontWeight: 600,
+              color: '#f8fafc'
             }}
           >
-            <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#4ade80' }} />
+            <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: '#4ade80', boxShadow: '0 0 8px rgba(74, 222, 128, 0.6)' }} />
             <span className="tabular-nums">24 ms</span>
           </div>
         </div>
@@ -273,7 +324,7 @@ export function MeetingRoom() {
       <main
         style={{
           flex: 1,
-          padding: '20px',
+          padding: '24px 32px',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
@@ -290,7 +341,7 @@ export function MeetingRoom() {
               height: '100%',
               display: 'grid',
               gridTemplateColumns: 'minmax(0, 1fr) 280px',
-              gap: '16px',
+              gap: '20px',
             }}
           >
             {/* Dominant Screen Share Tile */}
@@ -303,7 +354,7 @@ export function MeetingRoom() {
               style={{
                 display: 'flex',
                 flexDirection: 'column',
-                gap: '12px',
+                gap: '14px',
                 overflowY: 'auto',
                 height: '100%',
               }}
@@ -311,7 +362,7 @@ export function MeetingRoom() {
               {displayParticipants
                 .filter(p => p.id !== sharingParticipant.id)
                 .map(p => (
-                  <div key={p.id} style={{ height: '160px', flexShrink: 0 }}>
+                  <div key={p.id} style={{ height: '180px', flexShrink: 0 }}>
                     <VideoTile participant={p} />
                   </div>
                 ))}
@@ -324,7 +375,7 @@ export function MeetingRoom() {
               width: '100%',
               height: '100%',
               display: 'grid',
-              gap: '16px',
+              gap: '20px',
               gridTemplateColumns:
                 participantCount === 1
                   ? '1fr'
@@ -333,37 +384,13 @@ export function MeetingRoom() {
                   : 'repeat(2, 1fr)',
               gridTemplateRows:
                 participantCount <= 2 ? '1fr' : 'repeat(2, 1fr)',
-              maxWidth: participantCount === 1 ? '900px' : '1400px',
-              maxHeight: '800px',
+              maxWidth: participantCount === 1 ? '1060px' : '1400px',
+              maxHeight: 'calc(100vh - 170px)',
             }}
           >
             {displayParticipants.map(p => (
               <VideoTile key={p.id} participant={p} />
             ))}
-          </div>
-        )}
-
-        {/* Solo Waiting Badge */}
-        {participantCount === 1 && !sharingParticipant && (
-          <div
-            style={{
-              position: 'absolute',
-              top: '40px',
-              backgroundColor: 'rgba(9, 13, 22, 0.85)',
-              backdropFilter: 'var(--glass-blur)',
-              padding: '8px 18px',
-              borderRadius: 'var(--radius-pill)',
-              border: '1px solid var(--border-color)',
-              fontSize: '0.875rem',
-              color: 'var(--text-muted)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              zIndex: 10,
-            }}
-          >
-            <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--accent-cyan)' }} />
-            Waiting for peers to join (Room link is ready)
           </div>
         )}
       </main>
