@@ -139,9 +139,8 @@ export function Home() {
                 width: '6px', 
                 height: '6px', 
                 borderRadius: '50%', 
-                backgroundColor: '#22c55e',
-                border: '1px solid var(--surface-card)',
-                boxShadow: '0 0 4px rgba(34, 197, 94, 0.7)'
+                backgroundColor: 'var(--color-success)',
+                border: '1.5px solid var(--surface-card)'
               }} 
             />
           </button>
@@ -183,7 +182,7 @@ export function Home() {
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <FontAwesomeIcon icon={faUsers} style={{ color: 'var(--accent-cyan)', fontSize: '13px' }} />
+          <FontAwesomeIcon icon={faUsers} style={{ color: 'var(--accent-primary)', fontSize: '13px' }} />
           <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.01em', fontFamily: "'Geist', sans-serif" }}>
             Rekan Tim
           </span>
@@ -228,8 +227,8 @@ export function Home() {
                   width: '7px', 
                   height: '7px', 
                   borderRadius: '50%', 
-                  backgroundColor: f.isOnline ? '#22c55e' : '#64748b',
-                  boxShadow: f.isOnline ? '0 0 6px rgba(34, 197, 94, 0.75)' : 'none',
+                  backgroundColor: f.isOnline ? 'var(--color-success)' : '#64748b',
+                  border: '1.5px solid var(--surface-card)',
                   flexShrink: 0
                 }} 
               />
@@ -238,7 +237,7 @@ export function Home() {
           ))}
           <button 
             type="button"
-            className="cursor-pointer transition-all hover:border-cyan-500/40"
+            className="cursor-pointer transition-all hover:border-[var(--border-color-hover)]"
             style={{ 
               display: 'inline-flex',
               alignItems: 'center',
@@ -274,7 +273,7 @@ export function Home() {
               <h3 className="mb-2">{p.name}</h3>
               <p className="text-sm text-muted mb-4">Deleted on: {new Date(p.deletedAt!).toLocaleDateString()}</p>
               <div className="flex gap-2">
-                <button className="btn flex-1 text-cyan-400 hover:bg-cyan-400/20 border border-cyan-400/30" onClick={(e) => { e.stopPropagation(); restoreProject(p.id); }}>
+                <button className="btn flex-1 text-[var(--accent-primary)] hover:bg-[var(--surface-hover)] border border-[var(--border-color)]" onClick={(e) => { e.stopPropagation(); restoreProject(p.id); }}>
                   <FontAwesomeIcon icon={faArrowsRotate} className="mr-2" style={{ fontSize: '13px' }} /> Restore
                 </button>
                 <button className="btn flex-1 text-red-500 hover:bg-red-500/20 border border-red-500/30" onClick={(e) => {
@@ -350,7 +349,7 @@ export function Home() {
       {/* Mobile Bottom Navigation Bar */}
       <nav className="mobile-bottom-nav">
         <button className="nav-item active" onClick={() => navigate('/')} title="Projects">
-          <FontAwesomeIcon icon={faLayerGroup} className="text-cyan" style={{ fontSize: '18px' }} />
+          <FontAwesomeIcon icon={faLayerGroup} style={{ fontSize: '18px', color: 'var(--accent-primary)' }} />
           <span>Projects</span>
         </button>
         <button className="nav-item" onClick={() => navigate('/meeting')} title="Focus Room">
@@ -358,7 +357,7 @@ export function Home() {
           <span>Focus</span>
         </button>
         <button className="nav-item" onClick={() => setIsModalOpen(true)} title="New Project">
-          <FontAwesomeIcon icon={faPlus} className="text-cyan" style={{ fontSize: '19px' }} />
+          <FontAwesomeIcon icon={faPlus} style={{ fontSize: '19px', color: 'var(--accent-primary)' }} />
           <span>Add</span>
         </button>
         <button className="nav-item" onClick={() => navigate('/chat')} title="Collaboration & Chat" style={{ position: 'relative' }}>

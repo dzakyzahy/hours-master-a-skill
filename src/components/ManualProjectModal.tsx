@@ -90,7 +90,7 @@ export function ManualProjectModal({ isOpen = true, onClose }: { isOpen?: boolea
               display: 'flex', 
               alignItems: 'center', 
               justifyContent: 'center',
-              color: 'var(--accent-cyan)',
+              color: 'var(--accent-primary)',
               flexShrink: 0
             }}
           >

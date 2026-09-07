@@ -53,22 +53,23 @@ export function MeetingControls({
       }}
     >
       {/* Participant Counter Chip */}
-      <div
+      <div 
         style={{
           display: 'flex',
           alignItems: 'center',
-          gap: '6px',
-          padding: '6px 14px',
+          gap: '8px',
+          padding: '0 12px',
+          height: '36px',
           borderRadius: '9999px',
-          backgroundColor: 'rgba(255, 255, 255, 0.08)',
-          border: '1px solid rgba(255, 255, 255, 0.12)',
+          backgroundColor: 'rgba(255, 255, 255, 0.06)',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
           fontSize: '0.8125rem',
           fontWeight: 600,
           color: '#e2e8f0',
           marginRight: '6px',
         }}
       >
-        <FontAwesomeIcon icon={faUsers} style={{ color: 'var(--accent-cyan)', fontSize: '13px' }} />
+        <FontAwesomeIcon icon={faUsers} style={{ color: 'var(--accent-primary)', fontSize: '13px' }} />
         <span className="tabular-nums">{participantCount}/4</span>
       </div>
 
@@ -129,9 +130,9 @@ export function MeetingControls({
           height: '46px',
           padding: 0,
           borderRadius: '50%',
-          backgroundColor: isScreenSharing ? 'rgba(0, 229, 255, 0.2)' : 'rgba(255, 255, 255, 0.08)',
-          border: isScreenSharing ? '1px solid var(--accent-cyan)' : '1px solid rgba(255, 255, 255, 0.15)',
-          color: isScreenSharing ? 'var(--accent-cyan)' : '#ffffff',
+          backgroundColor: isScreenSharing ? 'rgba(14, 165, 233, 0.2)' : 'rgba(255, 255, 255, 0.08)',
+          border: isScreenSharing ? '1px solid var(--accent-primary)' : '1px solid rgba(255, 255, 255, 0.15)',
+          color: isScreenSharing ? 'var(--accent-primary)' : '#ffffff',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',

@@ -210,11 +210,11 @@ export function MeetingRoom() {
               Mastery Focus Room
             </h2>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.6875rem', color: '#94a3b8', marginTop: '2px' }}>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: '#4ade80', fontWeight: 500 }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: 'var(--color-success)', fontWeight: 500 }}>
                 <FontAwesomeIcon icon={faWifi} style={{ fontSize: '10px' }} /> P2P Live
               </span>
               <span>•</span>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: 'var(--accent-cyan)', fontWeight: 500 }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: 'var(--accent-primary)', fontWeight: 500 }}>
                 <FontAwesomeIcon icon={faShieldHalved} style={{ fontSize: '10px' }} /> E2E Encrypted
               </span>
               <span>•</span>
@@ -314,7 +314,7 @@ export function MeetingRoom() {
               color: '#f8fafc'
             }}
           >
-            <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: '#4ade80', boxShadow: '0 0 8px rgba(74, 222, 128, 0.6)' }} />
+            <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: 'var(--color-success)', boxShadow: '0 0 0 1.5px rgba(22, 163, 74, 0.25)' }} />
             <span className="tabular-nums">24 ms</span>
           </div>
         </div>

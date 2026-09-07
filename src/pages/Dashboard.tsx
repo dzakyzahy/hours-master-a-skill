@@ -225,7 +225,7 @@ export function Dashboard() {
           
           <div className="mt-6">
             <div className="progress-track" style={{ height: '4px' }}>
-              <div className="progress-fill" style={{ width: `${goalProgress}%`, background: goalProgress >= 100 ? '#22c55e' : 'var(--accent-cyan)' }}></div>
+              <div className="progress-fill" style={{ width: `${goalProgress}%`, background: goalProgress >= 100 ? 'var(--color-success)' : 'var(--accent-primary)' }}></div>
             </div>
             <p style={{ margin: '10px 0 0', fontSize: '11px', fontFamily: 'Geist Mono, monospace', color: 'var(--text-secondary)' }}>
               {dailyGoal - hoursToday > 0 ? `Sisa ${(dailyGoal - hoursToday).toFixed(1)} jam hari ini` : 'Target harian tercapai!'}

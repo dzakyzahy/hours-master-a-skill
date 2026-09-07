@@ -156,7 +156,7 @@ export function ApiKeyModal({ isOpen, onClose, onSaved }: ApiKeyModalProps) {
               display: 'flex', 
               alignItems: 'center', 
               justifyContent: 'center',
-              color: 'var(--accent-cyan)',
+              color: 'var(--accent-primary)',
               flexShrink: 0
             }}
           >
@@ -185,12 +185,12 @@ export function ApiKeyModal({ isOpen, onClose, onSaved }: ApiKeyModalProps) {
             alignItems: 'flex-start'
           }}
         >
-          <FontAwesomeIcon icon={faShieldHalved} style={{ color: 'var(--accent-cyan)', flexShrink: 0, marginTop: '3px', fontSize: '15px' }} />
+          <FontAwesomeIcon icon={faShieldHalved} style={{ color: 'var(--accent-primary)', flexShrink: 0, marginTop: '3px', fontSize: '15px' }} />
           <div style={{ fontSize: '11.5px', lineHeight: 1.45, color: 'var(--text-secondary)' }}>
             <span style={{ color: 'var(--text-primary)', fontWeight: 600, display: 'block', marginBottom: '2px' }}>
               Keamanan Data & Privasi Terjamin
             </span>
-            Kunci disimpan privat di database Supabase akun Anda (<code style={{ fontFamily: 'Geist Mono, monospace', color: 'var(--accent-cyan)', fontSize: '10.5px' }}>user_secrets</code>) dengan proteksi RLS. Kunci tidak pernah dibagikan atau dipublikasikan.
+            Kunci disimpan privat di database Supabase akun Anda (<code style={{ fontFamily: 'Geist Mono, monospace', color: 'var(--accent-primary)', fontSize: '10.5px' }}>user_secrets</code>) dengan proteksi RLS. Kunci tidak pernah dibagikan atau dipublikasikan.
           </div>
         </div>
 
@@ -270,7 +270,7 @@ export function ApiKeyModal({ isOpen, onClose, onSaved }: ApiKeyModalProps) {
                 rel="noreferrer" 
                 style={{ 
                   fontSize: '11.5px', 
-                  color: 'var(--accent-cyan)', 
+                  color: 'var(--accent-primary)', 
                   display: 'inline-flex', 
                   alignItems: 'center', 
                   gap: '5px',

@@ -36,10 +36,10 @@ export function VideoTile({ participant, isDominant = false }: VideoTileProps) {
         borderRadius: '16px',
         overflow: 'hidden',
         border: participant.isSpeaking
-          ? '2px solid var(--accent-cyan)'
+          ? '2px solid var(--accent-primary)'
           : '1px solid rgba(255, 255, 255, 0.1)',
         boxShadow: participant.isSpeaking
-          ? '0 0 24px rgba(0, 229, 255, 0.35)'
+          ? '0 0 0 3px rgba(14, 165, 233, 0.25), 0 20px 40px -10px rgba(0, 0, 0, 0.5)'
           : '0 20px 40px -10px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
         transition: 'border-color 0.25s ease, box-shadow 0.25s ease',
         display: 'flex',
@@ -98,9 +98,9 @@ export function VideoTile({ participant, isDominant = false }: VideoTileProps) {
                 gap: '6px',
                 padding: '4px 12px',
                 borderRadius: '9999px',
-                backgroundColor: 'rgba(0, 229, 255, 0.15)',
-                border: '1px solid var(--accent-cyan)',
-                color: 'var(--accent-cyan)',
+                backgroundColor: 'rgba(14, 165, 233, 0.12)',
+                border: '1px solid var(--accent-primary)',
+                color: 'var(--accent-primary)',
                 fontSize: '0.75rem',
                 fontWeight: 600,
               }}
@@ -128,7 +128,7 @@ export function VideoTile({ participant, isDominant = false }: VideoTileProps) {
             gap: '6px',
             fontSize: '0.75rem',
             fontWeight: 600,
-            color: 'var(--accent-cyan)',
+            color: 'var(--accent-primary)',
             boxShadow: '0 4px 12px rgba(0,0,0,0.35)',
           }}
         >
@@ -155,7 +155,7 @@ export function VideoTile({ participant, isDominant = false }: VideoTileProps) {
             backdropFilter: 'blur(12px)',
             padding: '5px 14px',
             borderRadius: '9999px',
-            border: participant.isSpeaking ? '1px solid var(--accent-cyan)' : '1px solid rgba(255, 255, 255, 0.15)',
+            border: participant.isSpeaking ? '1px solid var(--accent-primary)' : '1px solid rgba(255, 255, 255, 0.15)',
             fontSize: '0.8125rem',
             fontWeight: 600,
             color: '#ffffff',

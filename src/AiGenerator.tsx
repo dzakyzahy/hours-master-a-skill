@@ -95,7 +95,7 @@ export function AiGenerator() {
       {/* Header with Title & API Key Status Trigger (No Duplicate Button) */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', marginBottom: '8px', flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <FontAwesomeIcon icon={faRoute} style={{ color: 'var(--accent-cyan)', fontSize: '15px' }} />
+          <FontAwesomeIcon icon={faRoute} style={{ color: 'var(--accent-primary)', fontSize: '15px' }} />
           <h2 style={{ margin: 0, fontSize: '14.5px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.015em' }}>
             AI Mastery Plan Generator
           </h2>

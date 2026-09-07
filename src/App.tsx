@@ -24,7 +24,7 @@ function PageLoader() {
           width: '32px', 
           height: '32px', 
           border: '3px solid var(--border-color)', 
-          borderTopColor: 'var(--accent-cyan)', 
+          borderTopColor: 'var(--accent-primary)', 
           borderRadius: '50%' 
         }} 
       />

@@ -403,9 +403,8 @@ export function Chat() {
                   width: '8px', 
                   height: '8px', 
                   borderRadius: '50%', 
-                  backgroundColor: '#22c55e', 
-                  border: '1.5px solid var(--surface-card)',
-                  boxShadow: '0 0 6px rgba(34, 197, 94, 0.7)' 
+                  backgroundColor: 'var(--color-success)', 
+                  border: '1.5px solid var(--surface-card)'
                 }} 
               />
             </button>
@@ -572,9 +571,8 @@ export function Chat() {
                               width: '9px',
                               height: '9px',
                               borderRadius: '50%',
-                              backgroundColor: f.isOnline ? '#22c55e' : '#64748b',
-                              border: '2px solid var(--surface-card)',
-                              boxShadow: f.isOnline ? '0 0 6px rgba(34, 197, 94, 0.7)' : 'none'
+                              backgroundColor: f.isOnline ? 'var(--color-success)' : '#64748b',
+                              border: '1.5px solid var(--surface-card)'
                             }}
                           />
                         </div>
@@ -657,7 +655,7 @@ export function Chat() {
                             <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-secondary)' }}>@{req.receiver_username}</span>
                           </div>
                           <div className="flex items-center gap-2 mt-0.5">
-                            <span style={{ fontSize: '11px', color: 'var(--accent-cyan)', fontFamily: 'Geist Mono, monospace' }}>
+                            <span style={{ fontSize: '11px', color: 'var(--accent-primary)', fontFamily: 'Geist Mono, monospace' }}>
                               Menunggu Persetujuan...
                             </span>
                           </div>
@@ -746,9 +744,8 @@ export function Chat() {
                         width: '8px',
                         height: '8px',
                         borderRadius: '50%',
-                        backgroundColor: currentFriendInChat.isOnline ? '#22c55e' : '#64748b',
-                        border: '1.5px solid var(--surface-card)',
-                        boxShadow: currentFriendInChat.isOnline ? '0 0 6px rgba(34, 197, 94, 0.7)' : 'none'
+                        backgroundColor: currentFriendInChat.isOnline ? 'var(--color-success)' : '#64748b',
+                        border: '1.5px solid var(--surface-card)'
                       }}
                     />
                   </div>
@@ -762,8 +759,7 @@ export function Chat() {
                           width: '6px', 
                           height: '6px', 
                           borderRadius: '50%', 
-                          backgroundColor: currentFriendInChat.isOnline ? '#22c55e' : '#64748b',
-                          boxShadow: currentFriendInChat.isOnline ? '0 0 6px rgba(34, 197, 94, 0.75)' : 'none',
+                          backgroundColor: currentFriendInChat.isOnline ? 'var(--color-success)' : '#64748b',
                           marginLeft: '2px'
                         }} 
                         title={currentFriendInChat.isOnline ? 'Online' : 'Offline'}
@@ -778,7 +774,7 @@ export function Chat() {
                   onClick={() => navigate('/meeting')}
                   title="Mulai Video Call"
                 >
-                  <FontAwesomeIcon icon={faVideo} style={{ fontSize: '12px', color: 'var(--accent-cyan)' }} />
+                  <FontAwesomeIcon icon={faVideo} style={{ fontSize: '12px', color: 'var(--accent-primary)' }} />
                   <span>Video Call</span>
                 </button>
               </div>

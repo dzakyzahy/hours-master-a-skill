@@ -118,7 +118,7 @@ export function EditProjectModal({ project, isOpen, onClose }: EditProjectModalP
               display: 'flex', 
               alignItems: 'center', 
               justifyContent: 'center',
-              color: 'var(--accent-cyan)',
+              color: 'var(--accent-primary)',
               flexShrink: 0
             }}
           >
@@ -235,7 +235,7 @@ export function EditProjectModal({ project, isOpen, onClose }: EditProjectModalP
         {/* Manual Time Entry Section */}
         <div className="mt-5 pt-4" style={{ borderTop: '1px solid var(--border-hairline)' }}>
           <div className="flex items-center gap-1.5 mb-1">
-            <FontAwesomeIcon icon={faClock} style={{ color: 'var(--accent-cyan)', fontSize: '14px' }} />
+            <FontAwesomeIcon icon={faClock} style={{ color: 'var(--accent-primary)', fontSize: '14px' }} />
             <span style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-primary)' }}>
               Entri Jam Belajar Manual
             </span>

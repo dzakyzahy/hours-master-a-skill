@@ -36,16 +36,6 @@ export function SkilloLogo({
             transition: 'filter 0.3s ease',
           }}
         >
-          <defs>
-            <filter id="skilloLaserGlow" x="-30%" y="-20%" width="160%" height="140%">
-              <feGaussianBlur stdDeviation="5" result="blur" />
-              <feMerge>
-                <feMergeNode in="blur" />
-                <feMergeNode in="SourceGraphic" />
-              </feMerge>
-            </filter>
-          </defs>
-
           {/* Left Upper Wing */}
           <polygon
             points="76,40 186,40 186,200"
@@ -74,14 +64,13 @@ export function SkilloLogo({
             style={{ transition: 'fill 0.2s ease, opacity 0.2s ease' }}
           />
 
-          {/* Central Laser Beam */}
+          {/* Central Spine Beam */}
           <rect
             x="196"
             y="40"
             width="8"
             height="320"
-            fill="var(--accent-cyan)"
-            filter="url(#skilloLaserGlow)"
+            fill="var(--accent-primary)"
             className={animated ? 'animate-pulse' : ''}
           />
         </svg>
@@ -98,7 +87,7 @@ export function SkilloLogo({
             fontFamily: 'Geist, sans-serif',
           }}
         >
-          Skil<span style={{ color: 'var(--accent-cyan)' }}>lo</span>
+          Skil<span style={{ color: 'var(--accent-primary)' }}>lo</span>
         </span>
       )}
     </div>

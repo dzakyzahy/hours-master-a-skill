@@ -274,7 +274,7 @@ export function Profile() {
                     display: 'flex', 
                     alignItems: 'center', 
                     justifyContent: 'center', 
-                    color: geminiApiKey ? '#22c55e' : 'var(--accent-cyan)',
+                    color: geminiApiKey ? 'var(--color-success)' : 'var(--accent-primary)',
                     flexShrink: 0
                   }}
                 >
@@ -324,7 +324,7 @@ export function Profile() {
                     display: 'flex', 
                     alignItems: 'center', 
                     justifyContent: 'center', 
-                    color: 'var(--accent-cyan)',
+                    color: 'var(--accent-primary)',
                     flexShrink: 0
                   }}
                 >

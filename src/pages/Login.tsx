@@ -270,7 +270,7 @@ export function Login() {
               onClick={handleBiometricLogin}
               style={{ gap: '8px', height: '42px', fontSize: '13px' }}
             >
-              <FontAwesomeIcon icon={faFingerprint} style={{ color: 'var(--accent-cyan)', fontSize: '17px' }} />
+              <FontAwesomeIcon icon={faFingerprint} style={{ color: 'var(--accent-primary)', fontSize: '17px' }} />
               Masuk dengan Sidik Jari (Biometric)
             </button>
           </form>
@@ -339,12 +339,11 @@ export function Login() {
                 style={{ 
                   position: 'absolute', 
                   inset: 0, 
-                  borderRadius: '50%', 
-                  border: biometricStatus === 'success' 
-                    ? '2px solid #4ade80' 
+                  borderRadius: '50%',                   border: biometricStatus === 'success' 
+                    ? '2px solid var(--color-success)' 
                     : biometricStatus === 'failed' 
-                    ? '2px solid #ef4444' 
-                    : '2px solid var(--accent-cyan)',
+                    ? '2px solid var(--color-danger)' 
+                    : '2px solid var(--accent-primary)',
                   opacity: 0.3,
                   animation: biometricStatus === 'scanning' ? 'spin 3s linear infinite' : 'none'
                 }} 
@@ -355,21 +354,21 @@ export function Login() {
                   inset: '8px', 
                   borderRadius: '50%', 
                   background: biometricStatus === 'success' 
-                    ? 'rgba(74, 222, 128, 0.08)' 
+                    ? 'rgba(34, 197, 94, 0.08)' 
                     : biometricStatus === 'failed' 
                     ? 'rgba(239, 68, 68, 0.08)' 
-                    : 'rgba(0, 229, 255, 0.08)',
-                  display: 'flex',
-                  alignItems: 'center',
+                    : 'rgba(14, 165, 233, 0.08)',
+                  display: 'flex', 
+                  alignItems: 'center', 
                   justifyContent: 'center'
-                }}
+                }} 
               >
                 {biometricStatus === 'success' ? (
-                  <FontAwesomeIcon icon={faCircleCheck} style={{ color: '#4ade80', fontSize: '38px' }} />
+                  <FontAwesomeIcon icon={faCircleCheck} style={{ color: 'var(--color-success)', fontSize: '38px' }} />
                 ) : biometricStatus === 'failed' ? (
-                  <FontAwesomeIcon icon={faCircleExclamation} style={{ color: '#ef4444', fontSize: '38px' }} />
+                  <FontAwesomeIcon icon={faCircleExclamation} style={{ color: 'var(--color-danger)', fontSize: '38px' }} />
                 ) : (
-                  <FontAwesomeIcon icon={faFingerprint} style={{ color: 'var(--accent-cyan)', fontSize: '38px' }} className="animate-pulse" />
+                  <FontAwesomeIcon icon={faFingerprint} style={{ color: 'var(--accent-primary)', fontSize: '38px' }} className="animate-pulse" />
                 )}
               </div>
             </div>
@@ -408,7 +407,7 @@ export function Login() {
             </div>
 
             <div style={{ marginTop: '20px', fontSize: '11px', color: 'var(--text-placeholder)', fontFamily: 'Geist Mono, monospace', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-              <FontAwesomeIcon icon={faShieldHalved} style={{ color: 'var(--accent-cyan)', fontSize: '13px' }} />
+              <FontAwesomeIcon icon={faShieldHalved} style={{ color: 'var(--accent-primary)', fontSize: '13px' }} />
               WebAuthn / Biometric Secure Enclave
             </div>
           </div>
