@@ -649,12 +649,6 @@ button, a {
   touch-action: manipulation;
 }
 
-.background-ambient-clock {
-  opacity: 0.02;
-  color: var(--text-muted);
-  user-select: none;
-}
-
 .mobile-bottom-nav {
   display: none;
 }
@@ -663,6 +657,18 @@ button, a {
   .glass-panel {
     background: rgba(14, 21, 37, 0.92);
     padding: 18px 16px;
+  }
+
+  .desktop-header-actions {
+    display: none !important;
+  }
+
+  .mobile-only-header {
+    display: flex !important;
+  }
+
+  .mobile-content-container {
+    padding: 16px 16px 90px 16px !important;
   }
 
   .mobile-bottom-nav {
@@ -675,10 +681,11 @@ button, a {
     padding-bottom: env(safe-area-inset-bottom, 0px);
     background: rgba(9, 13, 22, 0.95);
     backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
     border-top: 1px solid var(--border-color);
     justify-content: space-around;
     align-items: center;
-    z-index: 50;
+    z-index: 80;
     box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.4);
   }
 
@@ -690,7 +697,7 @@ button, a {
     gap: 3px;
     background: none;
     border: none;
-    color: var(--text-muted);
+    color: var(--text-secondary);
     font-size: 0.6875rem;
     font-weight: 600;
     padding: 6px 12px;
@@ -704,32 +711,12 @@ button, a {
   .mobile-bottom-nav .nav-item.active {
     color: var(--accent-primary);
   }
-
-  .desktop-header-actions {
-    display: none !important;
-  }
-
-  .mobile-content-container {
-    padding: 16px 16px 84px 16px !important;
-  }
 }
 
 /* ==========================================================================
    Professional Thinker Auth System (Minimalist Editorial Dark)
    ========================================================================== */
 .auth-page-container {
-  --surface-canvas: #0A0B0D;
-  --surface-card: #111215;
-  --surface-input: #16181D;
-  --surface-input-focus: #18191F;
-  --border-hairline: rgba(255, 255, 255, 0.08);
-  --border-hairline-strong: rgba(255, 255, 255, 0.12);
-  --border-focus: rgba(255, 255, 255, 0.35);
-
-  --text-primary: #EDEDEC;
-  --text-secondary: #8E9096;
-  --text-placeholder: #4A4C53;
-
   --cta-primary-bg: #FFFFFF;
   --cta-primary-text: #0A0B0D;
   --cta-primary-hover: #E2E2DF;
@@ -1042,53 +1029,10 @@ button, a {
   }
 }
 
-@media (max-width: 640px) {
-  .desktop-header-actions {
-    display: none !important;
-  }
-  .mobile-only-header {
-    display: flex !important;
-  }
-  .mobile-content-container {
-    padding-bottom: 90px !important;
-  }
-  .mobile-bottom-nav {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 64px;
-    background: rgba(10, 11, 13, 0.92);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border-top: 1px solid var(--border-hairline);
-    display: flex;
-    align-items: center;
-    justify-content: space-around;
-    padding: 0 12px;
-    padding-bottom: env(safe-area-inset-bottom, 0px);
-    z-index: 80;
-  }
-  .mobile-bottom-nav .nav-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    background: transparent;
-    border: none;
-    color: var(--text-secondary);
-    font-size: 10px;
-    font-family: 'Geist', sans-serif;
-    gap: 4px;
-    cursor: pointer;
-    padding: 6px 10px;
-    border-radius: 6px;
-    transition: color 0.15s ease;
-  }
-  .mobile-bottom-nav .nav-item.active,
-  .mobile-bottom-nav .nav-item:hover {
-    color: var(--text-primary);
-  }
+/* Accessibility Focus Rings */
+:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
 }
 
 /* Biometric Radar Scanner Animation */

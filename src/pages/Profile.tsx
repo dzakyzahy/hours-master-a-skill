@@ -99,7 +99,7 @@ export function Profile() {
   };
 
   return (
-    <div className="no-drag mobile-content-container" style={{ padding: '32px 20px 80px', flex: 1, maxWidth: '960px', margin: '0 auto', width: '100%' }}>
+    <div className="no-drag mobile-content-container" style={{ padding: '32px 20px 80px', flex: 1, maxWidth: '680px', margin: '0 auto', width: '100%' }}>
       {/* Header with Symmetrical Back & Theme Switcher */}
       <header className="header-topbar mb-8" style={{ borderBottom: '1px solid var(--border-hairline)', paddingBottom: '16px' }}>
         <div className="flex items-center gap-4">

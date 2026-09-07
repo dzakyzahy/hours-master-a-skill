@@ -114,8 +114,34 @@ export function Home() {
             )}
           </button>
 
-          <button className="btn-icon" onClick={() => navigate('/chat')} title="Kolaborasi & Chat Tim">
+          <button 
+            className="btn-icon" 
+            onClick={() => navigate('/chat')} 
+            title="Kolaborasi & Chat Tim"
+            style={{ position: 'relative' }}
+          >
             <FontAwesomeIcon icon={faCommentDots} style={{ fontSize: '14px' }} />
+            {friendRequests.length > 0 && (
+              <span 
+                style={{ 
+                  position: 'absolute', 
+                  top: '-2px', 
+                  right: '-2px', 
+                  backgroundColor: 'var(--color-danger)', 
+                  color: '#ffffff', 
+                  width: '14px', 
+                  height: '14px', 
+                  borderRadius: '50%', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center', 
+                  fontSize: '9px', 
+                  fontWeight: 700 
+                }}
+              >
+                {friendRequests.length}
+              </span>
+            )}
           </button>
 
           <button 

@@ -1,5 +1,7 @@
-import React, { useEffect, Suspense, lazy } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faWifi } from '@fortawesome/free-solid-svg-icons';
 import { useStore } from './store';
 import { Login } from './pages/Login';
 import { Home } from './pages/Home';
@@ -14,6 +16,49 @@ const Dashboard = lazy(() => import('./pages/Dashboard').then(m => ({ default: m
 const Profile = lazy(() => import('./pages/Profile').then(m => ({ default: m.Profile })));
 const Chat = lazy(() => import('./pages/Chat').then(m => ({ default: m.Chat })));
 const MeetingRoom = lazy(() => import('./pages/MeetingRoom').then(m => ({ default: m.MeetingRoom })));
+
+function OfflineBanner() {
+  const [isOnline, setIsOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
+
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  if (isOnline) return null;
+
+  return (
+    <div 
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 9999,
+        background: 'var(--color-warning)',
+        color: '#000',
+        padding: '5px 12px',
+        fontSize: '11.5px',
+        fontWeight: 600,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '8px',
+        fontFamily: 'Geist, sans-serif',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+      }}
+    >
+      <FontAwesomeIcon icon={faWifi} style={{ fontSize: '11px' }} />
+      <span>Mode Offline — Data tersimpan lokal dan disinkronkan otomatis saat tersambung kembali.</span>
+    </div>
+  );
+}
 
 function PageLoader() {
   return (
@@ -72,6 +117,7 @@ export default function App() {
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', width: '100%', position: 'relative', overflow: 'hidden' }}>
+      <OfflineBanner />
       <HashRouter>
         <Suspense fallback={<PageLoader />}>
           <Routes>
