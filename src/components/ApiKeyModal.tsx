@@ -162,11 +162,11 @@ export function ApiKeyModal({ isOpen, onClose, onSaved }: ApiKeyModalProps) {
           >
             <FontAwesomeIcon icon={faKey} className="text-[15px]" />
           </div>
-          <div style={{ paddingLeft: '2px' }}>
-            <h2 style={{ margin: 0, fontSize: '16px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.02em', fontFamily: 'Geist, sans-serif', lineHeight: 1.3 }}>
+          <div style={{ paddingLeft: '4px' }}>
+            <h2 style={{ margin: 0, fontSize: '16px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.02em', fontFamily: "'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif", lineHeight: 1.3 }}>
               Pengaturan Kunci API Gemini
             </h2>
-            <span style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'block', marginTop: '2px', lineHeight: 1.4 }}>
+            <span style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'block', marginTop: '2px', lineHeight: 1.4, fontFamily: "'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" }}>
               Integrasi privat AI Mastery Generator
             </span>
           </div>
@@ -199,7 +199,7 @@ export function ApiKeyModal({ isOpen, onClose, onSaved }: ApiKeyModalProps) {
           className="flex justify-between items-center mb-4 px-3 py-2 rounded"
           style={{ background: 'var(--surface-input)', border: '1px solid var(--border-hairline)' }}
         >
-          <span style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-secondary)' }}>
+          <span style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-secondary)', fontFamily: "'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" }}>
             Status Integrasi
           </span>
           {isConfigured ? (
@@ -209,13 +209,14 @@ export function ApiKeyModal({ isOpen, onClose, onSaved }: ApiKeyModalProps) {
                 alignItems: 'center', 
                 gap: '5px', 
                 fontSize: '9px', 
-                fontFamily: 'Geist, sans-serif', 
+                fontFamily: "'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif", 
                 color: '#22c55e',
                 fontWeight: 600,
-                letterSpacing: '0.01em'
+                letterSpacing: '0.01em',
+                lineHeight: 1
               }}
             >
-              <span style={{ width: '5px', height: '5px', borderRadius: '50%', backgroundColor: '#22c55e' }} />
+              <span style={{ width: '5px', height: '5px', minWidth: '5px', minHeight: '5px', borderRadius: '50%', backgroundColor: '#22c55e', display: 'inline-block', flexShrink: 0 }} />
               Tersimpan & Aktif
             </span>
           ) : (
@@ -225,13 +226,14 @@ export function ApiKeyModal({ isOpen, onClose, onSaved }: ApiKeyModalProps) {
                 alignItems: 'center', 
                 gap: '5px', 
                 fontSize: '9px', 
-                fontFamily: 'Geist, sans-serif', 
+                fontFamily: "'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif", 
                 color: '#f59e0b',
                 fontWeight: 600,
-                letterSpacing: '0.01em'
+                letterSpacing: '0.01em',
+                lineHeight: 1
               }}
             >
-              <span style={{ width: '5px', height: '5px', borderRadius: '50%', backgroundColor: '#f59e0b' }} />
+              <span style={{ width: '5px', height: '5px', minWidth: '5px', minHeight: '5px', borderRadius: '50%', backgroundColor: '#f59e0b', display: 'inline-block', flexShrink: 0 }} />
               Belum Dikonfigurasi
             </span>
           )}

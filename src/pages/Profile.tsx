@@ -249,7 +249,7 @@ export function Profile() {
               Tersimpan privat di database akun Supabase Anda dengan proteksi Row Level Security.
             </p>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--surface-input)', border: '1px solid var(--border-hairline)', borderRadius: '6px', marginBottom: '12px' }}>
-              <span style={{ fontSize: geminiApiKey ? '11px' : '9.5px', fontFamily: geminiApiKey ? 'Geist Mono, monospace' : 'Geist, sans-serif', color: geminiApiKey ? '#22c55e' : 'var(--text-secondary)', letterSpacing: geminiApiKey ? 'normal' : '0.01em' }}>
+              <span style={{ fontSize: geminiApiKey ? '11px' : '9.5px', fontFamily: geminiApiKey ? 'Geist Mono, monospace' : "'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif", color: geminiApiKey ? '#22c55e' : 'var(--text-secondary)', letterSpacing: geminiApiKey ? 'normal' : '0.01em', fontWeight: 500 }}>
                 {geminiApiKey ? `${geminiApiKey.substring(0, 8)}••••••••••••` : 'Belum Dikonfigurasi'}
               </span>
               <button 
