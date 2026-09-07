@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Clock, Activity, Target, Trophy, Play, Square, Plus, Trash2, Edit, Check, Edit2, ArrowLeft } from 'lucide-react';
+import { Clock, Activity, Target, Trophy, Play, Square, Plus, Trash2, Edit, Edit2, Check, ArrowLeft } from 'lucide-react';
 import { useStore, type Project } from '../store';
+import { supabase } from '../supabaseClient';
 import { EditProjectModal } from '../components/EditProjectModal';
 
 export function Dashboard() {
-  const { projects, activeProjectId, addHours, toggleTimer, activeTimer, setTotalHours, deleteProject } = useStore();
+  const { projects, activeProjectId, addHours, toggleTimer, activeTimer, setRemoteTimerState, setTotalHours, deleteProject } = useStore();
   const navigate = useNavigate();
   
   const [manualInput, setManualInput] = useState('');
@@ -37,6 +38,26 @@ export function Dashboard() {
       if (interval) clearInterval(interval);
     };
   }, [activeTimer, addHours]);
+
+  // Live Timer Sync
+  useEffect(() => {
+    if (!project) return;
+    
+    const channel = supabase.channel(`timer_${project.id}`)
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'timer_state',
+        filter: `project_id=eq.${project.id}`
+      }, (payload) => {
+        if (payload.new) {
+           setRemoteTimerState((payload.new as any).is_active);
+        }
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [project, setRemoteTimerState]);
 
   if (!project) return null;
 

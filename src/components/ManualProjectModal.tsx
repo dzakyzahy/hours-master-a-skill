@@ -4,6 +4,8 @@ import { useStore, type SkillPhase } from '../store';
 
 export function ManualProjectModal({ isOpen = true, onClose }: { isOpen?: boolean; onClose: () => void }) {
   const addProject = useStore(state => state.addProject);
+  
+  if (!isOpen) return null;
   const [name, setName] = useState('');
   const [phases, setPhases] = useState<SkillPhase[]>([
     { title: 'Beginner Phase', hoursStart: 0, hoursEnd: 100, desc: 'Learning the basics' }
