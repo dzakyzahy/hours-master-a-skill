@@ -144,13 +144,13 @@ export function ApiKeyModal({ isOpen, onClose, onSaved }: ApiKeyModalProps) {
           <FontAwesomeIcon icon={faXmark} className="text-[14px]" />
         </button>
 
-        {/* Modal Header: Aligned with Security Card below */}
-        <div className="flex items-start gap-3 mb-4">
+        {/* Modal Header */}
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '18px' }}>
           <div 
             style={{ 
-              width: '34px', 
-              height: '34px', 
-              borderRadius: '6px', 
+              width: '36px', 
+              height: '36px', 
+              borderRadius: '8px', 
               background: 'var(--surface-input)', 
               border: '1px solid var(--border-hairline-strong)',
               display: 'flex', 
@@ -160,13 +160,13 @@ export function ApiKeyModal({ isOpen, onClose, onSaved }: ApiKeyModalProps) {
               flexShrink: 0
             }}
           >
-            <FontAwesomeIcon icon={faKey} className="text-[15px]" />
+            <FontAwesomeIcon icon={faKey} style={{ fontSize: '15px' }} />
           </div>
-          <div style={{ paddingLeft: '4px' }}>
+          <div>
             <h2 style={{ margin: 0, fontSize: '16px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.02em', fontFamily: "'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif", lineHeight: 1.3 }}>
               Pengaturan Kunci API Gemini
             </h2>
-            <span style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'block', marginTop: '2px', lineHeight: 1.4, fontFamily: "'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" }}>
+            <span style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'block', marginTop: '3px', lineHeight: 1.4, fontFamily: "'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" }}>
               Integrasi privat AI Mastery Generator
             </span>
           </div>
@@ -194,12 +194,20 @@ export function ApiKeyModal({ isOpen, onClose, onSaved }: ApiKeyModalProps) {
           </div>
         </div>
 
-        {/* Status Row: Visually demarcated & spacious */}
+        {/* Status Row: Clean, breathable card with explicit inline styles */}
         <div 
-          className="flex justify-between items-center mb-5 px-4 py-2.5 rounded-lg"
-          style={{ background: 'var(--surface-input)', border: '1px solid var(--border-hairline)' }}
+          style={{ 
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            padding: '12px 16px',
+            marginBottom: '20px',
+            borderRadius: '8px',
+            background: 'var(--surface-input)', 
+            border: '1px solid var(--border-hairline)' 
+          }}
         >
-          <span style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-secondary)', fontFamily: "'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" }}>
+          <span style={{ fontSize: '12.5px', fontWeight: 500, color: 'var(--text-secondary)', fontFamily: "'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" }}>
             Status Integrasi
           </span>
           {isConfigured ? (
@@ -208,19 +216,19 @@ export function ApiKeyModal({ isOpen, onClose, onSaved }: ApiKeyModalProps) {
                 display: 'inline-flex', 
                 alignItems: 'center', 
                 gap: '6px', 
-                fontSize: '10px', 
+                fontSize: '11px', 
                 fontFamily: "'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif", 
                 color: '#22c55e',
                 background: 'rgba(34, 197, 94, 0.08)',
                 border: '1px solid rgba(34, 197, 94, 0.25)',
-                padding: '3px 10px',
+                padding: '4px 12px',
                 borderRadius: '9999px',
                 fontWeight: 600,
                 letterSpacing: '0.01em',
                 lineHeight: 1
               }}
             >
-              <span style={{ width: '5px', height: '5px', minWidth: '5px', minHeight: '5px', borderRadius: '50%', backgroundColor: '#22c55e', display: 'inline-block', flexShrink: 0 }} />
+              <span style={{ width: '6px', height: '6px', minWidth: '6px', minHeight: '6px', borderRadius: '50%', backgroundColor: '#22c55e', display: 'inline-block', flexShrink: 0 }} />
               Tersimpan & Aktif
             </span>
           ) : (
@@ -229,30 +237,30 @@ export function ApiKeyModal({ isOpen, onClose, onSaved }: ApiKeyModalProps) {
                 display: 'inline-flex', 
                 alignItems: 'center', 
                 gap: '6px', 
-                fontSize: '10px', 
+                fontSize: '11px', 
                 fontFamily: "'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif", 
                 color: '#f59e0b',
                 background: 'rgba(245, 158, 11, 0.08)',
                 border: '1px solid rgba(245, 158, 11, 0.25)',
-                padding: '3px 10px',
+                padding: '4px 12px',
                 borderRadius: '9999px',
                 fontWeight: 600,
                 letterSpacing: '0.01em',
                 lineHeight: 1
               }}
             >
-              <span style={{ width: '5px', height: '5px', minWidth: '5px', minHeight: '5px', borderRadius: '50%', backgroundColor: '#f59e0b', display: 'inline-block', flexShrink: 0 }} />
+              <span style={{ width: '6px', height: '6px', minWidth: '6px', minHeight: '6px', borderRadius: '50%', backgroundColor: '#f59e0b', display: 'inline-block', flexShrink: 0 }} />
               Belum Dikonfigurasi
             </span>
           )}
         </div>
 
         <form onSubmit={handleSave}>
-          <div className="mb-4">
-            <div className="flex justify-between items-center mb-1.5">
+          <div style={{ marginBottom: '20px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
               <label 
                 htmlFor="gemini-key-input" 
-                style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-primary)' }}
+                style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}
               >
                 Gemini API Key
               </label>
@@ -261,11 +269,11 @@ export function ApiKeyModal({ isOpen, onClose, onSaved }: ApiKeyModalProps) {
                 target="_blank" 
                 rel="noreferrer" 
                 style={{ 
-                  fontSize: '11px', 
+                  fontSize: '11.5px', 
                   color: 'var(--accent-cyan)', 
                   display: 'inline-flex', 
                   alignItems: 'center', 
-                  gap: '4px',
+                  gap: '5px',
                   textDecoration: 'none'
                 }}
               >
@@ -286,7 +294,8 @@ export function ApiKeyModal({ isOpen, onClose, onSaved }: ApiKeyModalProps) {
                   fontFamily: showKey ? 'Geist Mono, monospace' : 'inherit',
                   letterSpacing: showKey ? '0.01em' : '0.15em',
                   fontSize: '13px',
-                  height: '40px'
+                  height: '42px',
+                  width: '100%'
                 }}
                 autoComplete="off"
                 spellCheck="false"
@@ -296,13 +305,13 @@ export function ApiKeyModal({ isOpen, onClose, onSaved }: ApiKeyModalProps) {
                 onClick={() => setShowKey(!showKey)} 
                 style={{ 
                   position: 'absolute', 
-                  right: '8px', 
+                  right: '10px', 
                   top: '50%',
                   transform: 'translateY(-50%)',
                   background: 'transparent',
                   border: 'none',
                   cursor: 'pointer',
-                  padding: '4px',
+                  padding: '6px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -314,8 +323,8 @@ export function ApiKeyModal({ isOpen, onClose, onSaved }: ApiKeyModalProps) {
               </button>
             </div>
 
-            <div className="flex justify-between items-center mt-1.5">
-              <span style={{ fontSize: '10.5px', color: 'var(--text-placeholder)', fontFamily: 'Geist Mono, monospace' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px' }}>
+              <span style={{ fontSize: '11px', color: 'var(--text-placeholder)', fontFamily: 'Geist Mono, monospace' }}>
                 Format standar: AIzaSy... (39 karakter)
               </span>
             </div>
@@ -325,9 +334,9 @@ export function ApiKeyModal({ isOpen, onClose, onSaved }: ApiKeyModalProps) {
           {testResult && (
             <div 
               style={{ 
-                padding: '9px 12px', 
+                padding: '10px 14px', 
                 borderRadius: '6px', 
-                marginBottom: '16px',
+                marginBottom: '18px',
                 display: 'flex', 
                 alignItems: 'center', 
                 gap: '8px',
@@ -345,9 +354,9 @@ export function ApiKeyModal({ isOpen, onClose, onSaved }: ApiKeyModalProps) {
           {saveSuccess && (
             <div 
               style={{ 
-                padding: '9px 12px', 
+                padding: '10px 14px', 
                 borderRadius: '6px', 
-                marginBottom: '16px',
+                marginBottom: '18px',
                 display: 'flex', 
                 alignItems: 'center', 
                 gap: '8px',
@@ -363,13 +372,13 @@ export function ApiKeyModal({ isOpen, onClose, onSaved }: ApiKeyModalProps) {
           )}
 
           {/* Action Buttons */}
-          <div className="flex gap-2 justify-end mt-4 pt-3" style={{ borderTop: '1px solid var(--border-hairline)' }}>
+          <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '24px', paddingTop: '16px', borderTop: '1px solid var(--border-hairline)' }}>
             {geminiApiKey && (
               <button 
                 type="button" 
                 className="btn" 
                 onClick={handleClear}
-                style={{ color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.25)', marginRight: 'auto', height: '36px', fontSize: '12px' }}
+                style={{ color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.25)', marginRight: 'auto', height: '38px', fontSize: '12px' }}
                 title="Hapus Kunci API yang tersimpan"
               >
                 <FontAwesomeIcon icon={faTrashCan} style={{ fontSize: '13px' }} /> Hapus
@@ -381,7 +390,7 @@ export function ApiKeyModal({ isOpen, onClose, onSaved }: ApiKeyModalProps) {
               className="btn" 
               onClick={handleTestKey}
               disabled={testing || !keyInput.trim()}
-              style={{ height: '36px', padding: '0 12px', fontSize: '12px' }}
+              style={{ height: '38px', padding: '0 16px', fontSize: '12.5px', gap: '6px' }}
             >
               {testing ? <FontAwesomeIcon icon={faCircleNotch} spin style={{ fontSize: '13px' }} /> : <FontAwesomeIcon icon={faShieldHalved} style={{ fontSize: '13px' }} />}
               <span>{testing ? 'Menguji...' : 'Uji Koneksi'}</span>
@@ -391,7 +400,7 @@ export function ApiKeyModal({ isOpen, onClose, onSaved }: ApiKeyModalProps) {
               type="submit" 
               className="btn-primary" 
               disabled={saving || !keyInput.trim()}
-              style={{ height: '36px', padding: '0 16px', fontSize: '12px' }}
+              style={{ height: '38px', padding: '0 18px', fontSize: '12.5px', gap: '6px' }}
             >
               {saving ? <FontAwesomeIcon icon={faCircleNotch} spin style={{ fontSize: '13px' }} /> : <FontAwesomeIcon icon={faCheck} style={{ fontSize: '13px' }} />}
               <span>{saving ? 'Menyimpan...' : 'Simpan Kunci API'}</span>
