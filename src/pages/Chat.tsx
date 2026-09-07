@@ -528,7 +528,7 @@ export function Chat() {
                           />
                         </div>
 
-                        <div>
+                        <div style={{ paddingLeft: '5px' }}>
                           <div className="flex items-center gap-2">
                             <span style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--text-primary)' }}>{f.name}</span>
                             <span style={{ fontSize: '11px', fontFamily: 'Geist Mono, monospace', color: 'var(--text-secondary)' }}>@{f.username}</span>
@@ -601,7 +601,7 @@ export function Chat() {
                           </div>
                         </div>
 
-                        <div>
+                        <div style={{ paddingLeft: '5px' }}>
                           <div className="flex items-center gap-2">
                             <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-secondary)' }}>@{req.receiver_username}</span>
                           </div>
@@ -702,7 +702,7 @@ export function Chat() {
                     />
                   </div>
 
-                  <div>
+                  <div style={{ paddingLeft: '5px' }}>
                     <div className="flex items-center gap-2">
                       <span style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--text-primary)' }}>{currentFriendInChat.name}</span>
                       <span style={{ fontSize: '11px', fontFamily: 'Geist Mono, monospace', color: 'var(--text-secondary)' }}>@{currentFriendInChat.username}</span>
