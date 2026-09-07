@@ -44,11 +44,11 @@ export function MeetingControls({
         justifyContent: 'center',
         gap: '12px',
         padding: '10px 20px',
-        backgroundColor: 'rgba(15, 20, 30, 0.85)',
+        backgroundColor: 'var(--surface-card)',
         backdropFilter: 'blur(20px)',
-        border: '1px solid rgba(255, 255, 255, 0.12)',
+        border: '1px solid var(--border-hairline-strong)',
         borderRadius: '9999px',
-        boxShadow: '0 20px 50px -10px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.15)',
+        boxShadow: '0 12px 36px rgba(0, 0, 0, 0.2)',
         zIndex: 50,
       }}
     >
@@ -61,11 +61,11 @@ export function MeetingControls({
           padding: '0 12px',
           height: '36px',
           borderRadius: '9999px',
-          backgroundColor: 'rgba(255, 255, 255, 0.06)',
-          border: '1px solid rgba(255, 255, 255, 0.1)',
+          backgroundColor: 'var(--surface-input)',
+          border: '1px solid var(--border-hairline-strong)',
           fontSize: '0.8125rem',
           fontWeight: 600,
-          color: '#e2e8f0',
+          color: 'var(--text-primary)',
           marginRight: '6px',
         }}
       >
@@ -84,9 +84,9 @@ export function MeetingControls({
           height: '46px',
           padding: 0,
           borderRadius: '50%',
-          backgroundColor: isMuted ? 'rgba(239, 68, 68, 0.25)' : 'rgba(255, 255, 255, 0.08)',
-          border: isMuted ? '1px solid rgba(239, 68, 68, 0.5)' : '1px solid rgba(255, 255, 255, 0.15)',
-          color: isMuted ? '#f87171' : '#ffffff',
+          backgroundColor: isMuted ? 'rgba(239, 68, 68, 0.15)' : 'var(--surface-input)',
+          border: isMuted ? '1px solid var(--color-danger)' : '1px solid var(--border-hairline-strong)',
+          color: isMuted ? 'var(--color-danger)' : 'var(--text-primary)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -107,9 +107,9 @@ export function MeetingControls({
           height: '46px',
           padding: 0,
           borderRadius: '50%',
-          backgroundColor: isVideoOff ? 'rgba(239, 68, 68, 0.25)' : 'rgba(255, 255, 255, 0.08)',
-          border: isVideoOff ? '1px solid rgba(239, 68, 68, 0.5)' : '1px solid rgba(255, 255, 255, 0.15)',
-          color: isVideoOff ? '#f87171' : '#ffffff',
+          backgroundColor: isVideoOff ? 'rgba(239, 68, 68, 0.15)' : 'var(--surface-input)',
+          border: isVideoOff ? '1px solid var(--color-danger)' : '1px solid var(--border-hairline-strong)',
+          color: isVideoOff ? 'var(--color-danger)' : 'var(--text-primary)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -130,9 +130,9 @@ export function MeetingControls({
           height: '46px',
           padding: 0,
           borderRadius: '50%',
-          backgroundColor: isScreenSharing ? 'rgba(14, 165, 233, 0.2)' : 'rgba(255, 255, 255, 0.08)',
-          border: isScreenSharing ? '1px solid var(--accent-primary)' : '1px solid rgba(255, 255, 255, 0.15)',
-          color: isScreenSharing ? 'var(--accent-primary)' : '#ffffff',
+          backgroundColor: isScreenSharing ? 'rgba(14, 165, 233, 0.18)' : 'var(--surface-input)',
+          border: isScreenSharing ? '1px solid var(--accent-primary)' : '1px solid var(--border-hairline-strong)',
+          color: isScreenSharing ? 'var(--accent-primary)' : 'var(--text-primary)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -142,7 +142,6 @@ export function MeetingControls({
         <FontAwesomeIcon icon={faDesktop} style={{ fontSize: '15px' }} />
       </button>
 
-      {/* Developer Mock Inspector Toggle */}
       {onToggleDevTools && (
         <button
           type="button"
@@ -154,9 +153,9 @@ export function MeetingControls({
             height: '46px',
             padding: 0,
             borderRadius: '50%',
-            backgroundColor: showDevTools ? 'rgba(168, 85, 247, 0.25)' : 'rgba(255, 255, 255, 0.08)',
-            border: showDevTools ? '1px solid var(--accent-purple)' : '1px solid rgba(255, 255, 255, 0.15)',
-            color: showDevTools ? 'var(--accent-purple)' : '#94a3b8',
+            backgroundColor: showDevTools ? 'rgba(168, 85, 247, 0.2)' : 'var(--surface-input)',
+            border: showDevTools ? '1px solid var(--accent-purple)' : '1px solid var(--border-hairline-strong)',
+            color: showDevTools ? 'var(--accent-purple)' : 'var(--text-secondary)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',

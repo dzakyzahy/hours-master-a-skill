@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import { useStore } from '../store';
 import { VideoTile } from '../components/meeting/VideoTile';
 import { MeetingControls } from '../components/meeting/MeetingControls';
+import { ThemeSwitcher } from '../components/ThemeSwitcher';
 import { useWebRTC } from '../hooks/useWebRTC';
 import type { Participant } from '../types/meeting';
 
@@ -167,8 +168,8 @@ export function MeetingRoom() {
         flexDirection: 'column',
         height: '100vh',
         width: '100vw',
-        backgroundColor: '#090b10',
-        color: '#f8fafc',
+        backgroundColor: 'var(--bg-canvas)',
+        color: 'var(--text-primary)',
         overflow: 'hidden',
       }}
       className="no-drag"
@@ -180,8 +181,8 @@ export function MeetingRoom() {
           justifyContent: 'space-between',
           alignItems: 'center',
           padding: '12px 24px',
-          borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-          backgroundColor: 'rgba(10, 13, 20, 0.9)',
+          borderBottom: '1px solid var(--border-hairline)',
+          backgroundColor: 'var(--surface-card)',
           backdropFilter: 'blur(16px)',
           zIndex: 20,
         }}
@@ -195,9 +196,9 @@ export function MeetingRoom() {
             style={{ 
               padding: '6px 14px', 
               borderRadius: '8px', 
-              background: 'rgba(255, 255, 255, 0.08)', 
-              border: '1px solid rgba(255, 255, 255, 0.15)', 
-              color: '#ffffff', 
+              background: 'var(--surface-input)', 
+              border: '1px solid var(--border-hairline-strong)', 
+              color: 'var(--text-primary)', 
               fontSize: '12.5px',
               fontWeight: 500,
               gap: '6px' 
@@ -206,10 +207,10 @@ export function MeetingRoom() {
             <FontAwesomeIcon icon={faArrowLeft} style={{ fontSize: '13px' }} /> Exit
           </button>
           <div>
-            <h2 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: '#ffffff', letterSpacing: '-0.01em' }}>
+            <h2 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
               Mastery Focus Room
             </h2>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.6875rem', color: '#94a3b8', marginTop: '2px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.6875rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: 'var(--color-success)', fontWeight: 500 }}>
                 <FontAwesomeIcon icon={faWifi} style={{ fontSize: '10px' }} /> P2P Live
               </span>
@@ -225,9 +226,9 @@ export function MeetingRoom() {
                   toast.success('Link meeting disalin!');
                 }}
                 style={{ 
-                  background: 'rgba(255, 255, 255, 0.08)', 
-                  border: '1px solid rgba(255, 255, 255, 0.15)', 
-                  color: '#e2e8f0', 
+                  background: 'var(--surface-input)', 
+                  border: '1px solid var(--border-hairline-strong)', 
+                  color: 'var(--text-secondary)', 
                   cursor: 'pointer', 
                   padding: '2px 8px', 
                   borderRadius: '4px', 
@@ -239,8 +240,8 @@ export function MeetingRoom() {
                   fontFamily: 'Geist Mono, monospace'
                 }}
                 title="Salin Link Room"
-                onMouseOver={e => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.14)'}
-                onMouseOut={e => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)'}
+                onMouseOver={e => e.currentTarget.style.background = 'var(--surface-hover)'}
+                onMouseOut={e => e.currentTarget.style.background = 'var(--surface-input)'}
               >
                 <FontAwesomeIcon icon={faCopy} style={{ fontSize: '10px' }} />
                 {roomId || 'skillo-global-room'}
@@ -272,8 +273,8 @@ export function MeetingRoom() {
           </div>
         </div>
 
-        {/* Status Indicator */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        {/* Status Indicator & Theme Switcher */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <button 
             type="button"
             className="btn" 
@@ -283,9 +284,9 @@ export function MeetingRoom() {
               fontWeight: 500,
               gap: '6px',
               borderRadius: '8px',
-              background: 'rgba(255, 255, 255, 0.08)',
-              border: '1px solid rgba(255, 255, 255, 0.15)',
-              color: '#ffffff'
+              background: 'var(--surface-input)',
+              border: '1px solid var(--border-hairline-strong)',
+              color: 'var(--text-primary)'
             }}
             onClick={() => {
               navigator.clipboard.writeText(window.location.href);
@@ -307,16 +308,17 @@ export function MeetingRoom() {
               gap: '8px',
               padding: '6px 14px',
               borderRadius: '9999px',
-              backgroundColor: 'rgba(255, 255, 255, 0.08)',
-              border: '1px solid rgba(255, 255, 255, 0.12)',
+              backgroundColor: 'var(--surface-input)',
+              border: '1px solid var(--border-hairline-strong)',
               fontSize: '0.8125rem',
               fontWeight: 600,
-              color: '#f8fafc'
+              color: 'var(--text-primary)'
             }}
           >
             <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: 'var(--color-success)', boxShadow: '0 0 0 1.5px rgba(22, 163, 74, 0.25)' }} />
             <span className="tabular-nums">24 ms</span>
           </div>
+          <ThemeSwitcher compact={true} />
         </div>
       </header>
 

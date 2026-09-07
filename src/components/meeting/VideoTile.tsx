@@ -32,15 +32,15 @@ export function VideoTile({ participant, isDominant = false }: VideoTileProps) {
         width: '100%',
         height: '100%',
         minHeight: isDominant ? '360px' : '200px',
-        backgroundColor: '#0a0e17',
+        backgroundColor: 'var(--surface-card)',
         borderRadius: '16px',
         overflow: 'hidden',
         border: participant.isSpeaking
           ? '2px solid var(--accent-primary)'
-          : '1px solid rgba(255, 255, 255, 0.1)',
+          : '1px solid var(--border-hairline-strong)',
         boxShadow: participant.isSpeaking
-          ? '0 0 0 3px rgba(14, 165, 233, 0.25), 0 20px 40px -10px rgba(0, 0, 0, 0.5)'
-          : '0 20px 40px -10px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
+          ? '0 0 0 3px rgba(14, 165, 233, 0.25), var(--shadow-md)'
+          : 'var(--shadow-md)',
         transition: 'border-color 0.25s ease, box-shadow 0.25s ease',
         display: 'flex',
         alignItems: 'center',
@@ -77,14 +77,14 @@ export function VideoTile({ participant, isDominant = false }: VideoTileProps) {
               width: isDominant ? '80px' : '64px',
               height: isDominant ? '80px' : '64px',
               borderRadius: '50%',
-              backgroundColor: 'rgba(255, 255, 255, 0.08)',
-              border: '1px solid rgba(255, 255, 255, 0.15)',
+              backgroundColor: 'var(--surface-input)',
+              border: '1px solid var(--border-hairline-strong)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               fontSize: isDominant ? '1.5rem' : '1.25rem',
               fontWeight: 700,
-              color: '#ffffff',
+              color: 'var(--text-primary)',
               letterSpacing: '0.05em',
             }}
           >
