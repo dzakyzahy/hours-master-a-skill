@@ -42,6 +42,7 @@ export interface FriendRequest {
   sender_id: string;
   sender_username?: string;
   receiver_id: string;
+  receiver_username?: string;
   status: string;
   created_at: string;
 }
@@ -60,8 +61,10 @@ interface AppState {
   // Friends & Presence
   friends: FriendUser[];
   friendRequests: FriendRequest[];
+  sentFriendRequests: FriendRequest[];
   fetchFriends: () => Promise<void>;
   fetchFriendRequests: () => Promise<void>;
+  fetchSentFriendRequests: () => Promise<void>;
   sendFriendRequest: (receiverId: string) => Promise<boolean>;
   acceptFriendRequest: (requestId: string, senderId: string) => Promise<boolean>;
   rejectFriendRequest: (requestId: string) => Promise<boolean>;
@@ -112,6 +115,8 @@ export const useStore = create<AppState>()(
       userEmail: '',
       biometricVerified: false,
       friends: [],
+      friendRequests: [],
+      sentFriendRequests: [],
 
       
       login: async (u, p) => {
@@ -261,6 +266,24 @@ export const useStore = create<AppState>()(
             sender_username: (d.profiles as any)?.username
           }));
           set({ friendRequests: reqs });
+        }
+      },
+      
+      fetchSentFriendRequests: async () => {
+        const uid = get().userId;
+        if (!uid) return;
+        const { data } = await supabase
+          .from('friend_requests')
+          .select('*, profiles!receiver_id(username)')
+          .eq('sender_id', uid)
+          .eq('status', 'pending');
+          
+        if (data) {
+          const reqs = data.map(d => ({
+            ...d,
+            receiver_username: (d.profiles as any)?.username
+          }));
+          set({ sentFriendRequests: reqs });
         }
       },
       

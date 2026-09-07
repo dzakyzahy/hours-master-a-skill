@@ -16,7 +16,7 @@ interface LocalChatMessage {
 
 export function Chat() {
   const navigate = useNavigate();
-  const { username, userId, friends, friendRequests, sendFriendRequest, acceptFriendRequest, rejectFriendRequest, checkFriendsOnlineStatus, projects, fetchFriendRequests, fetchFriends } = useStore();
+  const { username, userId, friends, friendRequests, sentFriendRequests, sendFriendRequest, acceptFriendRequest, rejectFriendRequest, checkFriendsOnlineStatus, projects, fetchFriendRequests, fetchSentFriendRequests, fetchFriends } = useStore();
   const [activeTab, setActiveTab] = useState<'friends' | 'requests' | 'chat' | 'clash'>('friends');
   
   const [searchQuery, setSearchQuery] = useState('');
@@ -41,12 +41,14 @@ export function Chat() {
   useEffect(() => {
     checkFriendsOnlineStatus();
     fetchFriendRequests();
+    fetchSentFriendRequests();
     const timer = setInterval(() => {
       checkFriendsOnlineStatus();
       fetchFriendRequests();
+      fetchSentFriendRequests();
     }, 3000);
     return () => clearInterval(timer);
-  }, [checkFriendsOnlineStatus, fetchFriendRequests]);
+  }, [checkFriendsOnlineStatus, fetchFriendRequests, fetchSentFriendRequests]);
 
   // Scroll to bottom of messages
   useEffect(() => {
@@ -283,7 +285,7 @@ export function Chat() {
               </div>
 
               <div className="flex flex-col gap-2">
-                {friends.length === 0 && (
+                {friends.length === 0 && sentFriendRequests.length === 0 && (
                   <p style={{ color: 'var(--text-secondary)', fontSize: '13px', padding: '16px', textAlign: 'center' }}>
                     Belum ada teman. Tambahkan teman melalui form di atas.
                   </p>
@@ -380,6 +382,61 @@ export function Chat() {
                         >
                           <Video size={13} /> Focus Room
                         </button>
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {sentFriendRequests.map(req => {
+                  const initials = (req.receiver_username || '?').substring(0, 2).toUpperCase();
+                  return (
+                    <div 
+                      key={`sent-${req.id}`} 
+                      style={{ 
+                        padding: '12px 14px', 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        justifyContent: 'space-between',
+                        gap: '12px',
+                        flexWrap: 'wrap',
+                        background: 'var(--surface-input)',
+                        border: '1px solid var(--border-hairline)',
+                        borderRadius: '4px',
+                        opacity: 0.7
+                      }}
+                    >
+                      <div className="flex items-center gap-3" style={{ minWidth: '200px' }}>
+                        <div style={{ position: 'relative' }}>
+                          <div 
+                            style={{ 
+                              width: '38px', 
+                              height: '38px', 
+                              borderRadius: '4px', 
+                              background: 'var(--surface-card)',
+                              border: '1px solid var(--border-hairline-strong)',
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              justifyContent: 'center',
+                              fontWeight: 600,
+                              fontFamily: 'Geist Mono, monospace',
+                              fontSize: '13px',
+                              color: 'var(--text-secondary)'
+                            }}
+                          >
+                            {initials}
+                          </div>
+                        </div>
+
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-secondary)' }}>@{req.receiver_username}</span>
+                          </div>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <span style={{ fontSize: '11px', color: 'var(--accent-cyan)', fontFamily: 'Geist Mono, monospace' }}>
+                              Menunggu Persetujuan...
+                            </span>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   );
