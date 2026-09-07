@@ -35,6 +35,44 @@ function isSameCalendarDay(timestamp?: number): boolean {
          d.getDate() === now.getDate();
 }
 
+const DEFAULT_DEMO_PROJECT: Project = {
+  id: 'default-1',
+  name: 'Ethical Hacking',
+  totalHours: 120,
+  dailyGoal: 2,
+  hoursToday: 0.5,
+  lastUpdated: Date.now(),
+  phases: [
+    { title: "Core Foundations & Low-Level Mechanics", hoursStart: 1, hoursEnd: 150, desc: "Networking, OS, Programming for Security." },
+    { title: "Web App Security & Vulnerability Analysis", hoursStart: 151, hoursEnd: 300, desc: "OWASP Top 10, Web Fundamentals." },
+    { title: "Infrastructure, Network Pentesting & AD", hoursStart: 301, hoursEnd: 480, desc: "Recon, AD Security, Host Exploitation." },
+    { title: "Defensive Engineering & Remediation", hoursStart: 481, hoursEnd: 600, desc: "Blue Team, Secure Coding, Reporting." },
+    { title: "Real-World App & Public Good", hoursStart: 601, hoursEnd: 750, desc: "Bug Bounty, CVD, Threat Intelligence." },
+  ]
+};
+
+function loadUserProjects(userId: string, username?: string): Project[] {
+  if (!userId) return [];
+  try {
+    const raw = localStorage.getItem(`projects_${userId}`);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed;
+    }
+  } catch {}
+  if (username === 'diky' || userId === 'usr-diky' || userId === 'e2ce644a-dca1-4ae9-9c17-3ea852ba5428') {
+    return [DEFAULT_DEMO_PROJECT];
+  }
+  return [];
+}
+
+function saveUserProjects(userId: string, projects: Project[]): void {
+  if (!userId) return;
+  try {
+    localStorage.setItem(`projects_${userId}`, JSON.stringify(projects));
+  } catch {}
+}
+
 export interface FriendUser {
   id: string;
   username: string;
@@ -170,13 +208,16 @@ export const useStore = create<AppState>()(
 
               const finalUser = profile?.username || resolvedUsername;
               const finalEmail = authData.user.email || profile?.email || resolvedEmail;
+              const userProjects = loadUserProjects(authData.user.id, finalUser);
               
               set({ 
                 isAuthenticated: true, 
-                biometricVerified: true,
-                userId: authData.user.id,
-                username: finalUser,
-                userEmail: finalEmail,
+                biometricVerified: true, 
+                userId: authData.user.id, 
+                username: finalUser, 
+                userEmail: finalEmail, 
+                projects: userProjects,
+                activeProjectId: userProjects[0]?.id || null,
                 friends: [] 
               });
               try {
@@ -194,15 +235,18 @@ export const useStore = create<AppState>()(
         if (p && p.length >= 1) {
           const finalUser = isDiky ? 'diky' : isZahy ? 'zahy' : resolvedUsername;
           const finalEmail = isDiky ? 'dikydwi442@gmail.com' : isZahy ? 'dzakyzr3@gmail.com' : resolvedEmail || `${resolvedUsername}@skillo.team`;
-          const fallbackUserId = isDiky ? 'usr-diky' : isZahy ? 'usr-zahy' : `usr-${resolvedUsername}`;
+          const fallbackUserId = isDiky ? 'e2ce644a-dca1-4ae9-9c17-3ea852ba5428' : isZahy ? '6b5525ce-a74a-42ee-a50a-0353bccd4d10' : (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `00000000-0000-0000-0000-${Math.random().toString(16).substring(2, 14)}`);
+          const userProjects = loadUserProjects(fallbackUserId, finalUser);
           
           set({ 
             isAuthenticated: true, 
-            biometricVerified: true,
-            userId: fallbackUserId,
-            username: finalUser,
-            userEmail: finalEmail,
-            friends: []
+            biometricVerified: true, 
+            userId: fallbackUserId, 
+            username: finalUser, 
+            userEmail: finalEmail, 
+            projects: userProjects,
+            activeProjectId: userProjects[0]?.id || null,
+            friends: [] 
           });
           try {
             localStorage.setItem('last_user', finalUser);
@@ -258,14 +302,12 @@ export const useStore = create<AppState>()(
             }
 
             if (authData?.user) {
-              // Ensure profile entry exists
+              // Ensure profile entry exists with columns matching the database schema
               await supabase.from('profiles').upsert({
                 id: authData.user.id,
                 username: cleanUser,
                 email: cleanEmail,
-                total_hours: 0,
-                role: 'Learner',
-                created_at: new Date().toISOString()
+                total_hours: 0
               }, { onConflict: 'id' });
 
               set({
@@ -274,8 +316,12 @@ export const useStore = create<AppState>()(
                 userId: authData.user.id,
                 username: cleanUser,
                 userEmail: cleanEmail,
+                projects: [],
+                activeProjectId: null,
                 friends: []
               });
+
+              saveUserProjects(authData.user.id, []);
 
               try {
                 localStorage.setItem('last_user', cleanUser);
@@ -289,16 +335,23 @@ export const useStore = create<AppState>()(
           }
         }
 
-        // Offline / Local registration fallback
-        const fallbackUserId = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `usr-${cleanUser}`;
+        // Offline / Local registration fallback with valid UUID
+        const fallbackUserId = typeof crypto !== 'undefined' && crypto.randomUUID 
+          ? crypto.randomUUID() 
+          : '00000000-0000-0000-0000-' + Math.random().toString(16).substring(2, 14);
+
         set({
           isAuthenticated: true,
           biometricVerified: true,
           userId: fallbackUserId,
           username: cleanUser,
           userEmail: cleanEmail,
+          projects: [],
+          activeProjectId: null,
           friends: []
         });
+
+        saveUserProjects(fallbackUserId, []);
 
         try {
           localStorage.setItem('last_user', cleanUser);
@@ -364,20 +417,35 @@ export const useStore = create<AppState>()(
 
       logout: async () => {
         const curr = get().username;
+        const uid = get().userId;
+        if (uid) {
+          saveUserProjects(uid, get().projects);
+        }
         try {
           if (curr) {
             localStorage.removeItem(`presence_${curr}`);
           }
         } catch {}
         await supabase.auth.signOut();
-        set({ isAuthenticated: false, userId: '', username: '', userEmail: '', biometricVerified: false, friends: [], friendRequests: [] });
+        set({ 
+          isAuthenticated: false, 
+          userId: '', 
+          username: '', 
+          userEmail: '', 
+          biometricVerified: false, 
+          projects: [],
+          activeProjectId: null,
+          friends: [], 
+          friendRequests: [] 
+        });
       },
 
       setBiometricVerified: (status) => set({ biometricVerified: status }),
       
       fetchFriends: async () => {
         const uid = get().userId;
-        if (!uid) return;
+        const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(uid);
+        if (!uid || !isUUID) return;
         const { data } = await supabase
           .from('friends')
           .select('id, user_id_1, user_id_2')
@@ -407,7 +475,8 @@ export const useStore = create<AppState>()(
       
       fetchFriendRequests: async () => {
         const uid = get().userId;
-        if (!uid) return;
+        const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(uid);
+        if (!uid || !isUUID) return;
         const { data } = await supabase
           .from('friend_requests')
           .select('*, profiles!sender_id(username)')
@@ -425,7 +494,8 @@ export const useStore = create<AppState>()(
       
       fetchSentFriendRequests: async () => {
         const uid = get().userId;
-        if (!uid) return;
+        const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(uid);
+        if (!uid || !isUUID) return;
         const { data, error } = await supabase
           .from('friend_requests')
           .select('*, profiles!receiver_id(username)')
@@ -446,12 +516,40 @@ export const useStore = create<AppState>()(
       },
       
       sendFriendRequest: async (receiverId) => {
-        const uid = get().userId;
+        let uid = get().userId;
+        const currentUsername = get().username;
         if (!uid) return false;
-        const { error } = await supabase
-          .from('friend_requests')
-          .insert({ sender_id: uid, receiver_id: receiverId });
-        return !error;
+
+        const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(uid);
+        if (!isUUID && currentUsername) {
+          try {
+            const { data: myProf } = await supabase
+              .from('profiles')
+              .select('id')
+              .ilike('username', currentUsername)
+              .maybeSingle();
+
+            if (myProf?.id) {
+              uid = myProf.id;
+              set({ userId: myProf.id });
+            }
+          } catch {}
+        }
+
+        try {
+          const { error } = await supabase
+            .from('friend_requests')
+            .insert({ sender_id: uid, receiver_id: receiverId });
+
+          if (error) {
+            console.error('sendFriendRequest error:', error);
+            return false;
+          }
+          return true;
+        } catch (err) {
+          console.error('sendFriendRequest exception:', err);
+          return false;
+        }
       },
       
       acceptFriendRequest: async (requestId, senderId) => {
@@ -617,8 +715,8 @@ export const useStore = create<AppState>()(
 
       setActiveProject: (id) => set({ activeProjectId: id }),
       
-      addProject: (name, phases) => set((state) => ({
-        projects: [...state.projects, {
+      addProject: (name, phases) => set((state) => {
+        const newProjects = [...state.projects, {
           id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(),
           userId: state.userId,
           name,
@@ -627,30 +725,44 @@ export const useStore = create<AppState>()(
           hoursToday: 0,
           phases,
           lastUpdated: Date.now()
-        }]
-      })),
+        }];
+        saveUserProjects(state.userId, newProjects);
+        return { projects: newProjects };
+      }),
 
-      updateProject: (id, name, phases) => set((state) => ({
-        projects: state.projects.map(p => 
+      updateProject: (id, name, phases) => set((state) => {
+        const newProjects = state.projects.map(p => 
           p.id === id 
             ? { ...p, name, phases, lastUpdated: Date.now() }
             : p
-        )
-      })),
+        );
+        saveUserProjects(state.userId, newProjects);
+        return { projects: newProjects };
+      }),
 
-      deleteProject: (id) => set((state) => ({
-        projects: state.projects.map(p => p.id === id ? { ...p, deletedAt: Date.now() } : p),
-        activeProjectId: state.activeProjectId === id ? null : state.activeProjectId
-      })),
+      deleteProject: (id) => set((state) => {
+        const newProjects = state.projects.map(p => p.id === id ? { ...p, deletedAt: Date.now() } : p);
+        saveUserProjects(state.userId, newProjects);
+        return {
+          projects: newProjects,
+          activeProjectId: state.activeProjectId === id ? null : state.activeProjectId
+        };
+      }),
 
-      restoreProject: (id) => set((state) => ({
-        projects: state.projects.map(p => p.id === id ? { ...p, deletedAt: undefined } : p)
-      })),
+      restoreProject: (id) => set((state) => {
+        const newProjects = state.projects.map(p => p.id === id ? { ...p, deletedAt: undefined } : p);
+        saveUserProjects(state.userId, newProjects);
+        return { projects: newProjects };
+      }),
 
-      hardDeleteProject: (id) => set((state) => ({
-        projects: state.projects.filter(p => p.id !== id),
-        activeProjectId: state.activeProjectId === id ? null : state.activeProjectId
-      })),
+      hardDeleteProject: (id) => set((state) => {
+        const newProjects = state.projects.filter(p => p.id !== id);
+        saveUserProjects(state.userId, newProjects);
+        return {
+          projects: newProjects,
+          activeProjectId: state.activeProjectId === id ? null : state.activeProjectId
+        };
+      }),
 
       addManualTime: (id, minutes) => {
         const hoursToAdd = minutes / 60;

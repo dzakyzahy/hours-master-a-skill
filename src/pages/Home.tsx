@@ -40,7 +40,8 @@ export function Home() {
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
   const [showRecycleBin, setShowRecycleBin] = useState(false);
 
-  const userProjects = projects.filter(p => !p.userId || p.userId === userId);
+  const isDiky = (username || '').toLowerCase() === 'diky';
+  const userProjects = projects.filter(p => p.userId === userId || (!p.userId && isDiky));
   const activeProjects = userProjects.filter(p => !p.deletedAt);
   const deletedProjects = userProjects.filter(p => !!p.deletedAt);
 
@@ -311,6 +312,48 @@ export function Home() {
               </div>
             </div>
           ))}
+        </div>
+      ) : activeProjects.length === 0 ? (
+        <div 
+          className="glass-panel" 
+          style={{ 
+            marginTop: '32px', 
+            padding: '48px 24px', 
+            textAlign: 'center', 
+            display: 'flex', 
+            flexDirection: 'column', 
+            alignItems: 'center',
+            gap: '12px' 
+          }}
+        >
+          <div 
+            style={{ 
+              width: '46px', 
+              height: '46px', 
+              borderRadius: '50%', 
+              background: 'rgba(14, 165, 233, 0.1)', 
+              color: 'var(--accent-primary)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '18px'
+            }}
+          >
+            <FontAwesomeIcon icon={faPlus} />
+          </div>
+          <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 600, color: 'var(--text-primary)' }}>
+            Belum Ada Proyek Keahlian
+          </h3>
+          <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)', maxWidth: '380px', lineHeight: 1.5 }}>
+            Mulai perjalanan 10.000 jam Anda dengan membuat proyek manual atau gunakan AI Mastery Plan Generator di atas.
+          </p>
+          <button 
+            className="btn-primary" 
+            onClick={() => setIsModalOpen(true)}
+            style={{ marginTop: '8px', height: '36px', padding: '0 16px', fontSize: '12.5px', gap: '6px' }}
+          >
+            <FontAwesomeIcon icon={faPlus} style={{ fontSize: '11px' }} /> Buat Proyek Pertama
+          </button>
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '24px', marginTop: '32px' }}>

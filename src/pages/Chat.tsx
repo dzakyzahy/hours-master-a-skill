@@ -257,31 +257,49 @@ export function Chat() {
 
   const handleSearchUsers = useCallback(async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (!searchQuery.trim()) return;
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return;
     setIsSearching(true);
     setSearchResults([]);
     
     try {
-      const { data } = await supabase
+      let req = supabase
         .from('profiles')
         .select('id, username, email')
-        .neq('id', userId)
-        .ilike('username', `%${searchQuery.trim()}%`)
-        .limit(5);
+        .ilike('username', `%${query}%`)
+        .limit(10);
+        
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId);
+      if (isUUID) {
+        req = req.neq('id', userId);
+      }
+
+      const { data, error } = await req;
+      if (error) {
+        console.warn("Supabase profile search warning:", error);
+      }
         
       if (data) {
         const friendIds = friends.map(f => f.id);
-        const filtered = data.filter(u => !friendIds.includes(u.id));
+        const myName = currentUsername.toLowerCase();
+        // Exclude existing friends and self
+        const filtered = data.filter(u => 
+          !friendIds.includes(u.id) && 
+          (u.username || '').toLowerCase() !== myName
+        );
 
         if (filtered.length > 0) {
           // Check for pending requests
-          const { data: pendingReqs } = await supabase
-            .from('friend_requests')
-            .select('receiver_id')
-            .eq('sender_id', userId)
-            .eq('status', 'pending');
-          
-          const pendingIds = new Set((pendingReqs || []).map(r => r.receiver_id));
+          let pendingIds = new Set<string>();
+          if (isUUID) {
+            const { data: pendingReqs } = await supabase
+              .from('friend_requests')
+              .select('receiver_id')
+              .eq('sender_id', userId)
+              .eq('status', 'pending');
+            
+            pendingIds = new Set((pendingReqs || []).map(r => r.receiver_id));
+          }
           
           setSearchResults(filtered.map(u => ({
             ...u,
@@ -296,7 +314,7 @@ export function Chat() {
     } finally {
       setIsSearching(false);
     }
-  }, [searchQuery, userId, friends]);
+  }, [searchQuery, userId, currentUsername, friends]);
 
   useEffect(() => {
     const delay = setTimeout(() => {
