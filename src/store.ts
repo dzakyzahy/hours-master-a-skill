@@ -15,6 +15,7 @@ export interface SkillPhase {
 
 export interface Project {
   id: string;
+  userId?: string;
   name: string;
   totalHours: number;
   dailyGoal: number;
@@ -504,6 +505,7 @@ export const useStore = create<AppState>()(
       addProject: (name, phases) => set((state) => ({
         projects: [...state.projects, {
           id: Date.now().toString(),
+          userId: state.userId,
           name,
           totalHours: 0,
           dailyGoal: 2,

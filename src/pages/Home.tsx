@@ -24,6 +24,7 @@ import { ThemeSwitcher } from '../components/ThemeSwitcher';
 export function Home() {
   const { 
     projects, 
+    userId,
     setActiveProject, 
     deleteProject, 
     logout, 
@@ -41,8 +42,9 @@ export function Home() {
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
   const [showRecycleBin, setShowRecycleBin] = useState(false);
 
-  const activeProjects = projects.filter(p => !p.deletedAt);
-  const deletedProjects = projects.filter(p => !!p.deletedAt);
+  const userProjects = projects.filter(p => !p.userId || p.userId === userId);
+  const activeProjects = userProjects.filter(p => !p.deletedAt);
+  const deletedProjects = userProjects.filter(p => !!p.deletedAt);
 
   const handleOpenProject = (id: string) => {
     setActiveProject(id);
@@ -212,7 +214,7 @@ export function Home() {
         </div>
       </div>
 
-      <AiGenerator />
+      {!showRecycleBin && <AiGenerator />}
 
       {showRecycleBin ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
