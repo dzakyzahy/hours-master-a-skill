@@ -22,6 +22,7 @@ export interface Project {
   phases: SkillPhase[];
   lastUpdated: number;
   deletedAt?: number;
+  userId?: string;
 }
 
 export interface FriendUser {
@@ -102,45 +103,6 @@ interface AppState {
   syncTotalHoursToSupabase: () => Promise<void>;
 }
 
-const DEFAULT_TEAM_MEMBERS: Record<string, FriendUser[]> = {
-  diky: [
-    {
-      id: 'usr-zahy',
-      username: 'zahy',
-      name: 'Zahy (Dzaky)',
-      email: 'dzakyzr3@gmail.com',
-      role: 'Tech Lead / Full-Stack',
-      isOnline: false,
-    },
-    {
-      id: 'usr-sarah',
-      username: 'sarah',
-      name: 'Sarah Chen',
-      email: 'sarah@skillo.internal',
-      role: 'Product Designer',
-      isOnline: false,
-    }
-  ],
-  zahy: [
-    {
-      id: 'usr-diky',
-      username: 'diky',
-      name: 'Diky Dwi',
-      email: 'dikydwi442@gmail.com',
-      role: 'UI/UX & Mobile Lead',
-      isOnline: false,
-    },
-    {
-      id: 'usr-sarah',
-      username: 'sarah',
-      name: 'Sarah Chen',
-      email: 'sarah@skillo.internal',
-      role: 'Product Designer',
-      isOnline: false,
-    }
-  ]
-};
-
 export const useStore = create<AppState>()(
   persist(
     (set, get) => ({
@@ -149,7 +111,7 @@ export const useStore = create<AppState>()(
       username: '',
       userEmail: '',
       biometricVerified: false,
-      friends: DEFAULT_TEAM_MEMBERS.diky,
+      friends: [],
 
       
       login: async (u, p) => {
@@ -227,7 +189,7 @@ export const useStore = create<AppState>()(
             userId: fallbackUserId,
             username: finalUser,
             userEmail: finalEmail,
-            friends: DEFAULT_TEAM_MEMBERS[finalUser] || DEFAULT_TEAM_MEMBERS.diky
+            friends: []
           });
           try {
             localStorage.setItem('last_user', finalUser);
@@ -468,10 +430,6 @@ export const useStore = create<AppState>()(
           } catch {}
         }
 
-        if (!key && import.meta.env.VITE_GEMINI_API_KEY) {
-          key = import.meta.env.VITE_GEMINI_API_KEY;
-        }
-
         if (key && key !== get().geminiApiKey) {
           set({ geminiApiKey: key });
         }
@@ -507,7 +465,8 @@ export const useStore = create<AppState>()(
           dailyGoal: 2,
           hoursToday: 0,
           phases,
-          lastUpdated: Date.now()
+          lastUpdated: Date.now(),
+          userId: state.userId
         }]
       })),
 

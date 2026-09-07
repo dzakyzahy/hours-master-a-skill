@@ -15,7 +15,7 @@ export function AiGenerator() {
     loadGeminiApiKey();
   }, [loadGeminiApiKey]);
 
-  const effectiveKey = (geminiApiKey || import.meta.env.VITE_GEMINI_API_KEY || '').trim();
+  const effectiveKey = (geminiApiKey || '').trim();
 
   const handleGenerate = async () => {
     if (!topic.trim()) return;
@@ -35,7 +35,7 @@ export function AiGenerator() {
       Output exactly 5 phases.`;
 
       const interaction = await ai.interactions.create({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-3.6-flash',
         input: prompt,
         response_format: {
           type: "text",

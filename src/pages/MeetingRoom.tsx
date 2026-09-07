@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Wifi, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, Wifi, ShieldCheck, Copy } from 'lucide-react';
 import { useStore } from '../store';
 import { VideoTile } from '../components/meeting/VideoTile';
 import { MeetingControls } from '../components/meeting/MeetingControls';
@@ -204,6 +204,23 @@ export function MeetingRoom() {
 
         {/* Status Indicator */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <button 
+            className="btn" 
+            style={{ padding: '8px 12px', fontSize: '0.75rem', gap: '6px' }}
+            onClick={() => {
+              navigator.clipboard.writeText(window.location.href);
+              // Simple visual feedback
+              const btn = document.getElementById('copy-link-btn');
+              if (btn) {
+                const originalText = btn.innerText;
+                btn.innerText = 'Copied!';
+                setTimeout(() => { btn.innerText = originalText; }, 2000);
+              }
+            }}
+            id="copy-link-btn"
+          >
+            <Copy size={14} /> Copy Link ({roomId || 'Main'})
+          </button>
           <div
             style={{
               display: 'flex',

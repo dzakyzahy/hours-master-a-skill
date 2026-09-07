@@ -8,14 +8,15 @@ import { ApiKeyModal } from '../components/ApiKeyModal';
 import { SkilloLogo } from '../components/SkilloLogo';
 
 export function Home() {
-  const { theme, toggleTheme, projects, setActiveProject, deleteProject, logout, restoreProject, hardDeleteProject, clockEnabled, toggleClock, username, friends, geminiApiKey } = useStore();
+  const { theme, toggleTheme, projects, setActiveProject, deleteProject, logout, restoreProject, hardDeleteProject, clockEnabled, toggleClock, username, friends, geminiApiKey, userId } = useStore();
   const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
   const [showRecycleBin, setShowRecycleBin] = useState(false);
 
-  const activeProjects = projects.filter(p => !p.deletedAt);
-  const deletedProjects = projects.filter(p => !!p.deletedAt);
+  const userProjects = projects.filter(p => !p.userId || p.userId === userId);
+  const activeProjects = userProjects.filter(p => !p.deletedAt);
+  const deletedProjects = userProjects.filter(p => !!p.deletedAt);
 
   const handleOpenProject = (id: string) => {
     setActiveProject(id);

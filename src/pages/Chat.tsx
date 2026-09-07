@@ -53,23 +53,21 @@ export function Chat() {
     }
   }, [localMessages, activeTab]);
 
-  // Broadcast channel for real-time local chat across windows
+  // Broadcast channel for real-time global chat across devices
   useEffect(() => {
-    let bc: BroadcastChannel | null = null;
+    let channel: any = null;
     try {
-      if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
-        bc = new BroadcastChannel('skillo_chat_channel');
-        bc.onmessage = (event) => {
-          const msg = event.data;
-          if (msg && msg.type === 'NEW_CHAT_MSG') {
-            setLocalMessages(prev => [...prev, msg.payload]);
-          }
-        };
-      }
-    } catch {}
+      channel = supabase.channel('global-chat')
+        .on('broadcast', { event: 'NEW_CHAT_MSG' }, (payload) => {
+          setLocalMessages(prev => [...prev, payload.payload]);
+        })
+        .subscribe();
+    } catch (e) {
+      console.error('Chat sync error', e);
+    }
 
     return () => {
-      if (bc) bc.close();
+      if (channel) supabase.removeChannel(channel);
     };
   }, []);
 
@@ -87,13 +85,13 @@ export function Chat() {
 
     setLocalMessages(prev => [...prev, newMsgObj]);
 
-    // Broadcast across windows
+    // Broadcast globally via Supabase
     try {
-      if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
-        const bc = new BroadcastChannel('skillo_chat_channel');
-        bc.postMessage({ type: 'NEW_CHAT_MSG', payload: newMsgObj });
-        bc.close();
-      }
+      supabase.channel('global-chat').send({
+        type: 'broadcast',
+        event: 'NEW_CHAT_MSG',
+        payload: newMsgObj
+      });
     } catch {}
 
     setNewMessage('');
@@ -528,7 +526,7 @@ export function Chat() {
           <ClashArena 
             friends={friends} 
             myUsername={username || 'You'} 
-            myTotalHours={projects.reduce((acc, p) => acc + (p.deletedAt ? 0 : p.totalHours), 0)} 
+            myTotalHours={projects.filter(p => !p.userId || p.userId === userId).reduce((acc, p) => acc + (p.deletedAt ? 0 : p.totalHours), 0)} 
           />
         )}
       </div>
