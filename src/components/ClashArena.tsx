@@ -68,7 +68,7 @@ export function ClashArena({ friends, myUsername, myTotalHours }: ClashArenaProp
 
       {viewMode === 'leaderboard' ? (
         <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
-          <div className="flex flex-col gap-3">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {allParticipants.map((p, index) => {
               const isTop3 = index < 3;
               let iconDef = null;
@@ -77,50 +77,54 @@ export function ClashArena({ friends, myUsername, myTotalHours }: ClashArenaProp
               else if (index === 1) { iconDef = faMedal; iconColor = '#94a3b8'; }
               else if (index === 2) { iconDef = faAward; iconColor = '#b45309'; }
 
+              const cleanUsername = (p.username || '').replace(/^@+/, '');
+
               return (
                 <div 
                   key={p.username}
                   style={{
                     display: 'flex',
                     alignItems: 'center',
-                    padding: '16px',
+                    padding: '18px 20px',
                     background: p.isMe ? 'rgba(74, 222, 128, 0.05)' : 'var(--surface-input)',
                     border: `1px solid ${p.isMe ? 'rgba(74, 222, 128, 0.3)' : 'var(--border-color)'}`,
-                    borderRadius: 'var(--radius-md)',
+                    borderRadius: '10px',
                     position: 'relative',
-                    overflow: 'hidden'
+                    overflow: 'hidden',
+                    minHeight: '76px'
                   }}
                 >
                   {/* Rank Number */}
-                  <div style={{ width: '40px', fontSize: '1.2rem', fontWeight: 800, color: iconDef ? iconColor : 'var(--text-secondary)', opacity: isTop3 ? 1 : 0.5 }}>
+                  <div style={{ width: '42px', fontSize: '1.25rem', fontWeight: 800, color: iconDef ? iconColor : 'var(--text-secondary)', opacity: isTop3 ? 1 : 0.5 }}>
                     #{index + 1}
                   </div>
                   
                   <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
                       {iconDef && <FontAwesomeIcon icon={iconDef} style={{ fontSize: '14px', color: iconColor }} />}
-                      <span style={{ fontWeight: 600, color: p.isMe ? '#4ade80' : 'var(--text-primary)' }}>
-                        {p.isMe ? 'You' : `@${p.username}`}
+                      <span style={{ fontWeight: 600, fontSize: '14px', color: p.isMe ? '#4ade80' : 'var(--text-primary)' }}>
+                        {p.isMe ? 'You' : cleanUsername}
                       </span>
                     </div>
                     {/* Progress Bar representing absolute volume compared to leader */}
-                    <div style={{ width: '100%', height: '8px', background: 'var(--bg-app)', borderRadius: '4px', overflow: 'hidden' }}>
+                    <div style={{ width: '100%', height: '7px', background: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.05)', borderRadius: '9999px', overflow: 'hidden' }}>
                       <div 
                         style={{ 
                           height: '100%', 
-                          width: `${(p.totalHours / Math.max(allParticipants[0].totalHours, 1)) * 100}%`,
+                          width: `${Math.max(0, (p.totalHours / Math.max(allParticipants[0].totalHours, 1)) * 100)}%`,
                           background: p.isMe ? '#4ade80' : (isTop3 ? iconColor : 'var(--accent-purple)'),
-                          borderRadius: '4px'
+                          borderRadius: '9999px',
+                          transition: 'width 0.4s ease'
                         }} 
                       />
                     </div>
                   </div>
                   
-                  <div style={{ marginLeft: '16px', textAlign: 'right' }}>
-                    <div style={{ fontSize: '1.25rem', fontWeight: 700, fontFamily: 'Geist Mono, monospace' }}>
+                  <div style={{ marginLeft: '20px', textAlign: 'right', minWidth: '70px' }}>
+                    <div style={{ fontSize: '1.3rem', fontWeight: 700, fontFamily: 'Geist Mono, monospace', letterSpacing: '-0.02em', color: p.isMe ? '#4ade80' : 'var(--text-primary)' }}>
                       {p.totalHours.toFixed(1)}
                     </div>
-                    <div style={{ fontSize: '10px', color: 'var(--text-secondary)' }}>HOURS</div>
+                    <div style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.04em', color: 'var(--text-secondary)' }}>HOURS</div>
                   </div>
                 </div>
               );
@@ -145,7 +149,7 @@ export function ClashArena({ friends, myUsername, myTotalHours }: ClashArenaProp
             >
               {friends.length === 0 && <option value="">No friends available</option>}
               {friends.map(f => (
-                <option key={f.username} value={f.username}>@{f.username}</option>
+                <option key={f.username} value={f.username}>{(f.username || '').replace(/^@+/, '')}</option>
               ))}
             </select>
           </div>
@@ -178,7 +182,7 @@ export function ClashArena({ friends, myUsername, myTotalHours }: ClashArenaProp
                 <div style={{ width: '100%', maxWidth: '400px', height: '24px', background: 'var(--bg-app)', borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--border-color)', position: 'relative' }}>
                   <div style={{ height: '100%', width: `${oppPercentage}%`, background: 'var(--accent-purple)', transition: 'width 1s ease-out' }} />
                 </div>
-                <div style={{ marginTop: '12px', fontWeight: 600, fontSize: '14px' }}>@{opp.username}</div>
+                <div style={{ marginTop: '12px', fontWeight: 600, fontSize: '14px' }}>{(opp.username || '').replace(/^@+/, '')}</div>
               </div>
 
               {/* YOU Player (Bottom) */}

@@ -177,20 +177,20 @@ export function Profile() {
         </div>
       </div>
 
-      {/* Settings Grid - Stack vertically on mobile, 2-col on desktop */}
-      <div className="flex flex-col md:flex-row gap-6">
+      {/* Settings Grid - Generous relaxed vertical layout */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
         {/* Account Form */}
-        <div className="glass-panel flex-1" style={{ padding: '28px' }}>
-          <div className="flex items-center gap-2 mb-5">
+        <div className="glass-panel" style={{ padding: '32px 28px' }}>
+          <div className="flex items-center gap-2" style={{ marginBottom: '24px' }}>
             <FontAwesomeIcon icon={faUser} style={{ color: 'var(--text-secondary)', fontSize: '14px' }} />
-            <h2 style={{ margin: 0, fontSize: '14.5px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.015em' }}>
+            <h2 style={{ margin: 0, fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.015em' }}>
               Pengaturan Akun
             </h2>
           </div>
 
-          <form onSubmit={handleUpdate} className="flex flex-col gap-4">
+          <form onSubmit={handleUpdate} style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
             <div>
-              <label style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-secondary)', marginBottom: '6px', display: 'block' }}>
+              <label style={{ fontSize: '12.5px', fontWeight: 500, color: 'var(--text-secondary)', marginBottom: '8px', display: 'block' }}>
                 Nama Pengguna
               </label>
               <input
@@ -203,7 +203,7 @@ export function Profile() {
             </div>
 
             <div>
-              <label style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-secondary)', marginBottom: '6px', display: 'block' }}>
+              <label style={{ fontSize: '12.5px', fontWeight: 500, color: 'var(--text-secondary)', marginBottom: '8px', display: 'block' }}>
                 Email Akun
               </label>
               <input
@@ -216,7 +216,7 @@ export function Profile() {
             </div>
 
             <div>
-              <label style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-secondary)', marginBottom: '6px', display: 'block' }}>
+              <label style={{ fontSize: '12.5px', fontWeight: 500, color: 'var(--text-secondary)', marginBottom: '8px', display: 'block' }}>
                 Ubah Kata Sandi (Opsional)
               </label>
               <input
@@ -229,7 +229,7 @@ export function Profile() {
             </div>
 
             {msg && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: '#22c55e', padding: '8px 12px', background: 'rgba(34, 197, 94, 0.08)', borderRadius: '4px', border: '1px solid rgba(34, 197, 94, 0.2)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: '#22c55e', padding: '10px 14px', background: 'rgba(34, 197, 94, 0.08)', borderRadius: '6px', border: '1px solid rgba(34, 197, 94, 0.2)' }}>
                 <FontAwesomeIcon icon={faCircleCheck} style={{ fontSize: '14px' }} />
                 <span>{msg}</span>
               </div>
@@ -237,9 +237,9 @@ export function Profile() {
 
             <button 
               type="submit" 
-              className="btn-primary mt-2" 
+              className="btn-primary" 
               disabled={loading}
-              style={{ height: '40px', gap: '6px' }}
+              style={{ height: '42px', marginTop: '6px', gap: '8px', fontSize: '13px', fontWeight: 600 }}
             >
               <FontAwesomeIcon icon={faFloppyDisk} style={{ fontSize: '14px' }} /> {loading ? 'Menyimpan...' : 'Simpan Perubahan'}
             </button>
@@ -247,33 +247,33 @@ export function Profile() {
         </div>
 
         {/* System & Update Info Card */}
-        <div className="glass-panel" style={{ width: '100%', maxWidth: '100%', padding: '28px', flex: '0 1 380px' }}>
-          <div className="flex items-center justify-between mb-5">
+        <div className="glass-panel" style={{ width: '100%', padding: '32px 28px' }}>
+          <div className="flex items-center justify-between" style={{ marginBottom: '24px' }}>
             <div className="flex items-center gap-2">
               <FontAwesomeIcon icon={faShieldHalved} style={{ color: 'var(--text-secondary)', fontSize: '14px' }} />
-              <h2 style={{ margin: 0, fontSize: '14.5px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.015em' }}>
+              <h2 style={{ margin: 0, fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.015em' }}>
                 Informasi Sistem
               </h2>
             </div>
-            <span style={{ fontSize: '10.5px', fontFamily: 'Geist Mono, monospace', color: 'var(--text-secondary)', background: 'var(--surface-input)', padding: '2px 8px', borderRadius: '4px', border: '1px solid var(--border-hairline)' }}>
+            <span style={{ fontSize: '10.5px', fontFamily: 'Geist Mono, monospace', color: 'var(--text-secondary)', background: 'var(--surface-input)', padding: '3px 9px', borderRadius: '4px', border: '1px solid var(--border-hairline)' }}>
               v1.1.0
             </span>
           </div>
           
           {/* Gemini AI Integration Section */}
-          <div style={{ marginBottom: '20px', paddingBottom: '18px', borderBottom: '1px solid var(--border-hairline)' }}>
-            <div className="flex items-start justify-between gap-3 mb-2.5">
-              <div className="flex items-start gap-2.5">
+          <div style={{ marginBottom: '24px', paddingBottom: '22px', borderBottom: '1px solid var(--border-hairline)' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px', marginBottom: '14px' }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
                 <div 
                   style={{ 
-                    width: '32px', 
-                    height: '32px', 
+                    width: '34px', 
+                    height: '34px', 
                     borderRadius: '6px', 
                     background: 'var(--surface-input)', 
                     border: '1px solid var(--border-hairline)', 
                     display: 'flex', 
                     alignItems: 'center', 
-                    justifyContent: 'center',
+                    justifyContent: 'center', 
                     color: geminiApiKey ? '#22c55e' : 'var(--accent-cyan)',
                     flexShrink: 0
                   }}
@@ -281,10 +281,10 @@ export function Profile() {
                   <FontAwesomeIcon icon={faKey} style={{ fontSize: '13px' }} />
                 </div>
                 <div>
-                  <h3 style={{ margin: 0, fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                  <h3 style={{ margin: 0, fontSize: '13.5px', fontWeight: 600, color: 'var(--text-primary)' }}>
                     Kunci API Gemini
                   </h3>
-                  <p style={{ margin: '2px 0 0', fontSize: '11px', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+                  <p style={{ margin: '3px 0 0', fontSize: '11px', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
                     AI Mastery Generator (RLS Supabase)
                   </p>
                 </div>
@@ -293,7 +293,7 @@ export function Profile() {
               <button 
                 type="button" 
                 className="btn" 
-                style={{ height: '30px', padding: '0 10px', fontSize: '11px', flexShrink: 0 }}
+                style={{ height: '30px', padding: '0 12px', fontSize: '11px', flexShrink: 0 }}
                 onClick={() => setIsApiKeyModalOpen(true)}
               >
                 {geminiApiKey ? 'Ubah' : 'Konfigurasi'}
@@ -301,30 +301,45 @@ export function Profile() {
             </div>
 
             {/* Status Bar */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '7px 10px', background: 'var(--surface-input)', border: '1px solid var(--border-hairline)', borderRadius: '6px' }}>
-              <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Status Kunci</span>
-              <span style={{ fontSize: geminiApiKey ? '11px' : '9.5px', fontFamily: geminiApiKey ? 'Geist Mono, monospace' : "'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif", color: geminiApiKey ? '#22c55e' : '#f59e0b', letterSpacing: geminiApiKey ? 'normal' : '0.01em', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
-                <span style={{ width: '5px', height: '5px', borderRadius: '50%', backgroundColor: geminiApiKey ? '#22c55e' : '#f59e0b' }} />
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '9px 12px', background: 'var(--surface-input)', border: '1px solid var(--border-hairline)', borderRadius: '6px' }}>
+              <span style={{ fontSize: '11.5px', color: 'var(--text-secondary)' }}>Status Kunci</span>
+              <span style={{ fontSize: geminiApiKey ? '11px' : '10px', fontFamily: geminiApiKey ? 'Geist Mono, monospace' : "'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif", color: geminiApiKey ? '#22c55e' : '#f59e0b', letterSpacing: geminiApiKey ? 'normal' : '0.01em', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: geminiApiKey ? '#22c55e' : '#f59e0b' }} />
                 {geminiApiKey ? `${geminiApiKey.substring(0, 8)}••••••••••••` : 'Belum Dikonfigurasi'}
               </span>
             </div>
           </div>
 
           {/* Biometric Sensor Section */}
-          <div style={{ marginBottom: '20px', paddingBottom: '18px', borderBottom: '1px solid var(--border-hairline)' }}>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <FontAwesomeIcon icon={faFingerprint} style={{ color: 'var(--accent-cyan)', fontSize: '15px' }} />
+          <div style={{ marginBottom: '24px', paddingBottom: '22px', borderBottom: '1px solid var(--border-hairline)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div 
+                  style={{ 
+                    width: '34px', 
+                    height: '34px', 
+                    borderRadius: '6px', 
+                    background: 'var(--surface-input)', 
+                    border: '1px solid var(--border-hairline)', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    color: 'var(--accent-cyan)',
+                    flexShrink: 0
+                  }}
+                >
+                  <FontAwesomeIcon icon={faFingerprint} style={{ fontSize: '15px' }} />
+                </div>
                 <div>
-                  <span style={{ fontSize: '12.5px', fontWeight: 500, color: 'var(--text-primary)', display: 'block' }}>
+                  <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', display: 'block' }}>
                     Sensor Biometrik
                   </span>
-                  <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                  <span style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'block', marginTop: '2px' }}>
                     Otentikasi cepat WebAuthn
                   </span>
                 </div>
               </div>
-              <span style={{ fontSize: '10.5px', color: '#22c55e', background: 'rgba(34, 197, 94, 0.08)', border: '1px solid rgba(34, 197, 94, 0.25)', padding: '3px 8px', borderRadius: '4px', fontWeight: 500, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+              <span style={{ fontSize: '11px', color: '#22c55e', background: 'rgba(34, 197, 94, 0.08)', border: '1px solid rgba(34, 197, 94, 0.25)', padding: '4px 10px', borderRadius: '4px', fontWeight: 500, display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
                 <span style={{ width: '5px', height: '5px', borderRadius: '50%', backgroundColor: '#22c55e' }} />
                 Siap
               </span>
@@ -332,14 +347,14 @@ export function Profile() {
           </div>
 
           {/* Updates & Runtime Info */}
-          <div className="mb-4">
-            <div className="flex items-center justify-between mb-2">
-              <h3 style={{ margin: 0, fontSize: '12.5px', fontWeight: 500, color: 'var(--text-primary)' }}>
+          <div style={{ marginBottom: '24px', paddingBottom: '22px', borderBottom: '1px solid var(--border-hairline)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+              <h3 style={{ margin: 0, fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
                 Pembaruan Sistem
               </h3>
               <button 
                 className="btn" 
-                style={{ height: '28px', padding: '0 10px', fontSize: '11px' }}
+                style={{ height: '28px', padding: '0 12px', fontSize: '11px' }}
                 onClick={() => {
                   if (window.electronAPI) {
                     window.electronAPI.checkForUpdates();
@@ -351,25 +366,26 @@ export function Profile() {
                 Periksa Pembaruan
               </button>
             </div>
-            <p style={{ margin: '0 0 10px', fontSize: '11.5px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+            <p style={{ margin: '0', fontSize: '11.5px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
               Skillo memeriksa pembaruan otomatis di background secara berkala.
             </p>
             {updateStatus && (
-              <p style={{ margin: '0 0 10px', fontSize: '11.5px', color: 'var(--text-primary)', padding: '7px 10px', borderRadius: '4px', background: 'var(--surface-input)', border: '1px solid var(--border-hairline)' }}>
+              <p style={{ margin: '12px 0 0', fontSize: '11.5px', color: 'var(--text-primary)', padding: '8px 12px', borderRadius: '4px', background: 'var(--surface-input)', border: '1px solid var(--border-hairline)' }}>
                 {updateStatus}
               </p>
             )}
           </div>
 
-          <div style={{ paddingTop: '14px', borderTop: '1px solid var(--border-hairline)', display: 'flex', flexDirection: 'column', gap: '7px', fontSize: '11px', fontFamily: 'Geist Mono, monospace', color: 'var(--text-secondary)' }}>
-            <div className="flex justify-between">
+          {/* Bottom Info: Platform & P2P */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', fontSize: '11.5px', fontFamily: 'Geist Mono, monospace', color: 'var(--text-secondary)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span>Platform</span>
-              <span style={{ color: 'var(--text-primary)' }}>Android & Desktop Hybrid</span>
+              <span style={{ color: 'var(--text-primary)', fontWeight: 500 }}>Android & Desktop Hybrid</span>
             </div>
-            <div className="flex justify-between">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span>Koneksi P2P</span>
-              <span style={{ color: '#22c55e', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                <span style={{ width: '4px', height: '4px', borderRadius: '50%', backgroundColor: '#22c55e' }} />
+              <span style={{ color: '#22c55e', display: 'inline-flex', alignItems: 'center', gap: '5px', fontWeight: 500 }}>
+                <span style={{ width: '5px', height: '5px', borderRadius: '50%', backgroundColor: '#22c55e' }} />
                 Active (Real-time)
               </span>
             </div>
