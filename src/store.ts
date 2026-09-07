@@ -504,7 +504,13 @@ export const useStore = create<AppState>()(
             }
 
             // If profile does not exist yet, auto-create it with clean schema
-            const newId = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : uid;
+            const isUidUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(uid);
+            const newId = isUidUUID 
+              ? uid 
+              : (typeof crypto !== 'undefined' && crypto.randomUUID 
+                  ? crypto.randomUUID() 
+                  : '00000000-0000-0000-0000-' + Math.random().toString(16).substring(2, 14));
+
             const { data: createdProf, error: insErr } = await supabase
               .from('profiles')
               .insert({
@@ -665,7 +671,7 @@ export const useStore = create<AppState>()(
         await supabase.from('friend_requests').update({ status: 'accepted' }).eq('id', requestId);
         const { error } = await supabase.from('friends').insert({ user_id_1: senderId, user_id_2: uid });
         
-        if (!error) {
+        if (!error || (error as any)?.code === '23505') {
           await get().fetchFriends();
           await get().fetchFriendRequests();
           return true;

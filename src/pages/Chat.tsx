@@ -849,38 +849,65 @@ export function Chat() {
         {/* TAB: REQUESTS */}
         {activeTab === 'requests' && (
           <div className="flex flex-col gap-4" style={{ overflowY: 'auto' }}>
-            <h2 style={{ margin: 0, fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
-              Permintaan Pertemanan
-            </h2>
+            <div className="flex items-center justify-between">
+              <h2 style={{ margin: 0, fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
+                Permintaan Pertemanan Masuk
+              </h2>
+              <span style={{ fontSize: '11px', fontFamily: 'Geist Mono, monospace', color: 'var(--text-secondary)' }}>
+                {friendRequests.length} permintaan
+              </span>
+            </div>
             
             {friendRequests.length === 0 && (
-              <p style={{ color: 'var(--text-secondary)', fontSize: '13px', padding: '16px', textAlign: 'center' }}>
-                Belum ada permintaan masuk.
+              <p style={{ color: 'var(--text-secondary)', fontSize: '13px', padding: '24px 16px', textAlign: 'center', background: 'var(--surface-input)', border: '1px solid var(--border-hairline)', borderRadius: '8px' }}>
+                Belum ada permintaan pertemanan baru.
               </p>
             )}
 
-            {friendRequests.map(req => (
-              <div key={req.id} className="flex items-center justify-between p-3 bg-slate-800/40 rounded border border-slate-700/50">
-                <div className="flex flex-col">
-                  <span className="text-sm font-bold">{req.sender_username}</span>
-                  <span className="text-xs text-slate-400">Ingin menjadi teman Anda</span>
-                </div>
-                <div className="flex gap-2">
-                  <button 
-                    className="btn bg-red-900/30 text-red-400 hover:bg-red-900/60 border border-red-900/50 px-3 py-1 rounded"
-                    onClick={() => rejectFriendRequest(req.id)}
-                  >
-                    Tolak
-                  </button>
-                  <button 
-                    className="btn bg-green-900/30 text-green-400 hover:bg-green-900/60 border border-green-900/50 px-3 py-1 rounded"
-                    onClick={() => acceptFriendRequest(req.id, req.sender_id)}
-                  >
-                    Terima
-                  </button>
-                </div>
-              </div>
-            ))}
+            <div className="community-list">
+              {friendRequests.map(req => {
+                const initials = (req.sender_username || 'U').substring(0, 2).toUpperCase();
+                return (
+                  <div key={req.id} className="community-card">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0, flex: 1 }}>
+                      <div className="community-avatar">
+                        {initials}
+                      </div>
+                      <div className="community-info">
+                        <span className="community-name">@{req.sender_username}</span>
+                        <span className="community-meta">Mengirim permintaan pertemanan</span>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <button 
+                        className="btn" 
+                        style={{ height: '32px', padding: '0 12px', fontSize: '12px', color: 'var(--text-secondary)' }}
+                        onClick={async () => {
+                          const ok = await rejectFriendRequest(req.id);
+                          if (ok) toast.success('Permintaan pertemanan ditolak');
+                        }}
+                      >
+                        Tolak
+                      </button>
+                      <button 
+                        className="btn-primary" 
+                        style={{ height: '32px', padding: '0 14px', fontSize: '12px' }}
+                        onClick={async () => {
+                          const ok = await acceptFriendRequest(req.id, req.sender_id);
+                          if (ok) {
+                            toast.success(`Sekarang berteman dengan @${req.sender_username}`);
+                          } else {
+                            toast.error('Gagal menerima permintaan');
+                          }
+                        }}
+                      >
+                        Terima
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
 

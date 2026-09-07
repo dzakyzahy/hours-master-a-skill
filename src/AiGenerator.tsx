@@ -185,19 +185,19 @@ export function AiGenerator() {
           value={topic}
           onChange={(e) => setTopic(e.target.value)}
           disabled={loading}
-          style={{ height: '38px', fontSize: '12.5px', fontFamily: 'Geist, sans-serif' }}
+          style={{ height: '53px', fontSize: '13.5px', fontFamily: 'Geist, sans-serif', padding: '0 16px' }}
           onKeyDown={(e) => { if (e.key === 'Enter') handleGenerate(); }}
         />
         <button 
           className="btn-primary" 
           onClick={handleGenerate}
           disabled={loading || !topic.trim()}
-          style={{ height: '38px', padding: '0 16px', whiteSpace: 'nowrap', fontSize: '12px', gap: '6px' }}
+          style={{ height: '53px', minHeight: '53px', padding: '0 20px', whiteSpace: 'nowrap', fontSize: '13px', gap: '8px' }}
         >
           {loading ? (
-            <FontAwesomeIcon icon={faCircleNotch} spin style={{ fontSize: '13px' }} />
+            <FontAwesomeIcon icon={faCircleNotch} spin style={{ fontSize: '14px' }} />
           ) : (
-            <FontAwesomeIcon icon={faBolt} style={{ fontSize: '12px' }} />
+            <FontAwesomeIcon icon={faBolt} style={{ fontSize: '13px' }} />
           )}
           <span>{loading ? 'Membuat Roadmap...' : 'Generate Plan'}</span>
         </button>
