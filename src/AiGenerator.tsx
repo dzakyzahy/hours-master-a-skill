@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { GoogleGenAI } from '@google/genai';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faWandMagicSparkles, faCircleNotch, faKey, faShieldHalved } from '@fortawesome/free-solid-svg-icons';
+import { faRoute, faBolt, faCircleNotch, faKey, faLock } from '@fortawesome/free-solid-svg-icons';
 import { useStore, type SkillPhase } from './store';
 import { ApiKeyModal } from './components/ApiKeyModal';
 
@@ -36,7 +36,7 @@ export function AiGenerator() {
       Output exactly 5 phases.`;
 
       const interaction = await ai.interactions.create({
-        model: 'gemini-3.6-flash',
+        model: 'gemini-2.5-flash',
         input: prompt,
         response_format: {
           type: "text",
@@ -92,47 +92,50 @@ export function AiGenerator() {
 
   return (
     <div className="glass-panel mt-6" style={{ padding: '24px', position: 'relative' }}>
-      {/* Header with Title & API Key Status Trigger */}
+      {/* Header with Title & API Key Status Trigger (No Duplicate Button) */}
       <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
-        <div className="flex items-center gap-2">
-          <FontAwesomeIcon icon={faWandMagicSparkles} style={{ color: 'var(--accent-cyan)', fontSize: '15px' }} />
+        <div className="flex items-center gap-2.5">
+          <FontAwesomeIcon icon={faRoute} style={{ color: 'var(--accent-cyan)', fontSize: '15px' }} />
           <h2 style={{ margin: 0, fontSize: '14.5px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.015em' }}>
             AI Mastery Plan Generator
           </h2>
         </div>
 
-        <button 
-          type="button"
-          className="btn" 
-          onClick={() => setIsKeyModalOpen(true)}
-          style={{ height: '30px', padding: '0 10px', fontSize: '11px', fontFamily: 'Geist Mono, monospace', gap: '6px' }}
-          title="Kelola Kunci API Gemini Anda"
-        >
-          <FontAwesomeIcon icon={faKey} style={{ color: effectiveKey ? '#22c55e' : '#f59e0b', fontSize: '12px' }} />
-          <span>{effectiveKey ? 'API Key: Aktif' : 'Konfigurasi API Key'}</span>
-          <span 
-            style={{ 
-              width: '6px', 
-              height: '6px', 
-              borderRadius: '50%', 
-              backgroundColor: effectiveKey ? '#22c55e' : '#f59e0b' 
-            }} 
-          />
-        </button>
+        {/* Only show button in header if API key is already configured */}
+        {effectiveKey && (
+          <button 
+            type="button"
+            className="btn" 
+            onClick={() => setIsKeyModalOpen(true)}
+            style={{ height: '30px', padding: '0 10px', fontSize: '11px', fontFamily: 'Geist Mono, monospace', gap: '6px' }}
+            title="Kelola Kunci API Gemini Anda"
+          >
+            <FontAwesomeIcon icon={faKey} style={{ color: '#22c55e', fontSize: '12px' }} />
+            <span>API Key: Aktif</span>
+            <span 
+              style={{ 
+                width: '6px', 
+                height: '6px', 
+                borderRadius: '50%', 
+                backgroundColor: '#22c55e' 
+              }} 
+            />
+          </button>
+        )}
       </div>
 
       <p style={{ margin: '0 0 16px', fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
         Masukkan keahlian yang ingin Anda kuasai, AI akan membuatkan roadmap belajar terstruktur 5 fase secara otomatis.
       </p>
 
-      {/* Unconfigured Key Notice Banner */}
+      {/* Unconfigured Key Notice Banner - Single Clear CTA without duplication */}
       {!effectiveKey && (
         <div 
           style={{ 
             display: 'flex', 
             alignItems: 'center', 
             justifyContent: 'space-between', 
-            padding: '10px 14px', 
+            padding: '11px 14px', 
             background: 'rgba(245, 158, 11, 0.06)', 
             border: '1px solid rgba(245, 158, 11, 0.25)', 
             borderRadius: '6px', 
@@ -142,13 +145,13 @@ export function AiGenerator() {
           }}
         >
           <div className="flex items-center gap-2.5" style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-            <FontAwesomeIcon icon={faShieldHalved} style={{ color: '#f59e0b', flexShrink: 0, fontSize: '15px' }} />
+            <FontAwesomeIcon icon={faLock} style={{ color: '#f59e0b', flexShrink: 0, fontSize: '14px' }} />
             <span>Kunci API Gemini diperlukan untuk membuat roadmap otomatis. Kunci disimpan privat di akun Anda.</span>
           </div>
           <button 
             type="button" 
             className="btn-primary" 
-            style={{ height: '30px', padding: '0 12px', fontSize: '11px', gap: '5px' }}
+            style={{ height: '32px', padding: '0 14px', fontSize: '11.5px', gap: '6px' }}
             onClick={() => setIsKeyModalOpen(true)}
           >
             <FontAwesomeIcon icon={faKey} style={{ fontSize: '11px' }} /> Masukkan Kunci API
@@ -194,7 +197,7 @@ export function AiGenerator() {
           {loading ? (
             <FontAwesomeIcon icon={faCircleNotch} spin style={{ fontSize: '13px' }} />
           ) : (
-            <FontAwesomeIcon icon={faWandMagicSparkles} style={{ fontSize: '13px' }} />
+            <FontAwesomeIcon icon={faBolt} style={{ fontSize: '12px' }} />
           )}
           <span>{loading ? 'Membuat Roadmap...' : 'Generate Plan'}</span>
         </button>

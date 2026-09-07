@@ -369,11 +369,46 @@ export function Chat() {
 
         <div className="flex items-center gap-2.5">
           {username && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '5px 10px', borderRadius: '6px', border: '1px solid var(--border-hairline)', background: 'var(--surface-input)', fontSize: '11px', fontFamily: 'Geist Mono, monospace' }}>
-              <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#22c55e', boxShadow: '0 0 6px rgba(34, 197, 94, 0.6)' }} />
-              <span style={{ color: 'var(--text-secondary)' }}>@</span>
-              <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{username}</span>
-            </div>
+            <button
+              type="button"
+              onClick={() => navigate('/profile')}
+              title={`Profil Saya (@${username}) • Online`}
+              style={{
+                position: 'relative',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '34px',
+                height: '34px',
+                borderRadius: '6px',
+                background: 'var(--surface-input)',
+                border: '1px solid var(--border-hairline)',
+                color: 'var(--text-primary)',
+                fontWeight: 700,
+                fontSize: '12px',
+                fontFamily: 'Geist Mono, monospace',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+                flexShrink: 0
+              }}
+              onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--border-hairline-strong)'}
+              onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border-hairline)'}
+            >
+              {username.substring(0, 2).toUpperCase()}
+              <span 
+                style={{ 
+                  position: 'absolute', 
+                  bottom: '-2px', 
+                  right: '-2px', 
+                  width: '8px', 
+                  height: '8px', 
+                  borderRadius: '50%', 
+                  backgroundColor: '#22c55e', 
+                  border: '1.5px solid var(--surface-card)',
+                  boxShadow: '0 0 6px rgba(34, 197, 94, 0.7)' 
+                }} 
+              />
+            </button>
           )}
 
           <div className="header-divider" aria-hidden="true" />

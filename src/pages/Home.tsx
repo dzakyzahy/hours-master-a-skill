@@ -126,8 +126,32 @@ export function Home() {
             <FontAwesomeIcon icon={faCommentDots} style={{ fontSize: '14px' }} />
           </button>
 
-          <button className="btn-icon" onClick={() => navigate('/profile')} title="Pengaturan Profil Pengguna">
-            <FontAwesomeIcon icon={faUser} style={{ fontSize: '13px' }} />
+          <button 
+            className="btn-icon" 
+            onClick={() => navigate('/profile')} 
+            title={`Profil Saya (@${username || 'user'})`}
+            style={{ 
+              position: 'relative', 
+              fontWeight: 700, 
+              fontSize: '11px', 
+              fontFamily: 'Geist Mono, monospace',
+              color: 'var(--text-primary)'
+            }}
+          >
+            {(username || 'DK').substring(0, 2).toUpperCase()}
+            <span 
+              style={{ 
+                position: 'absolute', 
+                bottom: '4px', 
+                right: '4px', 
+                width: '6px', 
+                height: '6px', 
+                borderRadius: '50%', 
+                backgroundColor: '#22c55e',
+                border: '1px solid var(--surface-card)',
+                boxShadow: '0 0 4px rgba(34, 197, 94, 0.7)'
+              }} 
+            />
           </button>
 
           <button className="btn-icon" onClick={logout} title="Keluar dari Akun">
