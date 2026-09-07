@@ -1,7 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, UserPlus, Users, MessageSquare, Send, Video } from 'lucide-react';
+import { 
+  ArrowLeft, 
+  UserPlus, 
+  Users, 
+  ChatTeardropText, 
+  PaperPlaneRight, 
+  VideoCamera
+} from '@phosphor-icons/react';
 import { useStore, type FriendUser } from '../store';
+import { supabase } from '../supabaseClient';
+import { ThemeSwitcher } from '../components/ThemeSwitcher';
 
 interface LocalChatMessage {
   id: string;
@@ -10,6 +19,53 @@ interface LocalChatMessage {
   text: string;
   timestamp: number;
 }
+
+const STORAGE_KEY = 'skillo_chat_history_v2';
+
+const loadStoredMessages = (currentUsername: string): LocalChatMessage[] => {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        // Strict deduplication against duplicate IDs or duplicate messages within 2 seconds
+        const seenIds = new Set<string>();
+        const deduped: LocalChatMessage[] = [];
+        for (const item of parsed) {
+          if (!item || !item.id) continue;
+          if (seenIds.has(item.id)) continue;
+          const isNearbyDuplicate = deduped.some(
+            existing => existing.sender === item.sender && 
+                        existing.text === item.text && 
+                        Math.abs(existing.timestamp - item.timestamp) < 2000
+          );
+          if (!isNearbyDuplicate) {
+            seenIds.add(item.id);
+            deduped.push(item);
+          }
+        }
+        return deduped;
+      }
+    }
+  } catch {}
+
+  const partner = currentUsername.toLowerCase() === 'diky' ? 'zahy' : 'diky';
+  return [
+    {
+      id: 'msg_welcome_seed',
+      sender: partner,
+      recipient: currentUsername.toLowerCase(),
+      text: 'Halo! Selamat datang di Skillo Hub. Siap kolaborasi proyek hari ini?',
+      timestamp: Date.now() - 3600000,
+    }
+  ];
+};
+
+const saveMessagesToStorage = (msgs: LocalChatMessage[]) => {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(msgs.slice(-250)));
+  } catch {}
+};
 
 export function Chat() {
   const navigate = useNavigate();
@@ -20,17 +76,12 @@ export function Chat() {
   const [selectedFriend, setSelectedFriend] = useState<FriendUser | null>(null);
   const effectiveSelectedFriend = selectedFriend || friends[0] || null;
 
-  const [localMessages, setLocalMessages] = useState<LocalChatMessage[]>(() => [
-    {
-      id: 'msg-welcome',
-      sender: username === 'diky' ? 'zahy' : 'diky',
-      recipient: username || 'diky',
-      text: 'Halo! Selamat datang di Skillo Hub. Siap kolaborasi proyek hari ini?',
-      timestamp: Date.now() - 3600000,
-    }
-  ]);
+  const currentUsername = (username || 'diky').toLowerCase();
+  const [localMessages, setLocalMessages] = useState<LocalChatMessage[]>(() => loadStoredMessages(currentUsername));
   const [newMessage, setNewMessage] = useState('');
+  const [isSending, setIsSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const supabaseChannelRef = useRef<any>(null);
 
   // Sync friends status continuously
   useEffect(() => {
@@ -48,41 +99,147 @@ export function Chat() {
     }
   }, [localMessages, activeTab]);
 
-  // Broadcast channel for real-time local chat across windows
+  // Real-Time Sync: Supabase Realtime WebSocket (across internet to Dzaky) + BroadcastChannel + Window Storage
   useEffect(() => {
+    const myUser = currentUsername;
+
+    // 1. Supabase Realtime Channel
+    const isSupabaseConfigured = Boolean(
+      import.meta.env.VITE_SUPABASE_URL &&
+      !import.meta.env.VITE_SUPABASE_URL.includes('your-project')
+    );
+
+    let supabaseChannel: any = null;
+    if (isSupabaseConfigured) {
+      try {
+        supabaseChannel = supabase.channel('skillo_team_chat', {
+          config: { broadcast: { self: false } }
+        });
+        supabaseChannelRef.current = supabaseChannel;
+
+        supabaseChannel
+          .on('broadcast', { event: 'NEW_CHAT_MSG' }, ({ payload }: { payload: LocalChatMessage }) => {
+            if (!payload || !payload.id) return;
+            const sender = (payload.sender || '').toLowerCase();
+            const recipient = (payload.recipient || '').toLowerCase();
+
+            // Only add if this message is for me or from me
+            if (sender === myUser || recipient === myUser) {
+              setLocalMessages(prev => {
+                if (prev.some(m => m.id === payload.id)) return prev;
+                if (prev.some(m => m.sender === payload.sender && m.text === payload.text && Math.abs(m.timestamp - payload.timestamp) < 2000)) {
+                  return prev;
+                }
+                const next = [...prev, payload];
+                saveMessagesToStorage(next);
+                return next;
+              });
+            }
+          })
+          .subscribe();
+      } catch (err) {
+        console.warn('Supabase chat realtime error:', err);
+      }
+    }
+
+    // 2. Local BroadcastChannel for same-origin tabs/windows
     let bc: BroadcastChannel | null = null;
     try {
       if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
         bc = new BroadcastChannel('skillo_chat_channel');
         bc.onmessage = (event) => {
           const msg = event.data;
-          if (msg && msg.type === 'NEW_CHAT_MSG') {
-            setLocalMessages(prev => [...prev, msg.payload]);
+          if (msg && msg.type === 'NEW_CHAT_MSG' && msg.payload?.id) {
+            const sender = (msg.payload.sender || '').toLowerCase();
+            // Don't re-add messages sent by self
+            if (sender === myUser) return;
+
+            setLocalMessages(prev => {
+              if (prev.some(m => m.id === msg.payload.id)) return prev;
+              if (prev.some(m => m.sender === msg.payload.sender && m.text === msg.payload.text && Math.abs(m.timestamp - msg.payload.timestamp) < 2000)) {
+                return prev;
+              }
+              const next = [...prev, msg.payload];
+              saveMessagesToStorage(next);
+              return next;
+            });
           }
         };
       }
     } catch {}
 
-    return () => {
-      if (bc) bc.close();
+    // 3. Storage event synchronization for multi-window local testing
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === STORAGE_KEY && e.newValue) {
+        try {
+          const parsed = JSON.parse(e.newValue);
+          if (Array.isArray(parsed)) {
+            setLocalMessages(parsed);
+          }
+        } catch {}
+      }
     };
-  }, []);
+    window.addEventListener('storage', handleStorage);
+
+    return () => {
+      window.removeEventListener('storage', handleStorage);
+      if (supabaseChannel) {
+        supabase.removeChannel(supabaseChannel);
+        supabaseChannelRef.current = null;
+      }
+      if (bc) {
+        bc.close();
+      }
+    };
+  }, [currentUsername]);
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newMessage.trim() || !effectiveSelectedFriend) return;
+    const text = newMessage.trim();
+    if (!text || !effectiveSelectedFriend || isSending) return;
+
+    setIsSending(true);
+    const myUser = currentUsername;
+    const targetUser = effectiveSelectedFriend.username.toLowerCase();
 
     const newMsgObj: LocalChatMessage = {
-      id: 'msg_' + Date.now(),
-      sender: username || 'diky',
-      recipient: effectiveSelectedFriend.username,
-      text: newMessage.trim(),
+      id: `msg_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`,
+      sender: myUser,
+      recipient: targetUser,
+      text: text,
       timestamp: Date.now(),
     };
 
-    setLocalMessages(prev => [...prev, newMsgObj]);
+    // 1. Deduplicated local state update
+    setLocalMessages(prev => {
+      if (prev.some(m => m.id === newMsgObj.id)) return prev;
+      const next = [...prev, newMsgObj];
+      saveMessagesToStorage(next);
+      return next;
+    });
 
-    // Broadcast across windows
+    setNewMessage('');
+
+    // 2. Broadcast to Dzaky across internet via Supabase WebSocket
+    const isSupabaseConfigured = Boolean(
+      import.meta.env.VITE_SUPABASE_URL &&
+      !import.meta.env.VITE_SUPABASE_URL.includes('your-project')
+    );
+
+    if (isSupabaseConfigured) {
+      try {
+        const channel = supabaseChannelRef.current || supabase.channel('skillo_team_chat');
+        channel.send({
+          type: 'broadcast',
+          event: 'NEW_CHAT_MSG',
+          payload: newMsgObj,
+        });
+      } catch (err) {
+        console.warn('Supabase message send error:', err);
+      }
+    }
+
+    // 3. Local BroadcastChannel for same PC
     try {
       if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
         const bc = new BroadcastChannel('skillo_chat_channel');
@@ -91,7 +248,9 @@ export function Chat() {
       }
     } catch {}
 
-    setNewMessage('');
+    setTimeout(() => {
+      setIsSending(false);
+    }, 150);
   };
 
   const handleStartChat = (friend: FriendUser) => {
@@ -115,66 +274,79 @@ export function Chat() {
 
     addFriend(newFriend);
     setSearchQuery('');
-    alert(`Teman @${newFriend.username} berhasil ditambahkan ke daftar!`);
   };
 
   const currentFriendInChat = friends.find(f => f.username.toLowerCase() === effectiveSelectedFriend?.username.toLowerCase()) || effectiveSelectedFriend;
+  const currentFriendUsername = (currentFriendInChat?.username || '').toLowerCase();
+
+  // Filter messages specifically for the selected friend conversation
+  const activeConversationMessages = localMessages.filter(m => {
+    const s = m.sender.toLowerCase();
+    const r = m.recipient.toLowerCase();
+    return (s === currentUsername && r === currentFriendUsername) || 
+           (s === currentFriendUsername && r === currentUsername);
+  });
 
   return (
     <div className="no-drag mobile-content-container" style={{ padding: '28px 16px 80px', flex: 1, display: 'flex', flexDirection: 'column', height: '100vh', maxWidth: '960px', margin: '0 auto', width: '100%' }}>
-      {/* Header - Responsive */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+      {/* Header - Symmetrical & Clean */}
+      <header className="header-topbar mb-6">
         <div className="flex items-center gap-3">
-          <button className="btn" onClick={() => navigate('/')} style={{ padding: '0 12px', height: '36px' }}>
-            <ArrowLeft size={16} />
+          <button className="btn" onClick={() => navigate('/')} style={{ padding: '0 12px', height: '36px' }} title="Kembali ke Beranda">
+            <ArrowLeft size={16} /> Kembali
           </button>
           <div>
-            <h1 style={{ margin: 0, fontFamily: 'Instrument Serif, Georgia, serif', fontSize: '1.75rem', fontWeight: 400, color: 'var(--text-primary)' }}>
+            <h1 style={{ margin: 0, fontSize: '18px', fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--text-primary)', fontFamily: 'Geist, sans-serif' }}>
               Collaboration Hub
             </h1>
-            <p style={{ margin: '2px 0 0', fontSize: '13px', color: 'var(--text-secondary)' }}>
+            <p style={{ margin: '2px 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>
               Teman, status kehadiran online & chat tim
             </p>
           </div>
         </div>
 
-        {username && (
-          <div style={{ alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 12px', borderRadius: '4px', border: '1px solid var(--border-hairline)', background: 'var(--surface-input)', fontSize: '11px', fontFamily: 'Geist Mono, monospace' }}>
-            <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#4ade80' }} />
-            <span style={{ color: 'var(--text-secondary)' }}>Masuk sebagai:</span>
-            <span style={{ color: 'var(--text-primary)', fontWeight: 600 }} className="capitalize">{username}</span>
-          </div>
-        )}
-      </div>
+        <div className="flex items-center gap-2.5">
+          {username && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '5px 10px', borderRadius: '6px', border: '1px solid var(--border-hairline)', background: 'var(--surface-input)', fontSize: '11px', fontFamily: 'Geist Mono, monospace' }}>
+              <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#22c55e', boxShadow: '0 0 6px rgba(34, 197, 94, 0.6)' }} />
+              <span style={{ color: 'var(--text-secondary)' }}>@</span>
+              <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{username}</span>
+            </div>
+          )}
 
-      {/* Sleek Minimalist Tabs */}
-      <div style={{ display: 'flex', background: 'var(--surface-card)', border: '1px solid var(--border-hairline)', borderRadius: '6px', padding: '3px', gap: '4px', marginBottom: '16px' }}>
+          <div className="header-divider" aria-hidden="true" />
+          <ThemeSwitcher compact={true} />
+        </div>
+      </header>
+
+      {/* Sleek Minimalist Segmented Tabs */}
+      <div style={{ display: 'flex', background: 'var(--surface-input)', border: '1px solid var(--border-hairline)', borderRadius: '6px', padding: '3px', gap: '4px', marginBottom: '16px' }}>
         <button 
           className={activeTab === 'friends' ? 'btn-primary' : 'btn'}
           onClick={() => setActiveTab('friends')}
-          style={{ flex: 1, height: '36px', border: 'none', borderRadius: '4px', fontSize: '13px', fontWeight: 500 }}
+          style={{ flex: 1, height: '34px', border: 'none', borderRadius: '4px', fontSize: '12.5px', fontWeight: activeTab === 'friends' ? 600 : 500 }}
         >
-          <Users size={15} /> Daftar Teman ({friends.length})
+          <Users size={15} weight="regular" /> Daftar Teman ({friends.length})
         </button>
         <button 
           className={activeTab === 'chat' ? 'btn-primary' : 'btn'}
           onClick={() => setActiveTab('chat')}
-          style={{ flex: 1, height: '36px', border: 'none', borderRadius: '4px', fontSize: '13px', fontWeight: 500 }}
+          style={{ flex: 1, height: '34px', border: 'none', borderRadius: '4px', fontSize: '12.5px', fontWeight: activeTab === 'chat' ? 600 : 500 }}
         >
-          <MessageSquare size={15} /> Ruang Chat
+          <ChatTeardropText size={15} weight="regular" /> Ruang Chat
         </button>
       </div>
 
       {/* Main Glass Panel */}
-      <div className="glass-panel flex-1" style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', padding: '24px' }}>
+      <div className="glass-panel flex-1" style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', padding: '20px' }}>
         
         {/* TAB 1: FRIENDS LIST & ONLINE STATUS */}
         {activeTab === 'friends' && (
-          <div className="flex flex-col gap-6" style={{ overflowY: 'auto' }}>
+          <div className="flex flex-col gap-5" style={{ overflowY: 'auto' }}>
             {/* Search & Add Friend */}
             <div>
-              <label style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-secondary)', marginBottom: '8px', display: 'block' }}>
-                Tambah Teman Baru
+              <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '6px', display: 'block' }}>
+                Tambah Rekan Tim Baru
               </label>
               <form onSubmit={handleAddCustomFriend} className="flex gap-2">
                 <input 
@@ -183,14 +355,15 @@ export function Chat() {
                   placeholder="Ketik username atau email teman..." 
                   value={searchQuery} 
                   onChange={e => setSearchQuery(e.target.value)} 
+                  style={{ height: '38px', fontSize: '13px' }}
                 />
-                <button type="submit" className="btn-primary" style={{ padding: '0 16px', height: '40px', whiteSpace: 'nowrap' }}>
-                  <UserPlus size={15} /> Tambah
+                <button type="submit" className="btn-primary" style={{ padding: '0 16px', height: '38px', whiteSpace: 'nowrap', fontSize: '12px' }}>
+                  <UserPlus size={15} weight="bold" /> Tambah
                 </button>
               </form>
             </div>
 
-            {/* List of Friends with Live Online / Offline Presence */}
+            {/* List of Friends with Minimalist Online/Offline Presence Dot */}
             <div>
               <div className="flex items-center justify-between mb-3">
                 <h2 style={{ margin: 0, fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
@@ -204,7 +377,7 @@ export function Chat() {
               <div className="flex flex-col gap-2">
                 {friends.length === 0 && (
                   <p style={{ color: 'var(--text-secondary)', fontSize: '13px', padding: '16px', textAlign: 'center' }}>
-                    Belum ada teman. Tambahkan teman melalui form di atas.
+                    Belum ada rekan tim. Tambahkan teman melalui form di atas.
                   </p>
                 )}
 
@@ -222,23 +395,23 @@ export function Chat() {
                         flexWrap: 'wrap',
                         background: 'var(--surface-input)',
                         border: '1px solid var(--border-hairline)',
-                        borderRadius: '4px'
+                        borderRadius: '6px'
                       }}
                     >
-                      {/* Left: Avatar + Info */}
+                      {/* Left: Avatar with Minimalist Dot Indicator + Name */}
                       <div className="flex items-center gap-3" style={{ minWidth: '200px' }}>
-                        <div style={{ position: 'relative' }}>
+                        <div style={{ position: 'relative', flexShrink: 0 }}>
                           <div 
                             style={{ 
                               width: '38px', 
                               height: '38px', 
-                              borderRadius: '4px', 
+                              borderRadius: '6px', 
                               background: 'var(--surface-card)',
-                              border: '1px solid var(--border-hairline-strong)',
+                              border: '1px solid var(--border-hairline-strong)', 
                               display: 'flex', 
                               alignItems: 'center', 
                               justifyContent: 'center',
-                              fontWeight: 600,
+                              fontWeight: 700,
                               fontFamily: 'Geist Mono, monospace',
                               fontSize: '13px',
                               color: 'var(--text-primary)'
@@ -246,38 +419,29 @@ export function Chat() {
                           >
                             {initials}
                           </div>
-                          {/* Online Badge Dot */}
+                          {/* Minimalist Presence Dot: Green glow when online, subtle slate when offline */}
                           <span 
                             style={{
                               position: 'absolute',
                               bottom: '-2px',
                               right: '-2px',
-                              width: '8px',
-                              height: '8px',
+                              width: '9px',
+                              height: '9px',
                               borderRadius: '50%',
-                              backgroundColor: f.isOnline ? '#4ade80' : '#64748b',
-                              border: '1.5px solid var(--surface-card)'
+                              backgroundColor: f.isOnline ? '#22c55e' : '#64748b',
+                              border: '2px solid var(--surface-card)',
+                              boxShadow: f.isOnline ? '0 0 6px rgba(34, 197, 94, 0.7)' : 'none'
                             }}
                           />
                         </div>
 
                         <div>
                           <div className="flex items-center gap-2">
-                            <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)' }}>{f.name}</span>
+                            <span style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--text-primary)' }}>{f.name}</span>
                             <span style={{ fontSize: '11px', fontFamily: 'Geist Mono, monospace', color: 'var(--text-secondary)' }}>@{f.username}</span>
                           </div>
-                          <div className="flex items-center gap-2 mt-0.5">
-                            {f.isOnline ? (
-                              <span style={{ fontSize: '11px', color: '#4ade80', fontFamily: 'Geist Mono, monospace' }}>
-                                ● Online
-                              </span>
-                            ) : (
-                              <span style={{ fontSize: '11px', color: 'var(--text-secondary)', fontFamily: 'Geist Mono, monospace' }}>
-                                ○ Offline
-                              </span>
-                            )}
-                            <span style={{ color: 'var(--border-hairline-strong)' }}>·</span>
-                            <span style={{ fontSize: '11px', color: 'var(--text-secondary)', fontFamily: 'Geist Mono, monospace' }}>{f.role}</span>
+                          <div style={{ fontSize: '11px', color: 'var(--text-secondary)', fontFamily: 'Geist Mono, monospace', marginTop: '1px' }}>
+                            {f.role}
                           </div>
                         </div>
                       </div>
@@ -289,7 +453,7 @@ export function Chat() {
                           style={{ padding: '0 12px', height: '32px', fontSize: '12px' }} 
                           onClick={() => handleStartChat(f)}
                         >
-                          <MessageSquare size={13} /> Chat
+                          <ChatTeardropText size={14} weight="bold" /> Chat
                         </button>
                         <button 
                           className="btn" 
@@ -297,7 +461,7 @@ export function Chat() {
                           onClick={() => navigate('/meeting')}
                           title="Ajak ke Focus Room"
                         >
-                          <Video size={13} /> Focus Room
+                          <VideoCamera size={14} weight="regular" /> Focus Room
                         </button>
                       </div>
                     </div>
@@ -311,22 +475,22 @@ export function Chat() {
         {/* TAB 2: ACTIVE CHAT ROOM */}
         {activeTab === 'chat' && (
           <div className="flex flex-col h-full" style={{ minHeight: '350px' }}>
-            {/* Chat Target Header */}
+            {/* Chat Target Header with Minimalist Dot */}
             {currentFriendInChat ? (
               <div className="flex items-center justify-between pb-3 mb-3" style={{ borderBottom: '1px solid var(--border-hairline)' }}>
                 <div className="flex items-center gap-3">
-                  <div style={{ position: 'relative' }}>
+                  <div style={{ position: 'relative', flexShrink: 0 }}>
                     <div 
                       style={{ 
                         width: '36px', 
                         height: '36px', 
-                        borderRadius: '4px', 
+                        borderRadius: '6px', 
                         background: 'var(--surface-input)',
                         border: '1px solid var(--border-hairline-strong)',
                         display: 'flex', 
                         alignItems: 'center', 
                         justifyContent: 'center',
-                        fontWeight: 600,
+                        fontWeight: 700,
                         fontSize: '12px',
                         fontFamily: 'Geist Mono, monospace',
                         color: 'var(--text-primary)'
@@ -334,6 +498,7 @@ export function Chat() {
                     >
                       {currentFriendInChat.name.substring(0, 2).toUpperCase()}
                     </div>
+                    {/* Corner Presence Dot */}
                     <span 
                       style={{
                         position: 'absolute',
@@ -342,23 +507,28 @@ export function Chat() {
                         width: '8px',
                         height: '8px',
                         borderRadius: '50%',
-                        backgroundColor: currentFriendInChat.isOnline ? '#4ade80' : '#64748b',
-                        border: '1.5px solid var(--surface-card)'
+                        backgroundColor: currentFriendInChat.isOnline ? '#22c55e' : '#64748b',
+                        border: '1.5px solid var(--surface-card)',
+                        boxShadow: currentFriendInChat.isOnline ? '0 0 6px rgba(34, 197, 94, 0.7)' : 'none'
                       }}
                     />
                   </div>
 
                   <div>
                     <div className="flex items-center gap-2">
-                      <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)' }}>{currentFriendInChat.name}</span>
+                      <span style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--text-primary)' }}>{currentFriendInChat.name}</span>
                       <span style={{ fontSize: '11px', fontFamily: 'Geist Mono, monospace', color: 'var(--text-secondary)' }}>@{currentFriendInChat.username}</span>
-                    </div>
-                    <div style={{ fontSize: '11px', fontFamily: 'Geist Mono, monospace' }}>
-                      {currentFriendInChat.isOnline ? (
-                        <span style={{ color: '#4ade80' }}>● Active Now</span>
-                      ) : (
-                        <span style={{ color: 'var(--text-secondary)' }}>○ Offline</span>
-                      )}
+                      <span 
+                        style={{ 
+                          width: '6px', 
+                          height: '6px', 
+                          borderRadius: '50%', 
+                          backgroundColor: currentFriendInChat.isOnline ? '#22c55e' : '#64748b',
+                          boxShadow: currentFriendInChat.isOnline ? '0 0 6px rgba(34, 197, 94, 0.75)' : 'none',
+                          marginLeft: '2px'
+                        }} 
+                        title={currentFriendInChat.isOnline ? 'Online' : 'Offline'}
+                      />
                     </div>
                   </div>
                 </div>
@@ -367,18 +537,25 @@ export function Chat() {
                   className="btn" 
                   style={{ padding: '0 12px', height: '32px', fontSize: '12px' }} 
                   onClick={() => navigate('/meeting')}
+                  title="Mulai Video Call"
                 >
-                  <Video size={13} /> Video Call
+                  <VideoCamera size={14} /> Video Call
                 </button>
               </div>
             ) : (
-              <div style={{ padding: '16px', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '13px' }}>Pilih teman terlebih dahulu</div>
+              <div style={{ padding: '16px', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '13px' }}>Pilih rekan tim terlebih dahulu</div>
             )}
 
-            {/* Message Feed */}
+            {/* Message Feed: Dedicated 1-on-1 Conversation Only */}
             <div className="flex-1 overflow-y-auto pr-1 flex flex-col gap-2 mb-3" style={{ maxHeight: 'calc(100vh - 360px)' }}>
-              {localMessages.map(m => {
-                const isMe = m.sender.toLowerCase() === (username || 'diky').toLowerCase();
+              {activeConversationMessages.length === 0 && (
+                <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-placeholder)', fontSize: '12px', fontFamily: 'Geist Mono, monospace' }}>
+                  Belum ada pesan dengan @{currentFriendUsername}. Mulai percakapan di bawah.
+                </div>
+              )}
+
+              {activeConversationMessages.map(m => {
+                const isMe = m.sender.toLowerCase() === currentUsername;
                 return (
                   <div 
                     key={m.id} 
@@ -387,19 +564,20 @@ export function Chat() {
                     <div 
                       style={{ 
                         maxWidth: '80%', 
-                        padding: '9px 13px', 
-                        borderRadius: '4px',
+                        padding: '8px 12px', 
+                        borderRadius: '6px',
                         backgroundColor: isMe ? 'var(--cta-primary-bg)' : 'var(--surface-input)',
                         color: isMe ? 'var(--cta-primary-text)' : 'var(--text-primary)',
                         border: isMe ? 'none' : '1px solid var(--border-hairline)',
                         fontWeight: 400,
                         fontSize: '13px',
                         lineHeight: 1.5,
+                        boxShadow: isMe ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'
                       }}
                     >
                       {m.text}
                     </div>
-                    <span style={{ fontSize: '10px', fontFamily: 'Geist Mono, monospace', color: 'var(--text-placeholder)', marginTop: '3px', padding: '0 2px' }}>
+                    <span style={{ fontSize: '10px', fontFamily: 'Geist Mono, monospace', color: 'var(--text-placeholder)', marginTop: '2px', padding: '0 2px' }}>
                       {new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </span>
                   </div>
@@ -409,21 +587,23 @@ export function Chat() {
             </div>
 
             {/* Input message form */}
-            <form onSubmit={handleSendMessage} className="flex gap-2">
+            <form onSubmit={handleSendMessage} className="flex gap-2 items-center">
               <input 
                 type="text" 
                 className="input-field flex-1" 
-                placeholder={`Kirim pesan ke @${currentFriendInChat?.username || 'teman'}...`}
+                placeholder={`Kirim pesan ke @${currentFriendInChat?.username || 'rekan'}...`}
                 value={newMessage} 
                 onChange={e => setNewMessage(e.target.value)} 
+                style={{ height: '40px', fontSize: '13px' }}
               />
               <button 
                 type="submit" 
                 className="btn-primary" 
-                disabled={!newMessage.trim()}
-                style={{ width: '40px', height: '40px', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                disabled={!newMessage.trim() || isSending}
+                style={{ width: '40px', height: '40px', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+                title="Kirim pesan (Enter)"
               >
-                <Send size={15} />
+                <PaperPlaneRight size={16} weight="fill" />
               </button>
             </form>
           </div>

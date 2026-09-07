@@ -185,11 +185,12 @@ export function Home() {
                   width: '6px', 
                   height: '6px', 
                   borderRadius: '50%', 
-                  backgroundColor: f.isOnline ? '#22c55e' : '#94a3b8',
+                  backgroundColor: f.isOnline ? '#22c55e' : '#64748b',
+                  boxShadow: f.isOnline ? '0 0 6px rgba(34, 197, 94, 0.75)' : 'none',
+                  flexShrink: 0
                 }} 
               />
               <span style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{f.name}</span>
-              <span style={{ color: 'var(--text-secondary)', fontSize: '10px' }}>{f.isOnline ? 'Online' : 'Offline'}</span>
             </div>
           ))}
           <button 

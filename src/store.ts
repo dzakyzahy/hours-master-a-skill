@@ -252,15 +252,15 @@ export const useStore = create<AppState>()(
         const now = Date.now();
         set(state => ({
           friends: state.friends.map(f => {
+            let lastSeen = f.lastSeen;
             try {
               const lastSeenStr = localStorage.getItem(`presence_${f.username.toLowerCase()}`);
               if (lastSeenStr) {
-                const lastSeen = parseInt(lastSeenStr, 10);
-                const isOnline = (now - lastSeen) < 12000;
-                return { ...f, isOnline, lastSeen };
+                lastSeen = Math.max(lastSeen || 0, parseInt(lastSeenStr, 10));
               }
             } catch {}
-            return f;
+            const isOnline = Boolean(lastSeen && (now - lastSeen) < 12000);
+            return { ...f, isOnline, lastSeen };
           })
         }));
       },

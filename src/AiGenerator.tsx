@@ -83,10 +83,10 @@ export function AiGenerator() {
   };
 
   const suggestions = [
-    'UI/UX Mobile Design',
-    'React & React Native',
-    'Machine Learning & Python',
-    'Public Speaking'
+    'Machine Learning',
+    'Mobile App Dev',
+    'Piano & Musik',
+    'UI/UX Design'
   ];
 
   return (
@@ -155,9 +155,9 @@ export function AiGenerator() {
         </div>
       )}
 
-      {/* Quick Suggestion Pills */}
-      <div className="flex items-center gap-2 mb-4 overflow-x-auto pb-1">
-        <span style={{ fontSize: '11px', color: 'var(--text-placeholder)', fontFamily: 'Geist Mono, monospace', whiteSpace: 'nowrap' }}>
+      {/* Quick Suggestion Pills - Minimalist Template Fit */}
+      <div className="flex items-center gap-1.5 mb-4 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+        <span style={{ fontSize: '10.5px', color: 'var(--text-placeholder)', fontFamily: 'Geist Mono, monospace', whiteSpace: 'nowrap', marginRight: '2px' }}>
           Ide Cepat:
         </span>
         {suggestions.map(s => (
@@ -165,6 +165,7 @@ export function AiGenerator() {
             key={s}
             type="button"
             className="chip-suggestion"
+            style={{ fontSize: '10.5px', height: '24px', padding: '0 8px', borderRadius: '4px' }}
             onClick={() => setTopic(s)}
           >
             {s}
@@ -172,7 +173,7 @@ export function AiGenerator() {
         ))}
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-2.5">
+      <div className="flex flex-col sm:flex-row gap-2">
         <input 
           type="text" 
           className="input-field flex-1" 
@@ -180,18 +181,19 @@ export function AiGenerator() {
           value={topic}
           onChange={(e) => setTopic(e.target.value)}
           disabled={loading}
+          style={{ height: '38px', fontSize: '12.5px', fontFamily: 'Geist, sans-serif' }}
           onKeyDown={(e) => { if (e.key === 'Enter') handleGenerate(); }}
         />
         <button 
           className="btn-primary" 
           onClick={handleGenerate}
           disabled={loading || !topic.trim()}
-          style={{ height: '42px', padding: '0 20px', whiteSpace: 'nowrap' }}
+          style={{ height: '38px', padding: '0 16px', whiteSpace: 'nowrap', fontSize: '12px' }}
         >
           {loading ? (
-            <CircleNotch size={16} className="animate-spin" />
+            <CircleNotch size={14} className="animate-spin" />
           ) : (
-            <Sparkle size={16} weight="fill" />
+            <Sparkle size={14} weight="fill" />
           )}
           <span>{loading ? 'Membuat Roadmap...' : 'Generate Plan'}</span>
         </button>
