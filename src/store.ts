@@ -25,6 +25,15 @@ export interface Project {
   deletedAt?: number;
 }
 
+function isSameCalendarDay(timestamp?: number): boolean {
+  if (!timestamp) return false;
+  const d = new Date(timestamp);
+  const now = new Date();
+  return d.getFullYear() === now.getFullYear() &&
+         d.getMonth() === now.getMonth() &&
+         d.getDate() === now.getDate();
+}
+
 export interface FriendUser {
   id: string;
   username: string;
@@ -333,7 +342,7 @@ export const useStore = create<AppState>()(
                 lastSeen = Math.max(lastSeen || 0, parseInt(lastSeenStr, 10));
               }
             } catch {}
-            const isOnline = Boolean(lastSeen && (now - lastSeen) < 12000);
+            const isOnline = Boolean(lastSeen && (now - lastSeen) < 25000);
             return { ...f, isOnline, lastSeen };
           })
         }));
@@ -404,10 +413,6 @@ export const useStore = create<AppState>()(
           } catch {}
         }
 
-        const isSupabaseConfigured = Boolean(
-          import.meta.env.VITE_SUPABASE_URL && 
-          !import.meta.env.VITE_SUPABASE_URL.includes('your-project')
-        );
         if (isSupabaseConfigured) {
           try {
             const { data: authData } = await supabase.auth.getUser();
@@ -453,7 +458,7 @@ export const useStore = create<AppState>()(
       
       addProject: (name, phases) => set((state) => ({
         projects: [...state.projects, {
-          id: Date.now().toString(),
+          id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(),
           userId: state.userId,
           name,
           totalHours: 0,
@@ -489,16 +494,16 @@ export const useStore = create<AppState>()(
       addManualTime: (id, minutes) => {
         const hoursToAdd = minutes / 60;
         set((state) => ({
-          projects: state.projects.map(p => 
-            p.id === id
-              ? { 
-                  ...p, 
-                  totalHours: p.totalHours + hoursToAdd,
-                  hoursToday: p.hoursToday + hoursToAdd,
-                  lastUpdated: Date.now()
-                }
-              : p
-          )
+          projects: state.projects.map(p => {
+            if (p.id !== id) return p;
+            const currentToday = isSameCalendarDay(p.lastUpdated) ? p.hoursToday : 0;
+            return {
+              ...p,
+              totalHours: Math.max(0, p.totalHours + hoursToAdd),
+              hoursToday: Math.max(0, currentToday + hoursToAdd),
+              lastUpdated: Date.now()
+            };
+          })
         }));
         get().syncTotalHoursToSupabase();
       },
@@ -508,11 +513,16 @@ export const useStore = create<AppState>()(
           const id = state.activeProjectId;
           if (!id) return state;
           return {
-            projects: state.projects.map(p => 
-              p.id === id 
-                ? { ...p, totalHours: p.totalHours + h, hoursToday: p.hoursToday + h, lastUpdated: Date.now() } 
-                : p
-            )
+            projects: state.projects.map(p => {
+              if (p.id !== id) return p;
+              const currentToday = isSameCalendarDay(p.lastUpdated) ? p.hoursToday : 0;
+              return {
+                ...p,
+                totalHours: Math.max(0, p.totalHours + h),
+                hoursToday: Math.max(0, currentToday + h),
+                lastUpdated: Date.now()
+              };
+            })
           };
         });
         get().syncTotalHoursToSupabase();
@@ -547,7 +557,7 @@ export const useStore = create<AppState>()(
         set({ activeTimer: newState });
         
         // Push state to Supabase timer_state if configured
-        if (import.meta.env.VITE_SUPABASE_URL && state.activeProjectId) {
+        if (isSupabaseConfigured && state.activeProjectId) {
           try {
             const { data: authData } = await supabase.auth.getUser();
             if (authData?.user) {
@@ -582,7 +592,6 @@ export const useStore = create<AppState>()(
         theme: state.theme,
         projects: state.projects,
         activeProjectId: state.activeProjectId,
-        geminiApiKey: state.geminiApiKey,
       }),
     }
   )

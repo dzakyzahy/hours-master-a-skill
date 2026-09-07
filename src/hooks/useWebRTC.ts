@@ -48,10 +48,11 @@ export function useWebRTC(
   }, [localUserId, localUserName]);
 
   // Sync local status changes to everyone
+  const { isAudioMuted, isVideoOff, isScreenSharing } = localStatus;
   useEffect(() => {
     if (!channelRef.current) return;
-    sendSignal('status-update', undefined, localStatus);
-  }, [localStatus.isAudioMuted, localStatus.isVideoOff, localStatus.isScreenSharing, sendSignal]);
+    sendSignal('status-update', undefined, { isAudioMuted, isVideoOff, isScreenSharing });
+  }, [isAudioMuted, isVideoOff, isScreenSharing, sendSignal]);
 
   const createPeer = useCallback((peerId: string, peerName: string, isInitiator: boolean) => {
     if (peersRef.current.has(peerId)) {
@@ -212,10 +213,11 @@ export function useWebRTC(
       }
     });
 
+    const peers = peersRef.current;
     return () => {
       channel.unsubscribe();
-      peersRef.current.forEach(peer => peer.close());
-      peersRef.current.clear();
+      peers.forEach(peer => peer.close());
+      peers.clear();
       channelRef.current = null;
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps

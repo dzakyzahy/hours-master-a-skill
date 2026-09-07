@@ -10,7 +10,7 @@ import {
   faKey, 
   faFingerprint 
 } from '@fortawesome/free-solid-svg-icons';
-import { supabase } from '../supabaseClient';
+import { supabase, isSupabaseConfigured } from '../supabaseClient';
 import { useStore } from '../store';
 import { ApiKeyModal } from '../components/ApiKeyModal';
 import { ThemeSwitcher } from '../components/ThemeSwitcher';
@@ -71,11 +71,6 @@ export function Profile() {
       // Local state update
       useStore.setState({ username: newUsername, userEmail: email });
       localStorage.setItem('last_user', newUsername);
-
-      const isSupabaseConfigured = Boolean(
-        import.meta.env.VITE_SUPABASE_URL && 
-        !import.meta.env.VITE_SUPABASE_URL.includes('your-project')
-      );
 
       if (isSupabaseConfigured) {
         const { data: authData } = await supabase.auth.getUser();

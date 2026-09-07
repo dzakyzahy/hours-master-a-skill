@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useStore } from '../store';
-import { supabase } from '../supabaseClient';
+import { supabase, isSupabaseConfigured } from '../supabaseClient';
 
 export function usePresence() {
   const { isAuthenticated, username, updateFriendStatus, checkFriendsOnlineStatus } = useStore();
@@ -81,11 +81,6 @@ export function usePresence() {
 
     // 3. Optional Supabase Presence (if Supabase is configured)
     let supabaseChannel: any = null;
-    const isSupabaseConfigured = Boolean(
-      import.meta.env.VITE_SUPABASE_URL &&
-      !import.meta.env.VITE_SUPABASE_URL.includes('your-project')
-    );
-
     if (isSupabaseConfigured) {
       try {
         supabaseChannel = supabase.channel('global_presence', {

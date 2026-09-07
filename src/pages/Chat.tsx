@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
@@ -12,7 +12,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { useStore, type FriendUser } from '../store';
 import { ClashArena } from '../components/ClashArena';
-import { supabase } from '../supabaseClient';
+import { supabase, isSupabaseConfigured } from '../supabaseClient';
 import toast from 'react-hot-toast';
 import { ThemeSwitcher } from '../components/ThemeSwitcher';
 
@@ -113,12 +113,6 @@ export function Chat() {
   // Real-Time Sync: Supabase Realtime WebSocket (across internet to Dzaky) + BroadcastChannel + Window Storage
   useEffect(() => {
     const myUser = currentUsername;
-
-    // 1. Supabase Realtime Channel
-    const isSupabaseConfigured = Boolean(
-      import.meta.env.VITE_SUPABASE_URL &&
-      !import.meta.env.VITE_SUPABASE_URL.includes('your-project')
-    );
 
     let supabaseChannel: any = null;
     if (isSupabaseConfigured) {
@@ -232,11 +226,6 @@ export function Chat() {
     setNewMessage('');
 
     // 2. Broadcast across internet via Supabase WebSocket
-    const isSupabaseConfigured = Boolean(
-      import.meta.env.VITE_SUPABASE_URL &&
-      !import.meta.env.VITE_SUPABASE_URL.includes('your-project')
-    );
-
     if (isSupabaseConfigured) {
       try {
         const channel = supabaseChannelRef.current || supabase.channel('skillo_team_chat');
@@ -260,16 +249,7 @@ export function Chat() {
     setActiveTab('chat');
   };
 
-  useEffect(() => {
-    const delay = setTimeout(() => {
-      if (searchQuery.trim().length > 0) {
-        handleSearchUsers();
-      }
-    }, 500);
-    return () => clearTimeout(delay);
-  }, [searchQuery]);
-
-  const handleSearchUsers = async (e?: React.FormEvent) => {
+  const handleSearchUsers = useCallback(async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!searchQuery.trim()) return;
     setIsSearching(true);
@@ -310,12 +290,21 @@ export function Chat() {
     } finally {
       setIsSearching(false);
     }
-  };
+  }, [searchQuery, userId, friends]);
+
+  useEffect(() => {
+    const delay = setTimeout(() => {
+      if (searchQuery.trim().length > 0) {
+        handleSearchUsers();
+      }
+    }, 500);
+    return () => clearTimeout(delay);
+  }, [searchQuery, handleSearchUsers]);
 
   const handleSendRequest = async (receiverId: string, receiverUsername: string) => {
     const success = await sendFriendRequest(receiverId);
     if (success) {
-      toast.success(`Permintaan pertemanan terkirim ke @${receiverUsername}`);
+      toast.success(`Permintaan pertemanan terkirim ke ${receiverUsername}`);
       setSearchResults(prev => prev.map(item => item.id === receiverId ? { ...item, isPending: true } : item));
     } else {
       toast.error('Gagal mengirim permintaan pertemanan');
@@ -372,7 +361,7 @@ export function Chat() {
             <button
               type="button"
               onClick={() => navigate('/profile')}
-              title={`Profil Saya (@${username}) • Online`}
+              title={`Profil Saya (${username}) • Online`}
               style={{
                 position: 'relative',
                 display: 'inline-flex',
@@ -486,7 +475,7 @@ export function Chat() {
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded bg-slate-700 flex items-center justify-center font-bold text-xs uppercase">{u.username.substring(0,2)}</div>
                         <div className="flex flex-col">
-                          <span className="text-sm font-medium">@{u.username}</span>
+                          <span className="text-sm font-medium">{u.username}</span>
                         </div>
                       </div>
                       <button 
@@ -580,7 +569,7 @@ export function Chat() {
                         <div style={{ paddingLeft: '10px' }}>
                           <div className="flex items-center gap-2">
                             <span style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--text-primary)' }}>{f.name}</span>
-                            <span style={{ fontSize: '11px', fontFamily: 'Geist Mono, monospace', color: 'var(--text-secondary)' }}>@{f.username}</span>
+                            <span style={{ fontSize: '11px', fontFamily: 'Geist Mono, monospace', color: 'var(--text-secondary)' }}>{f.username}</span>
                           </div>
                           <div style={{ fontSize: '11px', color: 'var(--text-secondary)', fontFamily: 'Geist Mono, monospace', marginTop: '1px' }}>
                             {f.role}
@@ -652,7 +641,7 @@ export function Chat() {
 
                         <div style={{ paddingLeft: '10px' }}>
                           <div className="flex items-center gap-2">
-                            <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-secondary)' }}>@{req.receiver_username}</span>
+                            <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-secondary)' }}>{req.receiver_username}</span>
                           </div>
                           <div className="flex items-center gap-2 mt-0.5">
                             <span style={{ fontSize: '11px', color: 'var(--accent-primary)', fontFamily: 'Geist Mono, monospace' }}>
@@ -687,7 +676,7 @@ export function Chat() {
             {friendRequests.map(req => (
               <div key={req.id} className="flex items-center justify-between p-3 bg-slate-800/40 rounded border border-slate-700/50">
                 <div className="flex flex-col">
-                  <span className="text-sm font-bold">@{req.sender_username}</span>
+                  <span className="text-sm font-bold">{req.sender_username}</span>
                   <span className="text-xs text-slate-400">Ingin menjadi teman Anda</span>
                 </div>
                 <div className="flex gap-2">
@@ -753,7 +742,7 @@ export function Chat() {
                   <div style={{ paddingLeft: '10px' }}>
                     <div className="flex items-center gap-2">
                       <span style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--text-primary)' }}>{currentFriendInChat.name}</span>
-                      <span style={{ fontSize: '11px', fontFamily: 'Geist Mono, monospace', color: 'var(--text-secondary)' }}>@{currentFriendInChat.username}</span>
+                      <span style={{ fontSize: '11px', fontFamily: 'Geist Mono, monospace', color: 'var(--text-secondary)' }}>{currentFriendInChat.username}</span>
                       <span 
                         style={{ 
                           width: '6px', 
@@ -786,7 +775,7 @@ export function Chat() {
             <div className="flex-1 overflow-y-auto pr-1 flex flex-col gap-3 mb-4" style={{ maxHeight: 'calc(100vh - 360px)', padding: '8px 4px' }}>
               {activeConversationMessages.length === 0 && (
                 <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--text-placeholder)', fontSize: '12px', fontFamily: 'Geist Mono, monospace' }}>
-                  Belum ada pesan dengan @{currentFriendUsername}. Mulai percakapan di bawah.
+                  Belum ada pesan dengan {currentFriendUsername}. Mulai percakapan di bawah.
                 </div>
               )}
 
@@ -842,7 +831,7 @@ export function Chat() {
               <input 
                 type="text" 
                 className="input-field flex-1" 
-                placeholder={`Kirim pesan ke @${currentFriendInChat?.username || 'rekan'}...`}
+                placeholder={`Kirim pesan ke ${currentFriendInChat?.username || 'rekan'}...`}
                 value={newMessage} 
                 onChange={e => setNewMessage(e.target.value)} 
                 style={{ height: '40px', fontSize: '13px', borderRadius: '6px' }}

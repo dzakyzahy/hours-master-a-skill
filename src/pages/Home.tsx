@@ -121,7 +121,7 @@ export function Home() {
           <button 
             className="btn-icon" 
             onClick={() => navigate('/profile')} 
-            title={`Profil Saya (@${username || 'user'})`}
+            title={`Profil Saya (${username || 'user'})`}
             style={{ 
               position: 'relative', 
               fontWeight: 700, 
