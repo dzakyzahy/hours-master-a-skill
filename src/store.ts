@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { supabase } from './supabaseClient';
+import { supabase, isSupabaseConfigured } from './supabaseClient';
 
 export interface SkillPhase {
   title: string;
@@ -68,8 +68,6 @@ interface AppState {
   sendFriendRequest: (receiverId: string) => Promise<boolean>;
   acceptFriendRequest: (requestId: string, senderId: string) => Promise<boolean>;
   rejectFriendRequest: (requestId: string) => Promise<boolean>;
-  addFriend: (friend: FriendUser) => void;
-  removeFriend: (id: string) => void;
   updateFriendStatus: (username: string, isOnline: boolean, lastSeen?: number) => void;
   checkFriendsOnlineStatus: () => void;
 
@@ -77,8 +75,6 @@ interface AppState {
   theme: 'dark' | 'light';
   toggleTheme: () => void;
   setTheme: (t: 'dark' | 'light') => void;
-  clockEnabled: boolean;
-  toggleClock: () => void;
   geminiApiKey: string;
   setGeminiApiKey: (key: string) => Promise<void>;
   clearGeminiApiKey: () => Promise<void>;
@@ -102,8 +98,6 @@ interface AppState {
   activeTimer: boolean;
   toggleTimer: () => void;
   setRemoteTimerState: (isActive: boolean) => void;
-  syncToSupabase: () => Promise<void>;
-  loadFromSupabase: () => Promise<void>;
   syncTotalHoursToSupabase: () => Promise<void>;
 }
 
@@ -140,12 +134,6 @@ export const useStore = create<AppState>()(
 
         const resolvedUsername = isDiky ? 'diky' : isZahy ? 'zahy' : (trimmed.includes('@') ? trimmed.split('@')[0] : trimmed);
         const resolvedEmail = emailToUse;
-
-        // Check if Supabase is actually configured with real URL
-        const isSupabaseConfigured = Boolean(
-          import.meta.env.VITE_SUPABASE_URL && 
-          !import.meta.env.VITE_SUPABASE_URL.includes('your-project')
-        );
 
         if (isSupabaseConfigured) {
           try {
@@ -326,17 +314,6 @@ export const useStore = create<AppState>()(
         return false;
       },
 
-      addFriend: (friend) => set(state => {
-        if (state.friends.some(f => f.username.toLowerCase() === friend.username.toLowerCase())) {
-          return state;
-        }
-        return { friends: [...state.friends, friend] };
-      }),
-
-      removeFriend: (id) => set(state => ({
-        friends: state.friends.filter(f => f.id !== id)
-      })),
-
       updateFriendStatus: (username, isOnline, lastSeen) => set(state => ({
         friends: state.friends.map(f => 
           f.username.toLowerCase() === username.toLowerCase() 
@@ -365,8 +342,6 @@ export const useStore = create<AppState>()(
       theme: 'dark',
       toggleTheme: () => set((state) => ({ theme: state.theme === 'dark' ? 'light' : 'dark' })),
       setTheme: (t: 'dark' | 'light') => set({ theme: t }),
-      clockEnabled: true,
-      toggleClock: () => set((state) => ({ clockEnabled: !state.clockEnabled })),
 
       geminiApiKey: '',
       setGeminiApiKey: async (key: string) => {
@@ -380,10 +355,6 @@ export const useStore = create<AppState>()(
           }
         } catch {}
 
-        const isSupabaseConfigured = Boolean(
-          import.meta.env.VITE_SUPABASE_URL && 
-          !import.meta.env.VITE_SUPABASE_URL.includes('your-project')
-        );
         if (isSupabaseConfigured) {
           try {
             const { data: authData } = await supabase.auth.getUser();
@@ -412,10 +383,6 @@ export const useStore = create<AppState>()(
         try {
           localStorage.removeItem('skillo_gemini_key_secure');
         } catch {}
-        const isSupabaseConfigured = Boolean(
-          import.meta.env.VITE_SUPABASE_URL && 
-          !import.meta.env.VITE_SUPABASE_URL.includes('your-project')
-        );
         if (isSupabaseConfigured) {
           try {
             const { data: authData } = await supabase.auth.getUser();
@@ -596,33 +563,11 @@ export const useStore = create<AppState>()(
       },
       setRemoteTimerState: (isActive) => set({ activeTimer: isActive }),
       
-      syncToSupabase: async () => {
-        const state = get();
-        // Only sync if supabase is actually configured (not placeholder)
-        if (import.meta.env.VITE_SUPABASE_URL && !import.meta.env.VITE_SUPABASE_URL.includes('your-project')) {
-          try {
-            // Simplified sync: just an example of pushing the current state
-            // In a real app, you'd iterate over projects and upsert to public.projects
-            // For now, this is a stub that won't crash the app if keys are missing.
-            console.log("Syncing to Supabase...", state, supabase);
-          } catch (e) {
-            console.error("Supabase sync error:", e);
-          }
-        }
-      },
-      
       syncTotalHoursToSupabase: async () => {
         const state = get();
         if (!state.userId) return;
         const total = state.projects.reduce((acc, p) => acc + (p.deletedAt ? 0 : p.totalHours), 0);
         await supabase.from('profiles').update({ total_hours: total }).eq('id', state.userId);
-      },
-
-      loadFromSupabase: async () => {
-        if (import.meta.env.VITE_SUPABASE_URL && !import.meta.env.VITE_SUPABASE_URL.includes('your-project')) {
-           // Fetch from Supabase and set() here
-           console.log("Loading from Supabase...");
-        }
       }
     }),
     {
@@ -635,7 +580,6 @@ export const useStore = create<AppState>()(
         userEmail: state.userEmail,
         friends: state.friends,
         theme: state.theme,
-        clockEnabled: state.clockEnabled,
         projects: state.projects,
         activeProjectId: state.activeProjectId,
         geminiApiKey: state.geminiApiKey,

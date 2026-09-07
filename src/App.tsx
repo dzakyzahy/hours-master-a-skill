@@ -3,7 +3,6 @@ import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useStore } from './store';
 import { Login } from './pages/Login';
 import { Home } from './pages/Home';
-import { BackgroundClock } from './components/BackgroundClock';
 import { App as CapApp } from '@capacitor/app';
 import { StatusBar, Style } from '@capacitor/status-bar';
 import { Capacitor } from '@capacitor/core';
@@ -73,8 +72,6 @@ export default function App() {
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', width: '100%', position: 'relative', overflow: 'hidden' }}>
-      <BackgroundClock />
-      
       <HashRouter>
         <Suspense fallback={<PageLoader />}>
           <Routes>

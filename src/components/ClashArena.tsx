@@ -44,7 +44,7 @@ export function ClashArena({ friends, myUsername, myTotalHours }: ClashArenaProp
     <div className="flex flex-col h-full overflow-hidden">
       {/* Clash Header Controls */}
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-bold flex items-center gap-2" style={{ fontFamily: 'Instrument Serif, serif', color: 'var(--accent-purple)' }}>
+        <h2 className="text-xl font-bold flex items-center gap-2" style={{ fontFamily: 'Instrument Serif, serif', color: 'var(--accent-primary)' }}>
           <FontAwesomeIcon icon={faHandFist} style={{ fontSize: '20px' }} /> Clash Arena
         </h2>
         
@@ -86,8 +86,8 @@ export function ClashArena({ friends, myUsername, myTotalHours }: ClashArenaProp
                     display: 'flex',
                     alignItems: 'center',
                     padding: '18px 20px',
-                    background: p.isMe ? 'rgba(74, 222, 128, 0.05)' : 'var(--surface-input)',
-                    border: `1px solid ${p.isMe ? 'rgba(74, 222, 128, 0.3)' : 'var(--border-color)'}`,
+                    background: p.isMe ? 'rgba(34, 197, 94, 0.08)' : 'var(--surface-input)',
+                    border: `1px solid ${p.isMe ? 'rgba(34, 197, 94, 0.35)' : 'var(--border-color)'}`,
                     borderRadius: '10px',
                     position: 'relative',
                     overflow: 'hidden',
@@ -102,17 +102,17 @@ export function ClashArena({ friends, myUsername, myTotalHours }: ClashArenaProp
                   <div className="flex-1">
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
                       {iconDef && <FontAwesomeIcon icon={iconDef} style={{ fontSize: '14px', color: iconColor }} />}
-                      <span style={{ fontWeight: 600, fontSize: '14px', color: p.isMe ? '#4ade80' : 'var(--text-primary)' }}>
+                      <span style={{ fontWeight: 600, fontSize: '14px', color: p.isMe ? 'var(--color-success)' : 'var(--text-primary)' }}>
                         {p.isMe ? 'You' : cleanUsername}
                       </span>
                     </div>
                     {/* Progress Bar representing absolute volume compared to leader */}
-                    <div style={{ width: '100%', height: '7px', background: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.05)', borderRadius: '9999px', overflow: 'hidden' }}>
+                    <div style={{ width: '100%', height: '7px', background: 'var(--surface-card)', border: '1px solid var(--border-hairline)', borderRadius: '9999px', overflow: 'hidden' }}>
                       <div 
                         style={{ 
                           height: '100%', 
                           width: `${Math.max(0, (p.totalHours / Math.max(allParticipants[0].totalHours, 1)) * 100)}%`,
-                          background: p.isMe ? '#4ade80' : (isTop3 ? iconColor : 'var(--accent-purple)'),
+                          background: p.isMe ? 'var(--color-success)' : (isTop3 ? iconColor : 'var(--accent-primary)'),
                           borderRadius: '9999px',
                           transition: 'width 0.4s ease'
                         }} 
@@ -121,7 +121,7 @@ export function ClashArena({ friends, myUsername, myTotalHours }: ClashArenaProp
                   </div>
                   
                   <div style={{ marginLeft: '20px', textAlign: 'right', minWidth: '70px' }}>
-                    <div style={{ fontSize: '1.3rem', fontWeight: 700, fontFamily: 'Geist Mono, monospace', letterSpacing: '-0.02em', color: p.isMe ? '#4ade80' : 'var(--text-primary)' }}>
+                    <div style={{ fontSize: '1.3rem', fontWeight: 700, fontFamily: 'Geist Mono, monospace', letterSpacing: '-0.02em', color: p.isMe ? 'var(--color-success)' : 'var(--text-primary)' }}>
                       {p.totalHours.toFixed(1)}
                     </div>
                     <div style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.04em', color: 'var(--text-secondary)' }}>HOURS</div>
@@ -132,9 +132,9 @@ export function ClashArena({ friends, myUsername, myTotalHours }: ClashArenaProp
           </div>
         </div>
       ) : (
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col overflow-y-auto custom-scrollbar pr-1">
           {/* Opponent Selector */}
-          <div className="mb-8">
+          <div className="mb-6">
             <label style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-secondary)', marginBottom: '8px', display: 'block' }}>
               Select Opponent
             </label>
@@ -154,51 +154,137 @@ export function ClashArena({ friends, myUsername, myTotalHours }: ClashArenaProp
             </select>
           </div>
 
-          {/* VS Arena */}
+          {/* VS Arena: Left (You/Aku) - Center (VS) - Right (Opponent/Musuh) */}
           {friends.length > 0 && opp ? (
-            <div className="flex-1 flex flex-col justify-center gap-12 relative pb-10">
+            <div className="flex-1 flex flex-col md:flex-row items-center md:items-stretch justify-center gap-4 md:gap-6 my-auto py-4">
               
-              {/* VS Badge */}
-              <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 10 }}>
+              {/* Left Card: YOU (Aku) */}
+              <div 
+                style={{
+                  flex: 1,
+                  width: '100%',
+                  maxWidth: '380px',
+                  background: 'var(--surface-input)',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '14px',
+                  padding: '24px 20px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  textAlign: 'center'
+                }}
+              >
+                <span style={{ 
+                  fontSize: '11px', 
+                  fontWeight: 700, 
+                  letterSpacing: '0.08em', 
+                  textTransform: 'uppercase', 
+                  color: 'var(--color-success)', 
+                  background: 'rgba(34, 197, 94, 0.12)', 
+                  padding: '3px 12px', 
+                  borderRadius: '9999px',
+                  marginBottom: '10px'
+                }}>
+                  YOU
+                </span>
+                <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '16px' }}>
+                  {(myUsername || 'You').replace(/^@+/, '')}
+                </div>
+                <div style={{ fontSize: '2.75rem', fontWeight: 800, fontFamily: 'Geist Mono, monospace', color: 'var(--color-success)', letterSpacing: '-0.02em', lineHeight: 1 }}>
+                  {me.totalHours.toFixed(1)}
+                </div>
+                <div style={{ fontSize: '10.5px', fontWeight: 600, color: 'var(--text-secondary)', letterSpacing: '0.06em', marginTop: '6px', marginBottom: '20px' }}>
+                  HOURS
+                </div>
+                <div style={{ width: '100%', height: '10px', background: 'var(--surface-card)', borderRadius: '9999px', border: '1px solid var(--border-hairline)', overflow: 'hidden' }}>
+                  <div 
+                    style={{ 
+                      height: '100%', 
+                      width: `${mePercentage}%`, 
+                      background: 'var(--color-success)', 
+                      borderRadius: '9999px', 
+                      transition: 'width 0.8s cubic-bezier(0.16, 1, 0.3, 1)' 
+                    }} 
+                  />
+                </div>
+              </div>
+
+              {/* Center Separator Badge (In-flow, Zero Overlap) */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '4px 0', flexShrink: 0 }}>
                 <div style={{ 
-                  width: '60px', height: '60px', 
-                  background: 'var(--bg-app)', 
-                  border: '2px solid var(--border-color)',
+                  width: '46px', 
+                  height: '46px', 
+                  background: 'var(--surface-card)', 
+                  border: '1.5px solid var(--border-color)',
                   borderRadius: '50%',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontFamily: 'Instrument Serif, serif', fontSize: '24px', fontWeight: 'bold', fontStyle: 'italic',
-                  color: 'var(--accent-purple)',
-                  boxShadow: '0 8px 32px rgba(0,0,0,0.5)'
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  fontFamily: 'Instrument Serif, serif', 
+                  fontSize: '18px', 
+                  fontWeight: 'bold', 
+                  fontStyle: 'italic',
+                  color: 'var(--accent-primary)',
+                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)'
                 }}>
                   VS
                 </div>
               </div>
 
-              {/* OP Player (Top) */}
-              <div className="flex flex-col items-center">
-                <div style={{ fontSize: '3rem', fontWeight: 800, fontFamily: 'Geist Mono, monospace', color: 'var(--text-primary)', marginBottom: '8px' }}>
-                  {opp.totalHours.toFixed(1)} <span style={{ fontSize: '1rem', color: 'var(--text-secondary)' }}>HRS</span>
+              {/* Right Card: OPPONENT (Musuh) */}
+              <div 
+                style={{
+                  flex: 1,
+                  width: '100%',
+                  maxWidth: '380px',
+                  background: 'var(--surface-input)',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '14px',
+                  padding: '24px 20px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  textAlign: 'center'
+                }}
+              >
+                <span style={{ 
+                  fontSize: '11px', 
+                  fontWeight: 700, 
+                  letterSpacing: '0.08em', 
+                  textTransform: 'uppercase', 
+                  color: 'var(--text-secondary)', 
+                  background: 'var(--border-hairline)', 
+                  padding: '3px 12px', 
+                  borderRadius: '9999px',
+                  marginBottom: '10px'
+                }}>
+                  OPPONENT
+                </span>
+                <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '16px' }}>
+                  {(opp.username || '').replace(/^@+/, '')}
                 </div>
-                <div style={{ width: '100%', maxWidth: '400px', height: '24px', background: 'var(--bg-app)', borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--border-color)', position: 'relative' }}>
-                  <div style={{ height: '100%', width: `${oppPercentage}%`, background: 'var(--accent-purple)', transition: 'width 1s ease-out' }} />
+                <div style={{ fontSize: '2.75rem', fontWeight: 800, fontFamily: 'Geist Mono, monospace', color: 'var(--text-primary)', letterSpacing: '-0.02em', lineHeight: 1 }}>
+                  {opp.totalHours.toFixed(1)}
                 </div>
-                <div style={{ marginTop: '12px', fontWeight: 600, fontSize: '14px' }}>{(opp.username || '').replace(/^@+/, '')}</div>
-              </div>
-
-              {/* YOU Player (Bottom) */}
-              <div className="flex flex-col items-center">
-                <div style={{ fontSize: '3rem', fontWeight: 800, fontFamily: 'Geist Mono, monospace', color: '#4ade80', marginBottom: '8px' }}>
-                  {me.totalHours.toFixed(1)} <span style={{ fontSize: '1rem', color: 'var(--text-secondary)' }}>HRS</span>
+                <div style={{ fontSize: '10.5px', fontWeight: 600, color: 'var(--text-secondary)', letterSpacing: '0.06em', marginTop: '6px', marginBottom: '20px' }}>
+                  HOURS
                 </div>
-                <div style={{ width: '100%', maxWidth: '400px', height: '24px', background: 'var(--bg-app)', borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--border-color)', position: 'relative' }}>
-                  <div style={{ height: '100%', width: `${mePercentage}%`, background: '#4ade80', transition: 'width 1s ease-out' }} />
+                <div style={{ width: '100%', height: '10px', background: 'var(--surface-card)', borderRadius: '9999px', border: '1px solid var(--border-hairline)', overflow: 'hidden' }}>
+                  <div 
+                    style={{ 
+                      height: '100%', 
+                      width: `${oppPercentage}%`, 
+                      background: 'var(--accent-primary)', 
+                      borderRadius: '9999px', 
+                      transition: 'width 0.8s cubic-bezier(0.16, 1, 0.3, 1)' 
+                    }} 
+                  />
                 </div>
-                <div style={{ marginTop: '12px', fontWeight: 600, fontSize: '14px', color: '#4ade80' }}>YOU</div>
               </div>
 
             </div>
           ) : (
-            <div className="flex-1 flex flex-col items-center justify-center text-center opacity-50">
+            <div className="flex-1 flex flex-col items-center justify-center text-center opacity-50 py-12">
               <FontAwesomeIcon icon={faHandFist} style={{ fontSize: '42px' }} className="mb-4" />
               <p>Add some friends to start clashing!</p>
             </div>

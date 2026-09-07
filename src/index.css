@@ -27,6 +27,11 @@
   --accent-cyan: #00e5ff;
   --accent-cyan-hover: #38edff;
   --accent-cyan-glow: rgba(0, 229, 255, 0.2);
+  --accent-primary: #0ea5e9;
+  --accent-primary-hover: #38bdf8;
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-danger: #ef4444;
   --accent-purple: #a855f7;
   --border-color: var(--border-hairline);
   --border-highlight: var(--border-hairline-strong);
@@ -70,6 +75,12 @@
   --accent-cyan: #0284c7;
   --accent-cyan-hover: #0369a1;
   --accent-cyan-glow: rgba(2, 132, 199, 0.18);
+  --accent-primary: #0284c7;
+  --accent-primary-hover: #0369a1;
+  --color-success: #16a34a;
+  --color-warning: #d97706;
+  --color-danger: #dc2626;
+  --accent-purple: #7c3aed;
   --border-color: var(--border-hairline);
   --border-highlight: var(--border-hairline-strong);
   --input-bg: var(--surface-input);
