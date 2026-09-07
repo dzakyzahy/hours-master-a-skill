@@ -272,11 +272,15 @@ export const useStore = create<AppState>()(
       fetchSentFriendRequests: async () => {
         const uid = get().userId;
         if (!uid) return;
-        const { data } = await supabase
+        const { data, error } = await supabase
           .from('friend_requests')
           .select('*, profiles!receiver_id(username)')
           .eq('sender_id', uid)
           .eq('status', 'pending');
+          
+        if (error) {
+          console.error('Error fetching sent friend requests:', error);
+        }
           
         if (data) {
           const reqs = data.map(d => ({

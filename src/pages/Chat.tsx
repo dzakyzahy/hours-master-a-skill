@@ -106,8 +106,17 @@ export function Chat() {
     setActiveTab('chat');
   };
 
-  const handleSearchUsers = async (e: React.FormEvent) => {
-    e.preventDefault();
+  useEffect(() => {
+    const delay = setTimeout(() => {
+      if (searchQuery.trim().length > 0) {
+        handleSearchUsers();
+      }
+    }, 500);
+    return () => clearTimeout(delay);
+  }, [searchQuery]);
+
+  const handleSearchUsers = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if (!searchQuery.trim()) return;
     setIsSearching(true);
     setSearchResults([]);
@@ -237,7 +246,12 @@ export function Chat() {
                   className="input-field flex-1" 
                   placeholder="Ketik username teman..." 
                   value={searchQuery} 
-                  onChange={e => setSearchQuery(e.target.value)} 
+                  onChange={e => {
+                    setSearchQuery(e.target.value);
+                    if (e.target.value.trim() === '') {
+                      setSearchResults([]);
+                    }
+                  }} 
                 />
                 <button type="submit" className="btn-primary" style={{ padding: '0 16px', height: '40px', whiteSpace: 'nowrap' }} disabled={isSearching}>
                   <UserPlus size={15} /> {isSearching ? 'Mencari...' : 'Cari'}
@@ -436,6 +450,53 @@ export function Chat() {
                               Menunggu Persetujuan...
                             </span>
                           </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {/* SENT PENDING FRIEND REQUESTS */}
+                {sentFriendRequests.map(req => {
+                  const initials = (req.receiver_username || '?').substring(0, 2).toUpperCase();
+                  return (
+                    <div 
+                      key={`sent-${req.id}`} 
+                      style={{ 
+                        padding: '12px 14px', 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        justifyContent: 'space-between',
+                        gap: '12px',
+                        flexWrap: 'wrap',
+                        background: 'var(--surface-input)',
+                        border: '1px dashed var(--border-hairline-strong)',
+                        borderRadius: '4px',
+                        opacity: 0.7
+                      }}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div 
+                          style={{ 
+                            width: '38px', 
+                            height: '38px', 
+                            borderRadius: '4px', 
+                            background: 'var(--surface-card)',
+                            border: '1px solid var(--border-hairline-strong)',
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            justifyContent: 'center',
+                            fontWeight: 600,
+                            fontFamily: 'Geist Mono, monospace',
+                            fontSize: '13px',
+                            color: 'var(--text-primary)'
+                          }}
+                        >
+                          {initials}
+                        </div>
+                        <div className="flex flex-col">
+                          <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)' }}>@{req.receiver_username}</span>
+                          <span style={{ fontSize: '11px', color: '#60a5fa' }}>Menunggu Persetujuan...</span>
                         </div>
                       </div>
                     </div>
