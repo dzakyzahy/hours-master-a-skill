@@ -479,34 +479,30 @@ export function Chat() {
       </header>
 
       {/* Sleek Minimalist Segmented Tabs */}
-      <div style={{ display: 'flex', background: 'var(--surface-input)', border: '1px solid var(--border-hairline)', borderRadius: '6px', padding: '3px', gap: '4px', marginBottom: '16px' }}>
+      <div className="hub-tab-bar">
         <button 
-          className={activeTab === 'friends' ? 'btn-primary' : 'btn'}
+          className={`hub-tab-btn ${activeTab === 'friends' ? 'active' : ''}`}
           onClick={() => setActiveTab('friends')}
-          style={{ flex: 1, height: '34px', border: 'none', borderRadius: '4px', fontSize: '12.5px', fontWeight: activeTab === 'friends' ? 600 : 500, gap: '6px' }}
         >
-          <FontAwesomeIcon icon={faUsers} style={{ fontSize: '13px' }} /> Daftar Teman ({friends.length})
+          <FontAwesomeIcon icon={faUsers} style={{ fontSize: '12px' }} /> Daftar Teman ({friends.length})
         </button>
         <button 
-          className={activeTab === 'requests' ? 'btn-primary' : 'btn'}
+          className={`hub-tab-btn ${activeTab === 'requests' ? 'active' : ''}`}
           onClick={() => setActiveTab('requests')}
-          style={{ flex: 1, height: '36px', border: 'none', borderRadius: '4px', fontSize: '13px', fontWeight: 500 }}
         >
           Permintaan ({friendRequests.length})
         </button>
         <button 
-          className={activeTab === 'chat' ? 'btn-primary' : 'btn'}
+          className={`hub-tab-btn ${activeTab === 'chat' ? 'active' : ''}`}
           onClick={() => setActiveTab('chat')}
-          style={{ flex: 1, height: '34px', border: 'none', borderRadius: '4px', fontSize: '12.5px', fontWeight: activeTab === 'chat' ? 600 : 500, gap: '6px' }}
         >
-          <FontAwesomeIcon icon={faCommentDots} style={{ fontSize: '13px' }} /> Ruang Chat
+          <FontAwesomeIcon icon={faCommentDots} style={{ fontSize: '12px' }} /> Ruang Chat
         </button>
         <button 
-          className={activeTab === 'clash' ? 'btn-primary' : 'btn'}
+          className={`hub-tab-btn ${activeTab === 'clash' ? 'active' : ''}`}
           onClick={() => setActiveTab('clash')}
-          style={{ flex: 1, height: '34px', border: 'none', borderRadius: '4px', fontSize: '12.5px', fontWeight: activeTab === 'clash' ? 600 : 500, gap: '6px' }}
         >
-          <FontAwesomeIcon icon={faHandFist} style={{ fontSize: '13px' }} /> Clash
+          <FontAwesomeIcon icon={faHandFist} style={{ fontSize: '12px' }} /> Clash
         </button>
       </div>
 
@@ -518,17 +514,18 @@ export function Chat() {
           <div className="flex flex-col gap-5" style={{ overflowY: 'auto' }}>
             {/* Search & Add Friend */}
             <div>
-              <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '6px', display: 'block' }}>
+              <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '8px', display: 'block' }}>
                 Cari & Tambah Teman Baru
               </label>
 
               {/* Quick Suggestions Chips */}
-              <div className="flex items-center gap-2 mb-3" style={{ flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px', flexWrap: 'wrap' }}>
                 <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Pengguna di Sistem:</span>
                 {['diky', 'zahy', 'gg442'].filter(u => u !== currentUsername).map(suggestedName => (
                   <button
                     key={suggestedName}
                     type="button"
+                    className="quick-chip"
                     onClick={() => {
                       setSearchQuery(suggestedName);
                       const filtered = communityUsers.filter(u => (u.username || '').toLowerCase() === suggestedName);
@@ -537,26 +534,16 @@ export function Chat() {
                         setHasSearched(true);
                       }
                     }}
-                    style={{
-                      padding: '2px 8px',
-                      borderRadius: '9999px',
-                      fontSize: '11px',
-                      background: 'var(--surface-card)',
-                      border: '1px solid var(--border-hairline-strong)',
-                      color: 'var(--accent-primary)',
-                      cursor: 'pointer',
-                      fontFamily: 'Geist Mono, monospace'
-                    }}
                   >
                     @{suggestedName}
                   </button>
                 ))}
               </div>
 
-              <form onSubmit={handleSearchUsers} className="flex gap-2 mb-4">
+              <form onSubmit={handleSearchUsers} style={{ display: 'flex', gap: '8px', marginBottom: '18px' }}>
                 <input 
                   type="text" 
-                  className="input-field flex-1" 
+                  className="input-field" 
                   placeholder="Ketik username teman (contoh: diky, zahy)..." 
                   value={searchQuery} 
                   onChange={e => {
@@ -566,89 +553,40 @@ export function Chat() {
                       setHasSearched(false);
                     }
                   }} 
-                  style={{ height: '38px', fontSize: '13px' }}
+                  style={{ flex: 1, height: '40px', fontSize: '13px' }}
                 />
-                <button type="submit" className="btn-primary" style={{ padding: '0 16px', height: '38px', whiteSpace: 'nowrap', fontSize: '12px', gap: '6px' }} disabled={isSearching}>
+                <button 
+                  type="submit" 
+                  className="btn-primary" 
+                  style={{ padding: '0 18px', height: '40px', whiteSpace: 'nowrap', fontSize: '12.5px', gap: '6px' }} 
+                  disabled={isSearching}
+                >
                   <FontAwesomeIcon icon={faUserPlus} style={{ fontSize: '13px' }} /> {isSearching ? 'Mencari...' : 'Cari'}
                 </button>
               </form>
 
               {/* Search Results */}
               {searchResults.length > 0 && (
-                <div className="flex flex-col gap-2 mb-6 p-4 rounded-lg bg-slate-800/40 border border-slate-700/50">
-                  <h3 style={{ margin: '0 0 8px 0', fontSize: '12px', color: 'var(--text-secondary)' }}>Hasil Pencarian</h3>
-                  {searchResults.map(u => (
-                    <div key={u.id} className="flex items-center justify-between p-2 bg-slate-800/60 rounded border border-slate-700/30">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded bg-slate-700 flex items-center justify-center font-bold text-xs uppercase text-white">
-                          {(u.username || 'U').substring(0, 2)}
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="text-sm font-medium text-white">@{u.username}</span>
-                          {u.email && <span className="text-xs text-slate-400">{u.email}</span>}
-                        </div>
-                      </div>
-                      <button 
-                        className="btn-primary text-xs px-3 py-1 h-auto" 
-                        disabled={u.isPending}
-                        onClick={() => {
-                          if (!u.isPending) {
-                            handleSendRequest(u.id, u.username);
-                          }
-                        }}
-                      >
-                        {u.isPending ? '✓ Menunggu...' : '+ Tambah Teman'}
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Search Not Found Feedback */}
-              {hasSearched && searchResults.length === 0 && searchQuery.trim() !== '' && (
-                <div style={{
-                  padding: '12px 14px',
-                  borderRadius: '8px',
-                  background: 'var(--surface-input)',
-                  border: '1px solid var(--border-hairline)',
-                  marginBottom: '16px',
-                  fontSize: '12px',
-                  color: 'var(--text-secondary)'
-                }}>
-                  Tidak ditemukan pengguna dengan nama "@{searchQuery.replace(/^@/, '')}". 
-                  Pengguna lain yang terdaftar di database saat ini: 
-                  <strong style={{ color: 'var(--text-primary)', marginLeft: '4px' }}>
-                    {['diky', 'zahy', 'gg442'].filter(u => u !== currentUsername).join(', ')}
-                  </strong>
-                </div>
-              )}
-
-              {/* Community Members List (When Not Searching) */}
-              {!hasSearched && communityUsers.length > 0 && (
-                <div className="mb-6 p-4 rounded-lg bg-slate-800/30 border border-slate-700/40">
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 style={{ margin: 0, fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                      Pengguna Terdaftar di Komunitas
-                    </h3>
-                    <span style={{ fontSize: '11px', fontFamily: 'Geist Mono, monospace', color: 'var(--text-secondary)' }}>
-                      {communityUsers.length} pengguna
-                    </span>
+                <div className="community-section">
+                  <div className="community-section-header">
+                    <h3 className="community-section-title">Hasil Pencarian</h3>
+                    <span className="community-section-badge">{searchResults.length} ditemukan</span>
                   </div>
-
-                  <div className="flex flex-col gap-2">
-                    {communityUsers.map(u => (
-                      <div key={u.id} className="flex items-center justify-between p-2.5 bg-slate-800/50 rounded border border-slate-700/30">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded bg-slate-700 flex items-center justify-center font-bold text-xs uppercase text-white">
-                            {(u.username || 'U').substring(0, 2)}
+                  <div className="community-list">
+                    {searchResults.map(u => (
+                      <div key={u.id} className="community-card">
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0, flex: 1 }}>
+                          <div className="community-avatar">
+                            {(u.username || 'U').substring(0, 2).toUpperCase()}
                           </div>
-                          <div className="flex flex-col">
-                            <span className="text-sm font-medium text-white">@{u.username}</span>
-                            {u.email && <span className="text-xs text-slate-400">{u.email}</span>}
+                          <div className="community-info">
+                            <span className="community-name">@{u.username}</span>
+                            {u.email && <span className="community-meta">{u.email}</span>}
                           </div>
                         </div>
                         <button 
-                          className={u.isPending ? "btn text-xs px-3 py-1 h-auto opacity-70" : "btn-primary text-xs px-3 py-1 h-auto"} 
+                          className={u.isPending ? "btn" : "btn-primary"} 
+                          style={{ height: '34px', padding: '0 14px', fontSize: '12px', flexShrink: 0 }}
                           disabled={u.isPending}
                           onClick={() => {
                             if (!u.isPending) {
@@ -657,11 +595,81 @@ export function Chat() {
                           }}
                         >
                           {u.isPending ? (
-                            <span className="flex items-center gap-1">
+                            <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                               <FontAwesomeIcon icon={faClock} style={{ fontSize: '10px' }} /> Menunggu Persetujuan
                             </span>
                           ) : (
-                            <span className="flex items-center gap-1">
+                            <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                              <FontAwesomeIcon icon={faUserPlus} style={{ fontSize: '10px' }} /> + Tambah Teman
+                            </span>
+                          )}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Search Not Found Feedback */}
+              {hasSearched && searchResults.length === 0 && searchQuery.trim() !== '' && (
+                <div style={{
+                  padding: '12px 14px',
+                  borderRadius: '10px',
+                  background: 'var(--surface-input)',
+                  border: '1px solid var(--border-hairline)',
+                  marginBottom: '18px',
+                  fontSize: '12.5px',
+                  color: 'var(--text-secondary)',
+                  lineHeight: 1.5
+                }}>
+                  Tidak ditemukan pengguna dengan nama "@{searchQuery.replace(/^@/, '')}". 
+                  Pengguna lain yang terdaftar di database saat ini: 
+                  <strong style={{ color: 'var(--accent-primary)', marginLeft: '4px' }}>
+                    {['diky', 'zahy', 'gg442'].filter(u => u !== currentUsername).map(u => `@${u}`).join(', ')}
+                  </strong>
+                </div>
+              )}
+
+              {/* Community Members List (When Not Searching) */}
+              {!hasSearched && communityUsers.length > 0 && (
+                <div className="community-section">
+                  <div className="community-section-header">
+                    <h3 className="community-section-title">
+                      Pengguna Terdaftar di Komunitas
+                    </h3>
+                    <span className="community-section-badge">
+                      {communityUsers.length} pengguna
+                    </span>
+                  </div>
+
+                  <div className="community-list">
+                    {communityUsers.map(u => (
+                      <div key={u.id} className="community-card">
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0, flex: 1 }}>
+                          <div className="community-avatar">
+                            {(u.username || 'U').substring(0, 2).toUpperCase()}
+                          </div>
+                          <div className="community-info">
+                            <span className="community-name">@{u.username}</span>
+                            {u.email && <span className="community-meta">{u.email}</span>}
+                          </div>
+                        </div>
+                        <button 
+                          className={u.isPending ? "btn" : "btn-primary"} 
+                          style={{ height: '34px', padding: '0 14px', fontSize: '12px', flexShrink: 0 }}
+                          disabled={u.isPending}
+                          onClick={() => {
+                            if (!u.isPending) {
+                              handleSendRequest(u.id, u.username);
+                            }
+                          }}
+                        >
+                          {u.isPending ? (
+                            <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                              <FontAwesomeIcon icon={faClock} style={{ fontSize: '10px' }} /> Menunggu Persetujuan
+                            </span>
+                          ) : (
+                            <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                               <FontAwesomeIcon icon={faUserPlus} style={{ fontSize: '10px' }} /> + Tambah Teman
                             </span>
                           )}
@@ -674,7 +682,7 @@ export function Chat() {
             </div>
 
             {/* List of Friends with Minimalist Online/Offline Presence Dot */}
-            <div>
+            <div style={{ marginTop: '8px', borderTop: '1px solid var(--border-hairline)', paddingTop: '20px' }}>
               <div className="flex items-center justify-between mb-3">
                 <h2 style={{ margin: 0, fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
                   Teman & Rekan Tim

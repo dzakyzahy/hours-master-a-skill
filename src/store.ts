@@ -484,13 +484,12 @@ export const useStore = create<AppState>()(
       setBiometricVerified: (status) => set({ biometricVerified: status }),
       
       ensureValidUserId: async (): Promise<string | null> => {
+        const currentUsername = (get().username || '').trim().toLowerCase();
         let uid = get().userId;
-        const currentUsername = get().username;
-        const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(uid);
-        if (isUUID) return uid;
 
-        if (currentUsername && isSupabaseConfigured) {
+        if (isSupabaseConfigured && currentUsername) {
           try {
+            // Check if profile with current username exists in Supabase profiles
             const { data: myProf } = await supabase
               .from('profiles')
               .select('id')
@@ -498,14 +497,36 @@ export const useStore = create<AppState>()(
               .maybeSingle();
 
             if (myProf?.id) {
-              set({ userId: myProf.id });
+              if (uid !== myProf.id) {
+                set({ userId: myProf.id });
+              }
               return myProf.id;
+            }
+
+            // If profile does not exist yet, auto-create it with clean schema
+            const newId = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : uid;
+            const { data: createdProf, error: insErr } = await supabase
+              .from('profiles')
+              .insert({
+                id: newId,
+                username: currentUsername,
+                email: get().userEmail || `${currentUsername}@skillo.team`,
+                total_hours: 0
+              })
+              .select('id')
+              .single();
+
+            if (!insErr && createdProf?.id) {
+              set({ userId: createdProf.id });
+              return createdProf.id;
             }
           } catch (e) {
             console.warn('ensureValidUserId lookup failed:', e);
           }
         }
-        return null;
+
+        const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(uid);
+        return isUUID ? uid : null;
       },
 
       fetchFriends: async () => {
