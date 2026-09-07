@@ -33,11 +33,22 @@ export interface FriendUser {
   avatar?: string;
   isOnline: boolean;
   lastSeen?: number;
+  totalHours?: number;
+}
+
+export interface FriendRequest {
+  id: string;
+  sender_id: string;
+  sender_username?: string;
+  receiver_id: string;
+  status: string;
+  created_at: string;
 }
 
 interface AppState {
   // Auth
   isAuthenticated: boolean;
+  userId: string;
   username: string;
   userEmail: string;
   login: (u: string, p: string) => Promise<boolean>;
@@ -47,6 +58,12 @@ interface AppState {
 
   // Friends & Presence
   friends: FriendUser[];
+  friendRequests: FriendRequest[];
+  fetchFriends: () => Promise<void>;
+  fetchFriendRequests: () => Promise<void>;
+  sendFriendRequest: (receiverId: string) => Promise<boolean>;
+  acceptFriendRequest: (requestId: string, senderId: string) => Promise<boolean>;
+  rejectFriendRequest: (requestId: string) => Promise<boolean>;
   addFriend: (friend: FriendUser) => void;
   removeFriend: (id: string) => void;
   updateFriendStatus: (username: string, isOnline: boolean, lastSeen?: number) => void;
@@ -82,6 +99,7 @@ interface AppState {
   setRemoteTimerState: (isActive: boolean) => void;
   syncToSupabase: () => Promise<void>;
   loadFromSupabase: () => Promise<void>;
+  syncTotalHoursToSupabase: () => Promise<void>;
 }
 
 const DEFAULT_TEAM_MEMBERS: Record<string, FriendUser[]> = {
@@ -127,10 +145,12 @@ export const useStore = create<AppState>()(
   persist(
     (set, get) => ({
       isAuthenticated: false,
+      userId: '',
       username: '',
       userEmail: '',
       biometricVerified: false,
       friends: DEFAULT_TEAM_MEMBERS.diky,
+
       
       login: async (u, p) => {
         const trimmed = (u || '').trim().toLowerCase();
@@ -179,9 +199,10 @@ export const useStore = create<AppState>()(
               set({ 
                 isAuthenticated: true, 
                 biometricVerified: true,
+                userId: authData.user.id,
                 username: finalUser,
                 userEmail: finalEmail,
-                friends: DEFAULT_TEAM_MEMBERS[finalUser] || DEFAULT_TEAM_MEMBERS.diky
+                friends: [] 
               });
               try {
                 localStorage.setItem('last_user', finalUser);
@@ -198,10 +219,12 @@ export const useStore = create<AppState>()(
         if (p && p.length >= 1) {
           const finalUser = isDiky ? 'diky' : isZahy ? 'zahy' : resolvedUsername;
           const finalEmail = isDiky ? 'dikydwi442@gmail.com' : isZahy ? 'dzakyzr3@gmail.com' : resolvedEmail || `${resolvedUsername}@skillo.team`;
+          const fallbackUserId = isDiky ? 'usr-diky' : isZahy ? 'usr-zahy' : `usr-${resolvedUsername}`;
           
           set({ 
             isAuthenticated: true, 
             biometricVerified: true,
+            userId: fallbackUserId,
             username: finalUser,
             userEmail: finalEmail,
             friends: DEFAULT_TEAM_MEMBERS[finalUser] || DEFAULT_TEAM_MEMBERS.diky
@@ -224,11 +247,97 @@ export const useStore = create<AppState>()(
           }
         } catch {}
         await supabase.auth.signOut();
-        set({ isAuthenticated: false, username: '', userEmail: '', biometricVerified: false });
+        set({ isAuthenticated: false, userId: '', username: '', userEmail: '', biometricVerified: false, friends: [], friendRequests: [] });
       },
 
       setBiometricVerified: (status) => set({ biometricVerified: status }),
       
+      friendRequests: [],
+      
+      fetchFriends: async () => {
+        const uid = get().userId;
+        if (!uid) return;
+        const { data } = await supabase
+          .from('friends')
+          .select('id, user_id_1, user_id_2')
+          .or(`user_id_1.eq.${uid},user_id_2.eq.${uid}`);
+          
+        if (data && data.length > 0) {
+          const friendIds = data.map(r => r.user_id_1 === uid ? r.user_id_2 : r.user_id_1);
+          const { data: profiles } = await supabase
+            .from('profiles')
+            .select('id, username, email, total_hours')
+            .in('id', friendIds);
+            
+          if (profiles) {
+            const mapped: FriendUser[] = profiles.map(p => ({
+              id: p.id,
+              username: p.username,
+              name: p.username,
+              email: p.email,
+              role: 'User',
+              isOnline: false,
+              totalHours: p.total_hours || 0
+            }));
+            set({ friends: mapped });
+          }
+        }
+      },
+      
+      fetchFriendRequests: async () => {
+        const uid = get().userId;
+        if (!uid) return;
+        const { data } = await supabase
+          .from('friend_requests')
+          .select('*, profiles!sender_id(username)')
+          .eq('receiver_id', uid)
+          .eq('status', 'pending');
+          
+        if (data) {
+          const reqs = data.map(d => ({
+            ...d,
+            sender_username: (d.profiles as any)?.username
+          }));
+          set({ friendRequests: reqs });
+        }
+      },
+      
+      sendFriendRequest: async (receiverId) => {
+        const uid = get().userId;
+        if (!uid) return false;
+        const { error } = await supabase
+          .from('friend_requests')
+          .insert({ sender_id: uid, receiver_id: receiverId });
+        return !error;
+      },
+      
+      acceptFriendRequest: async (requestId, senderId) => {
+        const uid = get().userId;
+        if (!uid) return false;
+        
+        await supabase.from('friend_requests').update({ status: 'accepted' }).eq('id', requestId);
+        const { error } = await supabase.from('friends').insert({ user_id_1: senderId, user_id_2: uid });
+        
+        if (!error) {
+          get().fetchFriends();
+          get().fetchFriendRequests();
+          return true;
+        }
+        return false;
+      },
+      
+      rejectFriendRequest: async (requestId) => {
+        const { error } = await supabase
+          .from('friend_requests')
+          .update({ status: 'rejected' })
+          .eq('id', requestId);
+        if (!error) {
+          get().fetchFriendRequests();
+          return true;
+        }
+        return false;
+      },
+
       addFriend: (friend) => set(state => {
         if (state.friends.some(f => f.username.toLowerCase() === friend.username.toLowerCase())) {
           return state;
@@ -424,9 +533,9 @@ export const useStore = create<AppState>()(
         activeProjectId: state.activeProjectId === id ? null : state.activeProjectId
       })),
 
-      addManualTime: (id, minutes) => set((state) => {
+      addManualTime: (id, minutes) => {
         const hoursToAdd = minutes / 60;
-        return {
+        set((state) => ({
           projects: state.projects.map(p => 
             p.id === id
               ? { 
@@ -437,30 +546,37 @@ export const useStore = create<AppState>()(
                 }
               : p
           )
-        };
-      }),
+        }));
+        get().syncTotalHoursToSupabase();
+      },
 
-      addHours: (h) => set((state) => {
-        const id = state.activeProjectId;
-        if (!id) return state;
-        return {
-          projects: state.projects.map(p => 
-            p.id === id 
-              ? { ...p, totalHours: p.totalHours + h, hoursToday: p.hoursToday + h, lastUpdated: Date.now() } 
-              : p
-          )
-        };
-      }),
+      addHours: (h) => {
+        set((state) => {
+          const id = state.activeProjectId;
+          if (!id) return state;
+          return {
+            projects: state.projects.map(p => 
+              p.id === id 
+                ? { ...p, totalHours: p.totalHours + h, hoursToday: p.hoursToday + h, lastUpdated: Date.now() } 
+                : p
+            )
+          };
+        });
+        get().syncTotalHoursToSupabase();
+      },
 
-      setTotalHours: (h) => set((state) => {
-        const id = state.activeProjectId;
-        if (!id) return state;
-        return {
-          projects: state.projects.map(p => 
-            p.id === id ? { ...p, totalHours: h, lastUpdated: Date.now() } : p
-          )
-        };
-      }),
+      setTotalHours: (h) => {
+        set((state) => {
+          const id = state.activeProjectId;
+          if (!id) return state;
+          return {
+            projects: state.projects.map(p => 
+              p.id === id ? { ...p, totalHours: h, lastUpdated: Date.now() } : p
+            )
+          };
+        });
+        get().syncTotalHoursToSupabase();
+      },
 
       setDailyGoal: (h) => set((state) => {
         const id = state.activeProjectId;
@@ -509,6 +625,13 @@ export const useStore = create<AppState>()(
         }
       },
       
+      syncTotalHoursToSupabase: async () => {
+        const state = get();
+        if (!state.userId) return;
+        const total = state.projects.reduce((acc, p) => acc + (p.deletedAt ? 0 : p.totalHours), 0);
+        await supabase.from('profiles').update({ total_hours: total }).eq('id', state.userId);
+      },
+
       loadFromSupabase: async () => {
         if (import.meta.env.VITE_SUPABASE_URL && !import.meta.env.VITE_SUPABASE_URL.includes('your-project')) {
            // Fetch from Supabase and set() here

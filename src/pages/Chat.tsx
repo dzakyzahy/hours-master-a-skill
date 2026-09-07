@@ -1,7 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, UserPlus, Users, MessageSquare, Send, Video } from 'lucide-react';
+import { ArrowLeft, UserPlus, Users, MessageSquare, Send, Video, Swords } from 'lucide-react';
 import { useStore, type FriendUser } from '../store';
+import { ClashArena } from '../components/ClashArena';
+import { supabase } from '../supabaseClient';
+import toast from 'react-hot-toast';
 
 interface LocalChatMessage {
   id: string;
@@ -13,10 +16,12 @@ interface LocalChatMessage {
 
 export function Chat() {
   const navigate = useNavigate();
-  const { username, friends, addFriend, checkFriendsOnlineStatus } = useStore();
-  const [activeTab, setActiveTab] = useState<'friends' | 'chat'>('friends');
+  const { username, userId, friends, friendRequests, sendFriendRequest, acceptFriendRequest, rejectFriendRequest, checkFriendsOnlineStatus, projects } = useStore();
+  const [activeTab, setActiveTab] = useState<'friends' | 'requests' | 'chat' | 'clash'>('friends');
   
   const [searchQuery, setSearchQuery] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchResults, setSearchResults] = useState<any[]>([]);
   const [selectedFriend, setSelectedFriend] = useState<FriendUser | null>(null);
   const effectiveSelectedFriend = selectedFriend || friends[0] || null;
 
@@ -99,23 +104,40 @@ export function Chat() {
     setActiveTab('chat');
   };
 
-  const handleAddCustomFriend = (e: React.FormEvent) => {
+  const handleSearchUsers = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!searchQuery.trim()) return;
+    setIsSearching(true);
+    setSearchResults([]);
+    
+    try {
+      const { data } = await supabase
+        .from('profiles')
+        .select('id, username, email')
+        .neq('id', userId)
+        .ilike('username', `%${searchQuery.trim()}%`)
+        .limit(5);
+        
+      if (data) {
+        const friendIds = friends.map(f => f.id);
+        const filtered = data.filter(u => !friendIds.includes(u.id));
+        setSearchResults(filtered);
+      }
+    } catch(err) {
+      console.error(err);
+    } finally {
+      setIsSearching(false);
+    }
+  };
 
-    const trimmed = searchQuery.trim().toLowerCase();
-    const newFriend: FriendUser = {
-      id: 'usr_' + Date.now(),
-      username: trimmed.replace('@', ''),
-      name: trimmed.charAt(0).toUpperCase() + trimmed.slice(1),
-      email: trimmed.includes('@') ? trimmed : `${trimmed}@skillo.team`,
-      role: 'Team Collaborator',
-      isOnline: false,
-    };
-
-    addFriend(newFriend);
-    setSearchQuery('');
-    alert(`Teman @${newFriend.username} berhasil ditambahkan ke daftar!`);
+  const handleSendRequest = async (receiverId: string, receiverUsername: string) => {
+    const success = await sendFriendRequest(receiverId);
+    if (success) {
+      toast.success(`Permintaan pertemanan terkirim ke @${receiverUsername}`);
+      setSearchResults(prev => prev.filter(u => u.id !== receiverId));
+    } else {
+      toast.error('Gagal mengirim permintaan pertemanan');
+    }
   };
 
   const currentFriendInChat = friends.find(f => f.username.toLowerCase() === effectiveSelectedFriend?.username.toLowerCase()) || effectiveSelectedFriend;
@@ -157,11 +179,25 @@ export function Chat() {
           <Users size={15} /> Daftar Teman ({friends.length})
         </button>
         <button 
+          className={activeTab === 'requests' ? 'btn-primary' : 'btn'}
+          onClick={() => setActiveTab('requests')}
+          style={{ flex: 1, height: '36px', border: 'none', borderRadius: '4px', fontSize: '13px', fontWeight: 500 }}
+        >
+          Permintaan ({friendRequests.length})
+        </button>
+        <button 
           className={activeTab === 'chat' ? 'btn-primary' : 'btn'}
           onClick={() => setActiveTab('chat')}
           style={{ flex: 1, height: '36px', border: 'none', borderRadius: '4px', fontSize: '13px', fontWeight: 500 }}
         >
           <MessageSquare size={15} /> Ruang Chat
+        </button>
+        <button 
+          className={activeTab === 'clash' ? 'btn-primary' : 'btn'}
+          onClick={() => setActiveTab('clash')}
+          style={{ flex: 1, height: '36px', border: 'none', borderRadius: '4px', fontSize: '13px', fontWeight: 500 }}
+        >
+          <Swords size={15} /> Clash
         </button>
       </div>
 
@@ -174,20 +210,40 @@ export function Chat() {
             {/* Search & Add Friend */}
             <div>
               <label style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-secondary)', marginBottom: '8px', display: 'block' }}>
-                Tambah Teman Baru
+                Cari Teman
               </label>
-              <form onSubmit={handleAddCustomFriend} className="flex gap-2">
+              <form onSubmit={handleSearchUsers} className="flex gap-2 mb-4">
                 <input 
                   type="text" 
                   className="input-field flex-1" 
-                  placeholder="Ketik username atau email teman..." 
+                  placeholder="Ketik username teman..." 
                   value={searchQuery} 
                   onChange={e => setSearchQuery(e.target.value)} 
                 />
-                <button type="submit" className="btn-primary" style={{ padding: '0 16px', height: '40px', whiteSpace: 'nowrap' }}>
-                  <UserPlus size={15} /> Tambah
+                <button type="submit" className="btn-primary" style={{ padding: '0 16px', height: '40px', whiteSpace: 'nowrap' }} disabled={isSearching}>
+                  <UserPlus size={15} /> {isSearching ? 'Mencari...' : 'Cari'}
                 </button>
               </form>
+
+              {/* Search Results */}
+              {searchResults.length > 0 && (
+                <div className="flex flex-col gap-2 mb-6 p-4 rounded-lg bg-slate-800/40 border border-slate-700/50">
+                  <h3 style={{ margin: '0 0 8px 0', fontSize: '12px', color: 'var(--text-secondary)' }}>Hasil Pencarian</h3>
+                  {searchResults.map(u => (
+                    <div key={u.id} className="flex items-center justify-between p-2 bg-slate-800/60 rounded border border-slate-700/30">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded bg-slate-700 flex items-center justify-center font-bold text-xs uppercase">{u.username.substring(0,2)}</div>
+                        <div className="flex flex-col">
+                          <span className="text-sm font-medium">@{u.username}</span>
+                        </div>
+                      </div>
+                      <button className="btn-primary text-xs px-3 py-1 h-auto" onClick={() => handleSendRequest(u.id, u.username)}>
+                        + Add
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* List of Friends with Live Online / Offline Presence */}
@@ -305,6 +361,44 @@ export function Chat() {
                 })}
               </div>
             </div>
+          </div>
+        )}
+
+        {/* TAB: REQUESTS */}
+        {activeTab === 'requests' && (
+          <div className="flex flex-col gap-4" style={{ overflowY: 'auto' }}>
+            <h2 style={{ margin: 0, fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
+              Permintaan Pertemanan
+            </h2>
+            
+            {friendRequests.length === 0 && (
+              <p style={{ color: 'var(--text-secondary)', fontSize: '13px', padding: '16px', textAlign: 'center' }}>
+                Belum ada permintaan masuk.
+              </p>
+            )}
+
+            {friendRequests.map(req => (
+              <div key={req.id} className="flex items-center justify-between p-3 bg-slate-800/40 rounded border border-slate-700/50">
+                <div className="flex flex-col">
+                  <span className="text-sm font-bold">@{req.sender_username}</span>
+                  <span className="text-xs text-slate-400">Ingin menjadi teman Anda</span>
+                </div>
+                <div className="flex gap-2">
+                  <button 
+                    className="btn bg-red-900/30 text-red-400 hover:bg-red-900/60 border border-red-900/50 px-3 py-1 rounded"
+                    onClick={() => rejectFriendRequest(req.id)}
+                  >
+                    Tolak
+                  </button>
+                  <button 
+                    className="btn bg-green-900/30 text-green-400 hover:bg-green-900/60 border border-green-900/50 px-3 py-1 rounded"
+                    onClick={() => acceptFriendRequest(req.id, req.sender_id)}
+                  >
+                    Terima
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
         )}
 
@@ -427,6 +521,15 @@ export function Chat() {
               </button>
             </form>
           </div>
+        )}
+
+        {/* TAB 4: CLASH ARENA */}
+        {activeTab === 'clash' && (
+          <ClashArena 
+            friends={friends} 
+            myUsername={username || 'You'} 
+            myTotalHours={projects.reduce((acc, p) => acc + (p.deletedAt ? 0 : p.totalHours), 0)} 
+          />
         )}
       </div>
     </div>

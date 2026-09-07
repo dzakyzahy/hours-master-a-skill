@@ -1,35 +1,34 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Wifi, UserPlus, UserMinus, Volume2, ShieldCheck } from 'lucide-react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { ArrowLeft, Wifi, ShieldCheck } from 'lucide-react';
 import { useStore } from '../store';
 import { VideoTile } from '../components/meeting/VideoTile';
 import { MeetingControls } from '../components/meeting/MeetingControls';
+import { useWebRTC } from '../hooks/useWebRTC';
 import type { Participant } from '../types/meeting';
 
 export function MeetingRoom() {
   const navigate = useNavigate();
-  const { username } = useStore();
+  const { roomId } = useParams<{ roomId?: string }>();
+  const { username, userId } = useStore();
 
-  const [, setLocalStream] = useState<MediaStream | null>(null);
+  const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoOff, setIsVideoOff] = useState(false);
   const [isScreenSharing, setIsScreenSharing] = useState(false);
+  const [screenStream, setScreenStream] = useState<MediaStream | null>(null);
   const [showDevTools, setShowDevTools] = useState(false);
 
-  // Initial Local Participant
-  const [participants, setParticipants] = useState<Participant[]>([
-    {
-      id: 'local-user',
-      name: username || 'You',
-      isAudioMuted: false,
-      isVideoOff: false,
-      isScreenSharing: false,
-      isSpeaking: false,
-      isLocal: true,
-    },
-  ]);
-
   const localStreamRef = useRef<MediaStream | null>(null);
+
+  // WebRTC Hook
+  const { remoteParticipants } = useWebRTC(
+    roomId || 'skillo-global-room',
+    userId || 'guest',
+    username || 'Guest',
+    isScreenSharing && screenStream ? screenStream : localStream,
+    { isAudioMuted: isMuted, isVideoOff, isScreenSharing }
+  );
 
   // Request camera and microphone on mount with proper memory leak cleanup
   useEffect(() => {
@@ -54,15 +53,10 @@ export function MeetingRoom() {
         localStreamRef.current = stream;
         setLocalStream(stream);
 
-        setParticipants(prev =>
-          prev.map(p => (p.isLocal ? { ...p, stream, isVideoOff: false } : p))
-        );
+        setLocalStream(stream);
       } catch (err) {
         console.warn('Camera/mic access unavailable or denied (using avatar fallback):', err);
         setIsVideoOff(true);
-        setParticipants(prev =>
-          prev.map(p => (p.isLocal ? { ...p, isVideoOff: true } : p))
-        );
       }
     }
 
@@ -87,9 +81,6 @@ export function MeetingRoom() {
           t.enabled = !next;
         });
       }
-      setParticipants(list =>
-        list.map(p => (p.isLocal ? { ...p, isAudioMuted: next } : p))
-      );
       return next;
     });
   }, []);
@@ -103,9 +94,6 @@ export function MeetingRoom() {
           t.enabled = !next;
         });
       }
-      setParticipants(list =>
-        list.map(p => (p.isLocal ? { ...p, isVideoOff: next } : p))
-      );
       return next;
     });
   }, []);
@@ -119,26 +107,18 @@ export function MeetingRoom() {
       }
 
       try {
-        const screenStream = await navigator.mediaDevices.getDisplayMedia({
+        const stream = await navigator.mediaDevices.getDisplayMedia({
           video: true,
         });
 
         setIsScreenSharing(true);
-        setParticipants(list =>
-          list.map(p =>
-            p.isLocal ? { ...p, isScreenSharing: true, stream: screenStream } : p
-          )
-        );
+        setScreenStream(stream);
 
-        const videoTrack = screenStream.getVideoTracks()?.[0];
+        const videoTrack = stream.getVideoTracks()?.[0];
         if (videoTrack) {
           videoTrack.onended = () => {
             setIsScreenSharing(false);
-            setParticipants(list =>
-              list.map(p =>
-                p.isLocal ? { ...p, isScreenSharing: false, stream: localStreamRef.current || undefined } : p
-              )
-            );
+            setScreenStream(null);
           };
         }
       } catch (err) {
@@ -146,13 +126,12 @@ export function MeetingRoom() {
       }
     } else {
       setIsScreenSharing(false);
-      setParticipants(list =>
-        list.map(p =>
-          p.isLocal ? { ...p, isScreenSharing: false, stream: localStreamRef.current || undefined } : p
-        )
-      );
+      if (screenStream) {
+        screenStream.getTracks().forEach(t => t.stop());
+        setScreenStream(null);
+      }
     }
-  }, [isScreenSharing]);
+  }, [isScreenSharing, screenStream]);
 
   // Leave Room
   const handleLeave = () => {
@@ -163,43 +142,18 @@ export function MeetingRoom() {
     navigate('/');
   };
 
-  // Dev Tool Simulation Helpers (for testing without live signaling)
-  const addMockPeer = () => {
-    if (participants.length >= 4) return;
-    const currentUsr = (username || '').toLowerCase();
-    const candidatePeers = [
-      { name: 'Zahy (Tech Lead)', usr: 'zahy' },
-      { name: 'Diky (UI/UX)', usr: 'diky' },
-      { name: 'Sarah (Designer)', usr: 'sarah' }
-    ].filter(p => !p.usr.includes(currentUsr) && !currentUsr.includes(p.usr));
-
-    const nextPeer = candidatePeers[participants.length - 1] || candidatePeers[0] || { name: `Peer ${participants.length}` };
-    const newPeer: Participant = {
-      id: `peer-${Date.now()}`,
-      name: nextPeer.name,
-      isAudioMuted: false,
-      isVideoOff: false,
-      isScreenSharing: false,
-      isSpeaking: false,
-      isLocal: false,
-    };
-    setParticipants(prev => [...prev, newPeer]);
+  const localParticipant: Participant = {
+    id: userId || 'local-user',
+    name: username || 'You',
+    isAudioMuted: isMuted,
+    isVideoOff: isVideoOff,
+    isScreenSharing: isScreenSharing,
+    isSpeaking: false,
+    isLocal: true,
+    stream: (isScreenSharing && screenStream) ? screenStream : localStream || undefined,
   };
 
-  const removeMockPeer = () => {
-    if (participants.length <= 1) return;
-    setParticipants(prev => prev.slice(0, prev.length - 1));
-  };
-
-  const toggleMockSpeaking = () => {
-    if (participants.length <= 1) return;
-    setParticipants(prev =>
-      prev.map((p, idx) => (idx === 1 ? { ...p, isSpeaking: !p.isSpeaking } : p))
-    );
-  };
-
-  const displayParticipants = participants.map(p => (p.isLocal ? { ...p, name: username || p.name } : p));
-  // Find screen sharing participant if any
+  const displayParticipants = [localParticipant, ...remoteParticipants];
   const sharingParticipant = displayParticipants.find(p => p.isScreenSharing);
   const participantCount = displayParticipants.length;
 
@@ -392,7 +346,7 @@ export function MeetingRoom() {
         />
       </footer>
 
-      {/* Dev Tools Drawer (Quick testing harness for Diky) */}
+      {/* Dev Tools Drawer */}
       {showDevTools && (
         <div
           style={{
@@ -411,17 +365,9 @@ export function MeetingRoom() {
           }}
         >
           <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--accent-purple)' }}>
-            MOCK HARNESS:
+            WEBRTC DEBUG:
           </span>
-          <button className="btn" onClick={addMockPeer} disabled={participantCount >= 4} style={{ fontSize: '0.75rem', padding: '6px 10px' }}>
-            <UserPlus size={14} /> Add Peer
-          </button>
-          <button className="btn" onClick={removeMockPeer} disabled={participantCount <= 1} style={{ fontSize: '0.75rem', padding: '6px 10px' }}>
-            <UserMinus size={14} /> Remove Peer
-          </button>
-          <button className="btn" onClick={toggleMockSpeaking} disabled={participantCount <= 1} style={{ fontSize: '0.75rem', padding: '6px 10px' }}>
-            <Volume2 size={14} /> Toggle Speaking
-          </button>
+          <span style={{ fontSize: '0.75rem' }}>Peers connected: {remoteParticipants.length}</span>
         </div>
       )}
     </div>
