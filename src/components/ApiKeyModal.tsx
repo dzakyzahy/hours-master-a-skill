@@ -123,12 +123,12 @@ export function ApiKeyModal({ isOpen, onClose, onSaved }: ApiKeyModalProps) {
         className="glass-panel no-drag" 
         style={{ 
           width: '100%', 
-          maxWidth: '520px', 
+          maxWidth: '540px', 
           maxHeight: '92vh', 
           overflowY: 'auto', 
           position: 'relative',
-          padding: '24px 28px',
-          borderRadius: '8px',
+          padding: '28px 32px',
+          borderRadius: '12px',
           border: '1px solid var(--border-hairline-strong)',
           boxShadow: '0 20px 50px rgba(0, 0, 0, 0.6)'
         }}
@@ -175,13 +175,13 @@ export function ApiKeyModal({ isOpen, onClose, onSaved }: ApiKeyModalProps) {
         {/* Security Assurance Card */}
         <div 
           style={{ 
-            padding: '11px 14px', 
-            borderRadius: '6px', 
+            padding: '12px 16px', 
+            borderRadius: '8px', 
             background: 'rgba(2, 132, 199, 0.05)', 
             border: '1px solid rgba(2, 132, 199, 0.18)',
             marginBottom: '18px',
             display: 'flex',
-            gap: '10px',
+            gap: '12px',
             alignItems: 'flex-start'
           }}
         >
@@ -194,9 +194,9 @@ export function ApiKeyModal({ isOpen, onClose, onSaved }: ApiKeyModalProps) {
           </div>
         </div>
 
-        {/* Status Row: Visually demarcated */}
+        {/* Status Row: Visually demarcated & spacious */}
         <div 
-          className="flex justify-between items-center mb-4 px-3 py-2 rounded"
+          className="flex justify-between items-center mb-5 px-4 py-2.5 rounded-lg"
           style={{ background: 'var(--surface-input)', border: '1px solid var(--border-hairline)' }}
         >
           <span style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-secondary)', fontFamily: "'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" }}>
@@ -207,10 +207,14 @@ export function ApiKeyModal({ isOpen, onClose, onSaved }: ApiKeyModalProps) {
               style={{ 
                 display: 'inline-flex', 
                 alignItems: 'center', 
-                gap: '5px', 
-                fontSize: '9px', 
+                gap: '6px', 
+                fontSize: '10px', 
                 fontFamily: "'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif", 
                 color: '#22c55e',
+                background: 'rgba(34, 197, 94, 0.08)',
+                border: '1px solid rgba(34, 197, 94, 0.25)',
+                padding: '3px 10px',
+                borderRadius: '9999px',
                 fontWeight: 600,
                 letterSpacing: '0.01em',
                 lineHeight: 1
@@ -224,10 +228,14 @@ export function ApiKeyModal({ isOpen, onClose, onSaved }: ApiKeyModalProps) {
               style={{ 
                 display: 'inline-flex', 
                 alignItems: 'center', 
-                gap: '5px', 
-                fontSize: '9px', 
+                gap: '6px', 
+                fontSize: '10px', 
                 fontFamily: "'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif", 
                 color: '#f59e0b',
+                background: 'rgba(245, 158, 11, 0.08)',
+                border: '1px solid rgba(245, 158, 11, 0.25)',
+                padding: '3px 10px',
+                borderRadius: '9999px',
                 fontWeight: 600,
                 letterSpacing: '0.01em',
                 lineHeight: 1

@@ -3,8 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faTrashCan, 
-  faEye, 
-  faEyeSlash, 
   faRightFromBracket, 
   faPlus, 
   faUser, 
@@ -31,8 +29,6 @@ export function Home() {
     logout, 
     restoreProject, 
     hardDeleteProject, 
-    clockEnabled, 
-    toggleClock, 
     username, 
     friends, 
     geminiApiKey,
@@ -118,10 +114,6 @@ export function Home() {
             )}
           </button>
 
-          <button className="btn-icon" onClick={toggleClock} title="Toggle Jam Ambient Latar Belakang">
-            {clockEnabled ? <FontAwesomeIcon icon={faEye} style={{ fontSize: '13px' }} /> : <FontAwesomeIcon icon={faEyeSlash} style={{ fontSize: '13px' }} />}
-          </button>
-
           <button className="btn-icon" onClick={() => navigate('/chat')} title="Kolaborasi & Chat Tim">
             <FontAwesomeIcon icon={faCommentDots} style={{ fontSize: '14px' }} />
           </button>
@@ -181,70 +173,84 @@ export function Home() {
       <div 
         className="glass-panel mb-6" 
         style={{ 
-          padding: '12px 18px', 
+          padding: '14px 20px', 
           display: 'flex', 
           alignItems: 'center', 
           justifyContent: 'space-between',
-          gap: '12px',
+          gap: '16px',
           flexWrap: 'wrap',
+          borderRadius: '12px'
         }}
       >
-        <div className="flex items-center gap-2">
-          <FontAwesomeIcon icon={faUsers} style={{ color: 'var(--text-secondary)', fontSize: '13px' }} />
-          <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>Rekan Tim:</span>
-          <span style={{ fontSize: '11px', fontFamily: 'Geist Mono, monospace', color: 'var(--text-secondary)' }}>
-            ({onlineFriendsCount} Online)
+        <div className="flex items-center gap-2.5">
+          <FontAwesomeIcon icon={faUsers} style={{ color: 'var(--accent-cyan)', fontSize: '13px' }} />
+          <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.01em', fontFamily: "'Geist', sans-serif" }}>
+            Rekan Tim
+          </span>
+          <span 
+            style={{ 
+              fontSize: '11px', 
+              fontFamily: "'Geist', sans-serif", 
+              color: 'var(--text-secondary)',
+              background: 'var(--surface-input)',
+              padding: '2px 8px',
+              borderRadius: '9999px',
+              border: '1px solid var(--border-hairline)',
+              fontWeight: 500
+            }}
+          >
+            {onlineFriendsCount} Online
           </span>
         </div>
 
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-3 flex-wrap">
           {friends.map(f => (
             <div 
               key={f.id}
               onClick={() => navigate('/chat')}
-              className="flex items-center gap-2 px-2.5 py-1 rounded cursor-pointer transition-all hover:border-white/20"
+              className="flex items-center gap-2 cursor-pointer transition-all hover:border-white/30"
               style={{
                 background: 'var(--surface-input)',
                 border: '1px solid var(--border-hairline)',
-                fontSize: '11px',
-                fontFamily: 'Geist Mono, monospace',
-                borderRadius: '5px'
+                fontSize: '12px',
+                fontFamily: "'Geist', sans-serif",
+                borderRadius: '9999px',
+                padding: '6px 14px',
+                userSelect: 'none'
               }}
               title={`Klik untuk chat dengan ${f.name}`}
             >
               <span 
                 style={{ 
-                  width: '6px', 
-                  height: '6px', 
+                  width: '7px', 
+                  height: '7px', 
                   borderRadius: '50%', 
                   backgroundColor: f.isOnline ? '#22c55e' : '#64748b',
                   boxShadow: f.isOnline ? '0 0 6px rgba(34, 197, 94, 0.75)' : 'none',
                   flexShrink: 0
                 }} 
               />
-              <span style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{f.name}</span>
+              <span style={{ color: 'var(--text-primary)', fontWeight: 500, letterSpacing: '-0.01em' }}>{f.name}</span>
             </div>
           ))}
           <button 
+            type="button"
+            className="flex items-center gap-2 cursor-pointer transition-all hover:border-cyan-500/40"
             style={{ 
-              background: 'transparent', 
-              border: 'none', 
+              background: 'var(--surface-card)', 
+              border: '1px solid var(--border-hairline-strong)', 
               color: 'var(--text-primary)', 
-              fontSize: '11px', 
-              fontFamily: 'Geist Mono, monospace',
-              cursor: 'pointer',
-              textDecoration: 'none',
-              borderBottom: '1px solid var(--border-hairline-strong)',
-              padding: '0 0 1px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px'
+              fontSize: '12px', 
+              fontFamily: "'Geist', sans-serif",
+              borderRadius: '9999px',
+              padding: '6px 14px',
+              fontWeight: 500
             }}
             onClick={() => navigate('/chat')}
           >
-            Buka Hub &rarr;
+            <span>Buka Hub &rarr;</span>
             {friendRequests.length > 0 && (
-              <span style={{ background: '#ef4444', color: 'white', padding: '1px 5px', borderRadius: '10px', fontSize: '10px', fontWeight: 'bold' }}>
+              <span style={{ background: '#ef4444', color: 'white', padding: '1px 6px', borderRadius: '9999px', fontSize: '10px', fontWeight: 700 }}>
                 {friendRequests.length}
               </span>
             )}
@@ -276,17 +282,17 @@ export function Home() {
           ))}
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px', marginTop: '32px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '24px', marginTop: '32px' }}>
           {activeProjects.map(p => (
             <div 
               key={p.id} 
               className="project-card-interactive" 
-              style={{ cursor: 'pointer', position: 'relative', padding: '20px' }} 
+              style={{ cursor: 'pointer', position: 'relative', padding: '24px', borderRadius: '12px' }} 
               onClick={() => handleOpenProject(p.id)}
             >
               <button 
                 className="btn-icon" 
-                style={{ position: 'absolute', top: 12, right: 12, width: '28px', height: '28px', color: 'var(--text-placeholder)', borderColor: 'transparent' }}
+                style={{ position: 'absolute', top: 14, right: 14, width: '30px', height: '30px', color: 'var(--text-placeholder)', borderColor: 'transparent' }}
                 onClick={(e) => { e.stopPropagation(); deleteProject(p.id); }}
                 title="Pindahkan ke Recycle Bin"
               >
@@ -294,31 +300,31 @@ export function Home() {
               </button>
               <h3 
                 style={{ 
-                  margin: '0 0 14px 0', 
-                  paddingRight: '28px',
+                  margin: '0 0 16px 0', 
+                  paddingRight: '32px',
                   whiteSpace: 'nowrap',
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
                   display: 'block',
-                  fontSize: '15px',
+                  fontSize: '16px',
                   fontWeight: 600,
-                  letterSpacing: '-0.015em',
+                  letterSpacing: '-0.02em',
                   color: 'var(--text-primary)'
                 }}
                 title={p.name}
               >
                 {p.name}
               </h3>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: '5px', lineHeight: 1 }}>
-                <span style={{ fontSize: '30px', fontWeight: 700, letterSpacing: '-0.03em', fontVariantNumeric: 'tabular-nums', color: 'var(--text-primary)', fontFamily: 'Geist, sans-serif' }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', lineHeight: 1 }}>
+                <span style={{ fontSize: '32px', fontWeight: 700, letterSpacing: '-0.03em', fontVariantNumeric: 'tabular-nums', color: 'var(--text-primary)', fontFamily: 'Geist, sans-serif' }}>
                   {p.totalHours.toFixed(1)}
                 </span>
-                <span style={{ fontSize: '12px', fontFamily: 'Geist Mono, monospace', color: 'var(--text-secondary)', fontWeight: 500 }}>
+                <span style={{ fontSize: '13px', fontFamily: 'Geist Mono, monospace', color: 'var(--text-secondary)', fontWeight: 500 }}>
                   hrs
                 </span>
               </div>
-              <div className="progress-track mt-3" style={{ height: '4px' }}>
-                <div className="progress-fill" style={{ width: `${Math.min((p.totalHours / (p.phases[p.phases.length-1]?.hoursEnd || 10000))*100, 100)}%` }}></div>
+              <div className="progress-track mt-4" style={{ height: '5px', borderRadius: '9999px' }}>
+                <div className="progress-fill" style={{ width: `${Math.min((p.totalHours / (p.phases[p.phases.length-1]?.hoursEnd || 10000))*100, 100)}%`, borderRadius: '9999px' }}></div>
               </div>
             </div>
           ))}
