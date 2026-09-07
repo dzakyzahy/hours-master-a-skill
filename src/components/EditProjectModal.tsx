@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { X, Plus, Trash2, Clock } from 'lucide-react';
 import { useStore, type SkillPhase, type Project } from '../store';
 

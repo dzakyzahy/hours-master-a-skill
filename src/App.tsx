@@ -62,7 +62,7 @@ export default function App() {
       });
 
       return () => {
-        backListener.then(l => l.remove()).catch(() => {});
+        backListener.then((l: any) => l.remove()).catch(() => {});
       };
     }
   }, [theme]);
@@ -108,7 +108,7 @@ export default function App() {
               } 
             />
             <Route 
-              path="/meeting" 
+              path="/meeting/:roomId?" 
               element={
                 <ProtectedRoute>
                   <MeetingRoom />

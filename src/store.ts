@@ -29,7 +29,7 @@ interface AppState {
   isAuthenticated: boolean;
   username: string;
   login: (u: string, p: string) => Promise<boolean>;
-  logout: () => void;
+  logout: () => Promise<void>;
   setBiometricVerified: (status: boolean) => void;
   biometricVerified: boolean;
 
@@ -134,7 +134,10 @@ export const useStore = create<AppState>()(
 
         return false;
       },
-      logout: () => set({ isAuthenticated: false, username: '', biometricVerified: false }),
+      logout: async () => {
+        await supabase.auth.signOut();
+        set({ isAuthenticated: false, username: '', biometricVerified: false });
+      },
       setBiometricVerified: (status) => set({ biometricVerified: status }),
       
       theme: 'dark',
@@ -161,7 +164,10 @@ export const useStore = create<AppState>()(
       ],
       activeProjectId: null,
 
-      setActiveProject: (id) => set({ activeProjectId: id }),
+      setActiveProject: (id) => {
+        set({ activeProjectId: id });
+        get().syncToSupabase();
+      },
       
       addProject: (name, phases) => set((state) => ({
         projects: [...state.projects, {
@@ -197,9 +203,9 @@ export const useStore = create<AppState>()(
         activeProjectId: state.activeProjectId === id ? null : state.activeProjectId
       })),
 
-      addManualTime: (id, minutes) => set((state) => {
+      addManualTime: (id, minutes) => {
         const hoursToAdd = minutes / 60;
-        return {
+        set((state) => ({
           projects: state.projects.map(p => 
             p.id === id
               ? { 
@@ -210,20 +216,23 @@ export const useStore = create<AppState>()(
                 }
               : p
           )
-        };
-      }),
+        }));
+        get().syncToSupabase();
+      },
 
-      addHours: (h) => set((state) => {
+      addHours: (h) => {
+        const state = get();
         const id = state.activeProjectId;
-        if (!id) return state;
-        return {
+        if (!id) return;
+        set((state) => ({
           projects: state.projects.map(p => 
             p.id === id 
               ? { ...p, totalHours: p.totalHours + h, hoursToday: p.hoursToday + h, lastUpdated: Date.now() } 
               : p
           )
-        };
-      }),
+        }));
+        get().syncToSupabase();
+      },
 
       setTotalHours: (h) => set((state) => {
         const id = state.activeProjectId;
@@ -269,13 +278,17 @@ export const useStore = create<AppState>()(
       
       syncToSupabase: async () => {
         const state = get();
-        // Only sync if supabase is actually configured (not placeholder)
         if (import.meta.env.VITE_SUPABASE_URL && !import.meta.env.VITE_SUPABASE_URL.includes('your-project')) {
           try {
-            // Simplified sync: just an example of pushing the current state
-            // In a real app, you'd iterate over projects and upsert to public.projects
-            // For now, this is a stub that won't crash the app if keys are missing.
-            console.log("Syncing to Supabase...", state, supabase);
+            const { data: authData } = await supabase.auth.getUser();
+            if (authData?.user) {
+              const totalHours = state.projects.reduce((acc, p) => acc + p.totalHours, 0);
+              const activeProj = state.projects.find(p => p.id === state.activeProjectId);
+              await supabase.from('profiles').update({
+                total_hours: totalHours,
+                current_skill: activeProj ? activeProj.name : null
+              }).eq('id', authData.user.id);
+            }
           } catch (e) {
             console.error("Supabase sync error:", e);
           }
