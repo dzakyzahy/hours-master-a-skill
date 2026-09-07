@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Plus, Trash2, Clock } from 'lucide-react';
+import { X, Plus, Trash, Clock, Check, PencilSimple } from '@phosphor-icons/react';
 import { useStore, type SkillPhase, type Project } from '../store';
 
 interface EditProjectModalProps {
@@ -13,6 +13,7 @@ export function EditProjectModal({ project, isOpen, onClose }: EditProjectModalP
   const [phases, setPhases] = useState<SkillPhase[]>(project.phases);
   const { updateProject, addManualTime } = useStore();
   const [addMinutes, setAddMinutes] = useState('');
+  const [timeMessage, setTimeMessage] = useState('');
 
   if (!isOpen) return null;
 
@@ -22,7 +23,7 @@ export function EditProjectModal({ project, isOpen, onClose }: EditProjectModalP
     setPhases([
       ...phases,
       {
-        id: Date.now().toString(),
+        id: `phase_${Date.now()}`,
         name: '',
         title: '',
         hoursRequired: 20,
@@ -56,7 +57,8 @@ export function EditProjectModal({ project, isOpen, onClose }: EditProjectModalP
     if (!isNaN(mins) && mins !== 0) {
       addManualTime(project.id, mins);
       setAddMinutes('');
-      alert(`Successfully added ${mins} minutes to ${project.name}`);
+      setTimeMessage(`Berhasil menambahkan ${mins} menit ke ${project.name}`);
+      setTimeout(() => setTimeMessage(''), 4000);
     }
   };
 
@@ -68,56 +70,201 @@ export function EditProjectModal({ project, isOpen, onClose }: EditProjectModalP
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="glass-panel w-full max-w-lg max-h-[90vh] overflow-y-auto no-drag">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="m-0">Edit Project</h2>
-          <button onClick={onClose} className="btn"><X size={20} /></button>
+    <div 
+      style={{ 
+        position: 'fixed', 
+        inset: 0, 
+        background: 'rgba(0,0,0,0.6)', 
+        backdropFilter: 'blur(8px)', 
+        zIndex: 100, 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        padding: '20px' 
+      }}
+      onClick={onClose}
+    >
+      <div 
+        className="glass-panel no-drag" 
+        style={{ 
+          width: '100%', 
+          maxWidth: '560px', 
+          maxHeight: '90vh', 
+          overflowY: 'auto', 
+          position: 'relative',
+          padding: '24px'
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button 
+          onClick={onClose} 
+          className="btn" 
+          style={{ position: 'absolute', top: 18, right: 18, width: '32px', height: '32px', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          aria-label="Tutup"
+        >
+          <X size={15} />
+        </button>
+
+        {/* Modal Header */}
+        <div className="flex items-center gap-3 mb-5">
+          <div 
+            style={{ 
+              width: '34px', 
+              height: '34px', 
+              borderRadius: '6px', 
+              background: 'var(--surface-input)', 
+              border: '1px solid var(--border-hairline-strong)',
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center',
+              color: 'var(--accent-cyan)',
+              flexShrink: 0
+            }}
+          >
+            <PencilSimple size={17} />
+          </div>
+          <div>
+            <h2 style={{ margin: 0, fontSize: '16px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.02em', fontFamily: 'Geist, sans-serif' }}>
+              Edit Proyek Keahlian
+            </h2>
+            <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+              Perbarui judul, fase pembelajaran, atau sesuaikan jam manual
+            </span>
+          </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div>
-            <label className="text-muted mb-2 block text-sm font-medium">Project Name</label>
-            <input type="text" className="input-field" value={name} onChange={e => setName(e.target.value)} placeholder="e.g., Learn Rust" autoFocus />
+            <label style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-primary)', display: 'block', marginBottom: '6px' }}>
+              Nama Proyek
+            </label>
+            <input 
+              type="text" 
+              className="input-field" 
+              value={name} 
+              onChange={e => setName(e.target.value)} 
+              placeholder="e.g. Learn Rust" 
+              style={{ height: '38px', fontSize: '12.5px' }}
+              autoFocus 
+            />
           </div>
 
           <div>
-            <div className="flex justify-between items-center mb-2">
-              <label className="text-muted text-sm font-medium">Learning Phases</label>
-              <button type="button" onClick={handleAddPhase} className="btn text-xs py-1 px-2"><Plus size={14} className="mr-1" /> Add Phase</button>
+            <div className="flex justify-between items-center mb-2.5">
+              <label style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                Fase Pembelajaran ({phases.length})
+              </label>
+              <button 
+                type="button" 
+                onClick={handleAddPhase} 
+                className="btn"
+                style={{ height: '28px', padding: '0 10px', fontSize: '11px', gap: '4px' }}
+              >
+                <Plus size={13} /> Tambah Fase
+              </button>
             </div>
             
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-2">
               {phases.map((phase, idx) => {
                 const phaseId = phase.id || phase.title || `phase-${idx}`;
                 const phaseName = phase.name ?? phase.title ?? '';
                 const phaseHours = phase.hoursRequired ?? (phase.hoursEnd - phase.hoursStart);
                 return (
-                  <div key={phaseId} className="flex gap-2 items-center bg-slate-900/50 p-2 rounded-lg border border-slate-700">
-                    <input type="text" className="input-field flex-1" value={phaseName} onChange={e => handleUpdatePhase(phaseId, 'name', e.target.value)} placeholder="Phase Name (e.g., Basics)" />
-                    <input type="number" className="input-field w-24" value={phaseHours} onChange={e => handleUpdatePhase(phaseId, 'hoursRequired', Number(e.target.value))} min="1" />
-                    <span className="text-muted text-sm">hrs</span>
-                    <button type="button" onClick={() => handleRemovePhase(phaseId)} className="btn p-2 text-red-400 hover:bg-red-400/20"><Trash2 size={16} /></button>
+                  <div 
+                    key={phaseId} 
+                    style={{ 
+                      display: 'flex', 
+                      gap: '8px', 
+                      alignItems: 'center', 
+                      background: 'var(--surface-input)', 
+                      padding: '8px 10px', 
+                      borderRadius: '6px', 
+                      border: '1px solid var(--border-hairline)' 
+                    }}
+                  >
+                    <input 
+                      type="text" 
+                      className="input-field flex-1" 
+                      value={phaseName} 
+                      onChange={e => handleUpdatePhase(phaseId, 'name', e.target.value)} 
+                      placeholder="Nama Fase (e.g. Dasar Sintaksis)"
+                      style={{ height: '34px', fontSize: '12px' }}
+                    />
+                    <div className="flex items-center gap-1.5" style={{ flexShrink: 0 }}>
+                      <input 
+                        type="number" 
+                        className="input-field" 
+                        value={phaseHours} 
+                        onChange={e => handleUpdatePhase(phaseId, 'hoursRequired', Number(e.target.value))} 
+                        min="1" 
+                        style={{ width: '68px', height: '34px', fontSize: '12px', textAlign: 'center' }}
+                      />
+                      <span style={{ fontSize: '11px', fontFamily: 'Geist Mono, monospace', color: 'var(--text-secondary)' }}>jam</span>
+                    </div>
+                    <button 
+                      type="button" 
+                      onClick={() => handleRemovePhase(phaseId)} 
+                      className="btn"
+                      style={{ width: '32px', height: '32px', padding: 0, color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.25)', flexShrink: 0 }}
+                      title="Hapus Fase"
+                    >
+                      <Trash size={13} />
+                    </button>
                   </div>
                 );
               })}
-              {phases.length === 0 && <div className="text-center p-4 border border-dashed border-slate-700 rounded-lg text-muted text-sm">No phases defined. Add a phase to break down your goal.</div>}
+              {phases.length === 0 && (
+                <div style={{ textAlign: 'center', padding: '16px', border: '1px dashed var(--border-hairline-strong)', borderRadius: '6px', color: 'var(--text-secondary)', fontSize: '12px' }}>
+                  Belum ada fase. Klik &quot;Tambah Fase&quot; untuk merancang tahapan.
+                </div>
+              )}
             </div>
           </div>
           
-          <div className="flex justify-end gap-2 border-b border-slate-700 pb-6">
-            <button type="button" onClick={onClose} className="btn">Cancel</button>
-            <button type="submit" className="btn btn-primary">Save Changes</button>
+          <div className="flex justify-end gap-2 pt-3" style={{ borderTop: '1px solid var(--border-hairline)' }}>
+            <button type="button" onClick={onClose} className="btn" style={{ height: '36px', padding: '0 14px', fontSize: '12px' }}>
+              Batal
+            </button>
+            <button type="submit" className="btn-primary" style={{ height: '36px', padding: '0 16px', fontSize: '12px', gap: '6px' }}>
+              <Check size={14} weight="bold" /> Simpan Perubahan
+            </button>
           </div>
         </form>
 
-        <div className="mt-6">
-          <h3 className="text-sm font-medium text-cyan-400 mb-2 flex items-center gap-2"><Clock size={16}/> Manual Time Entry</h3>
-          <p className="text-xs text-muted mb-3">Forgot to start the timer? Add or subtract minutes manually.</p>
+        {/* Manual Time Entry Section */}
+        <div className="mt-5 pt-4" style={{ borderTop: '1px solid var(--border-hairline)' }}>
+          <div className="flex items-center gap-1.5 mb-1">
+            <Clock size={15} style={{ color: 'var(--accent-cyan)' }} />
+            <span style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-primary)' }}>
+              Entri Jam Belajar Manual
+            </span>
+          </div>
+          <p style={{ fontSize: '11.5px', color: 'var(--text-secondary)', margin: '0 0 10px' }}>
+            Lupa menyalakan timer? Tambahkan atau kurangi menit belajar secara manual.
+          </p>
           <form onSubmit={handleManualTimeAdd} className="flex gap-2">
-            <input type="number" className="input-field flex-1" value={addMinutes} onChange={e => setAddMinutes(e.target.value)} placeholder="Minutes (e.g., 30 or -15)" />
-            <button type="submit" className="btn btn-primary bg-cyan-600 hover:bg-cyan-700 text-white">Apply</button>
+            <input 
+              type="number" 
+              className="input-field flex-1" 
+              value={addMinutes} 
+              onChange={e => setAddMinutes(e.target.value)} 
+              placeholder="Menit (e.g. 30 atau -15)"
+              style={{ height: '36px', fontSize: '12px' }}
+            />
+            <button 
+              type="submit" 
+              className="btn"
+              disabled={!addMinutes.trim()}
+              style={{ height: '36px', padding: '0 14px', fontSize: '12px' }}
+            >
+              Terapkan
+            </button>
           </form>
+          {timeMessage && (
+            <span style={{ fontSize: '11px', color: '#22c55e', display: 'block', marginTop: '6px', fontFamily: 'Geist Mono, monospace' }}>
+              {timeMessage}
+            </span>
+          )}
         </div>
       </div>
     </div>

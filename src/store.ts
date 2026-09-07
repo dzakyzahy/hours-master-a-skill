@@ -76,6 +76,7 @@ interface AppState {
   // Settings
   theme: 'dark' | 'light';
   toggleTheme: () => void;
+  setTheme: (t: 'dark' | 'light') => void;
   clockEnabled: boolean;
   toggleClock: () => void;
   geminiApiKey: string;
@@ -219,8 +220,6 @@ export const useStore = create<AppState>()(
 
       setBiometricVerified: (status) => set({ biometricVerified: status }),
       
-      friendRequests: [],
-      
       fetchFriends: async () => {
         const uid = get().userId;
         if (!uid) return;
@@ -350,21 +349,22 @@ export const useStore = create<AppState>()(
         const now = Date.now();
         set(state => ({
           friends: state.friends.map(f => {
+            let lastSeen = f.lastSeen;
             try {
               const lastSeenStr = localStorage.getItem(`presence_${f.username.toLowerCase()}`);
               if (lastSeenStr) {
-                const lastSeen = parseInt(lastSeenStr, 10);
-                const isOnline = (now - lastSeen) < 12000;
-                return { ...f, isOnline, lastSeen };
+                lastSeen = Math.max(lastSeen || 0, parseInt(lastSeenStr, 10));
               }
             } catch {}
-            return f;
+            const isOnline = Boolean(lastSeen && (now - lastSeen) < 12000);
+            return { ...f, isOnline, lastSeen };
           })
         }));
       },
       
       theme: 'dark',
       toggleTheme: () => set((state) => ({ theme: state.theme === 'dark' ? 'light' : 'dark' })),
+      setTheme: (t: 'dark' | 'light') => set({ theme: t }),
       clockEnabled: true,
       toggleClock: () => set((state) => ({ clockEnabled: !state.clockEnabled })),
 

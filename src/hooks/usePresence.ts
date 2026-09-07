@@ -50,6 +50,10 @@ export function usePresence() {
         if (!data || typeof data !== 'object') return;
 
         if (data.type === 'HEARTBEAT' && data.username && data.username !== currentUsername) {
+          const usr = data.username.toLowerCase();
+          try {
+            localStorage.setItem(`presence_${usr}`, (data.timestamp || Date.now()).toString());
+          } catch {}
           updateFriendStatus(data.username, true, data.timestamp);
           // Respond back so the other tab knows we are online immediately
           try {
@@ -60,8 +64,16 @@ export function usePresence() {
             });
           } catch {}
         } else if (data.type === 'ACK' && data.username && data.username !== currentUsername) {
+          const usr = data.username.toLowerCase();
+          try {
+            localStorage.setItem(`presence_${usr}`, (data.timestamp || Date.now()).toString());
+          } catch {}
           updateFriendStatus(data.username, true, data.timestamp);
         } else if (data.type === 'LOGOUT' && data.username && data.username !== currentUsername) {
+          const usr = data.username.toLowerCase();
+          try {
+            localStorage.removeItem(`presence_${usr}`);
+          } catch {}
           updateFriendStatus(data.username, false, data.timestamp);
         }
       };

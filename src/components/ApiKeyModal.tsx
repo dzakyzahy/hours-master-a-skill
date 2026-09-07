@@ -1,5 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { X, Key, ShieldCheck, Check, AlertCircle, Eye, EyeOff, ExternalLink, Trash2, Loader2 } from 'lucide-react';
+import { 
+  X, 
+  Key, 
+  ShieldCheck, 
+  Check, 
+  WarningCircle, 
+  Eye, 
+  EyeSlash, 
+  ArrowSquareOut, 
+  Trash, 
+  CircleNotch 
+} from '@phosphor-icons/react';
 import { useStore } from '../store';
 import { GoogleGenAI } from '@google/genai';
 
@@ -74,7 +85,7 @@ export function ApiKeyModal({ isOpen, onClose, onSaved }: ApiKeyModalProps) {
       if (onSaved) onSaved();
       setTimeout(() => {
         onClose();
-      }, 1200);
+      }, 1000);
     } catch (err: any) {
       setTestResult({ success: false, message: 'Gagal menyimpan: ' + (err?.message || 'Error tidak diketahui') });
     } finally {
@@ -111,45 +122,47 @@ export function ApiKeyModal({ isOpen, onClose, onSaved }: ApiKeyModalProps) {
         className="glass-panel no-drag" 
         style={{ 
           width: '100%', 
-          maxWidth: '540px', 
+          maxWidth: '520px', 
           maxHeight: '92vh', 
           overflowY: 'auto', 
           position: 'relative',
-          padding: '28px',
+          padding: '24px 28px',
+          borderRadius: '8px',
           border: '1px solid var(--border-hairline-strong)',
-          boxShadow: '0 24px 60px rgba(0, 0, 0, 0.8)'
+          boxShadow: '0 20px 50px rgba(0, 0, 0, 0.6)'
         }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close Button */}
         <button 
           onClick={onClose} 
-          className="btn" 
-          style={{ position: 'absolute', top: 20, right: 20, width: '32px', height: '32px', padding: 0 }}
+          className="btn-icon" 
+          style={{ position: 'absolute', top: '18px', right: '18px', width: '32px', height: '32px' }}
           aria-label="Tutup"
         >
-          <X size={16} />
+          <X size={15} />
         </button>
 
-        {/* Modal Header */}
+        {/* Modal Header: Balanced Sizing */}
         <div className="flex items-center gap-3 mb-4">
           <div 
             style={{ 
-              width: '40px', 
-              height: '40px', 
+              width: '34px', 
+              height: '34px', 
               borderRadius: '6px', 
               background: 'var(--surface-input)', 
               border: '1px solid var(--border-hairline-strong)',
               display: 'flex', 
               alignItems: 'center', 
               justifyContent: 'center',
-              color: 'var(--accent-cyan)'
+              color: 'var(--accent-cyan)',
+              flexShrink: 0
             }}
           >
-            <Key size={20} />
+            <Key size={17} weight="regular" />
           </div>
           <div>
-            <h2 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
+            <h2 style={{ margin: 0, fontSize: '16px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.02em', fontFamily: 'Geist, sans-serif' }}>
               Pengaturan Kunci API Gemini
             </h2>
             <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
@@ -161,29 +174,32 @@ export function ApiKeyModal({ isOpen, onClose, onSaved }: ApiKeyModalProps) {
         {/* Security Assurance Card */}
         <div 
           style={{ 
-            padding: '12px 14px', 
-            borderRadius: '4px', 
-            background: 'rgba(0, 229, 255, 0.04)', 
-            border: '1px solid rgba(0, 229, 255, 0.15)',
-            marginBottom: '20px',
+            padding: '11px 14px', 
+            borderRadius: '6px', 
+            background: 'rgba(2, 132, 199, 0.05)', 
+            border: '1px solid rgba(2, 132, 199, 0.18)',
+            marginBottom: '18px',
             display: 'flex',
-            gap: '12px',
+            gap: '10px',
             alignItems: 'flex-start'
           }}
         >
-          <ShieldCheck size={18} style={{ color: 'var(--accent-cyan)', flexShrink: 0, marginTop: '2px' }} />
-          <div style={{ fontSize: '12px', lineHeight: 1.5, color: 'var(--text-secondary)' }}>
+          <ShieldCheck size={17} weight="fill" style={{ color: 'var(--accent-cyan)', flexShrink: 0, marginTop: '2px' }} />
+          <div style={{ fontSize: '11.5px', lineHeight: 1.45, color: 'var(--text-secondary)' }}>
             <span style={{ color: 'var(--text-primary)', fontWeight: 600, display: 'block', marginBottom: '2px' }}>
               Keamanan Data & Privasi Terjamin
             </span>
-            Kunci API disimpan secara privat di database Supabase akun Anda (<code style={{ fontFamily: 'Geist Mono, monospace', color: 'var(--accent-cyan)', fontSize: '11px' }}>user_secrets</code>) dengan proteksi Row Level Security (RLS). Kunci tidak pernah dibagikan atau dipublikasikan.
+            Kunci disimpan privat di database Supabase akun Anda (<code style={{ fontFamily: 'Geist Mono, monospace', color: 'var(--accent-cyan)', fontSize: '10.5px' }}>user_secrets</code>) dengan proteksi RLS. Kunci tidak pernah dibagikan atau dipublikasikan.
           </div>
         </div>
 
-        {/* Current Key Status Badge */}
-        <div className="flex justify-between items-center mb-3">
+        {/* Status Row: Visually demarcated */}
+        <div 
+          className="flex justify-between items-center mb-4 px-3 py-2 rounded"
+          style={{ background: 'var(--surface-input)', border: '1px solid var(--border-hairline)' }}
+        >
           <span style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-secondary)' }}>
-            Status Kunci API
+            Status Integrasi
           </span>
           {isConfigured ? (
             <span 
@@ -193,14 +209,11 @@ export function ApiKeyModal({ isOpen, onClose, onSaved }: ApiKeyModalProps) {
                 gap: '6px', 
                 fontSize: '11px', 
                 fontFamily: 'Geist Mono, monospace', 
-                color: '#4ade80',
-                padding: '3px 8px',
-                borderRadius: '3px',
-                border: '1px solid rgba(74, 222, 128, 0.2)',
-                background: 'rgba(74, 222, 128, 0.05)'
+                color: '#22c55e',
+                fontWeight: 600
               }}
             >
-              <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#4ade80' }} />
+              <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#22c55e' }} />
               Tersimpan & Aktif
             </span>
           ) : (
@@ -212,10 +225,7 @@ export function ApiKeyModal({ isOpen, onClose, onSaved }: ApiKeyModalProps) {
                 fontSize: '11px', 
                 fontFamily: 'Geist Mono, monospace', 
                 color: '#f59e0b',
-                padding: '3px 8px',
-                borderRadius: '3px',
-                border: '1px solid rgba(245, 158, 11, 0.2)',
-                background: 'rgba(245, 158, 11, 0.05)'
+                fontWeight: 600
               }}
             >
               <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#f59e0b' }} />
@@ -226,12 +236,30 @@ export function ApiKeyModal({ isOpen, onClose, onSaved }: ApiKeyModalProps) {
 
         <form onSubmit={handleSave}>
           <div className="mb-4">
-            <label 
-              htmlFor="gemini-key-input" 
-              style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-secondary)', marginBottom: '6px', display: 'block' }}
-            >
-              Gemini API Key
-            </label>
+            <div className="flex justify-between items-center mb-1.5">
+              <label 
+                htmlFor="gemini-key-input" 
+                style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-primary)' }}
+              >
+                Gemini API Key
+              </label>
+              <a 
+                href="https://aistudio.google.com/app/apikey" 
+                target="_blank" 
+                rel="noreferrer" 
+                style={{ 
+                  fontSize: '11px', 
+                  color: 'var(--accent-cyan)', 
+                  display: 'inline-flex', 
+                  alignItems: 'center', 
+                  gap: '3px',
+                  textDecoration: 'none'
+                }}
+              >
+                Dapatkan API Key Gratis <ArrowSquareOut size={11} />
+              </a>
+            </div>
+
             <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
               <input 
                 id="gemini-key-input"
@@ -243,9 +271,9 @@ export function ApiKeyModal({ isOpen, onClose, onSaved }: ApiKeyModalProps) {
                 style={{ 
                   paddingRight: '40px', 
                   fontFamily: showKey ? 'Geist Mono, monospace' : 'inherit',
-                  letterSpacing: showKey ? '0.02em' : '0.15em',
+                  letterSpacing: showKey ? '0.01em' : '0.15em',
                   fontSize: '13px',
-                  height: '42px'
+                  height: '40px'
                 }}
                 autoComplete="off"
                 spellCheck="false"
@@ -253,41 +281,30 @@ export function ApiKeyModal({ isOpen, onClose, onSaved }: ApiKeyModalProps) {
               <button 
                 type="button" 
                 onClick={() => setShowKey(!showKey)} 
-                className="btn" 
                 style={{ 
                   position: 'absolute', 
-                  right: '6px', 
-                  width: '32px', 
-                  height: '32px', 
-                  padding: 0, 
+                  right: '8px', 
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'transparent',
                   border: 'none',
+                  cursor: 'pointer',
+                  padding: '4px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
                   color: 'var(--text-placeholder)' 
                 }}
                 title={showKey ? 'Sembunyikan Kunci' : 'Tampilkan Kunci'}
               >
-                {showKey ? <EyeOff size={16} /> : <Eye size={16} />}
+                {showKey ? <EyeSlash size={16} /> : <Eye size={16} />}
               </button>
             </div>
-            <div className="flex justify-between items-center mt-2">
-              <span style={{ fontSize: '11px', color: 'var(--text-placeholder)', fontFamily: 'Geist Mono, monospace' }}>
-                Format: AIzaSy... (39 karakter)
+
+            <div className="flex justify-between items-center mt-1.5">
+              <span style={{ fontSize: '10.5px', color: 'var(--text-placeholder)', fontFamily: 'Geist Mono, monospace' }}>
+                Format standar: AIzaSy... (39 karakter)
               </span>
-              <a 
-                href="https://aistudio.google.com/app/apikey" 
-                target="_blank" 
-                rel="noreferrer" 
-                style={{ 
-                  fontSize: '11px', 
-                  color: 'var(--text-primary)', 
-                  display: 'inline-flex', 
-                  alignItems: 'center', 
-                  gap: '4px',
-                  textDecoration: 'none',
-                  borderBottom: '1px solid var(--border-hairline-strong)'
-                }}
-              >
-                Dapatkan API Key Gratis <ExternalLink size={10} />
-              </a>
             </div>
           </div>
 
@@ -295,19 +312,19 @@ export function ApiKeyModal({ isOpen, onClose, onSaved }: ApiKeyModalProps) {
           {testResult && (
             <div 
               style={{ 
-                padding: '10px 14px', 
-                borderRadius: '4px', 
+                padding: '9px 12px', 
+                borderRadius: '6px', 
                 marginBottom: '16px',
                 display: 'flex', 
                 alignItems: 'center', 
-                gap: '10px',
+                gap: '8px',
                 fontSize: '12px',
-                background: testResult.success ? 'rgba(74, 222, 128, 0.08)' : 'rgba(239, 68, 68, 0.08)',
-                border: testResult.success ? '1px solid rgba(74, 222, 128, 0.2)' : '1px solid rgba(239, 68, 68, 0.2)',
-                color: testResult.success ? '#4ade80' : '#f87171'
+                background: testResult.success ? 'rgba(34, 197, 94, 0.08)' : 'rgba(239, 68, 68, 0.08)',
+                border: testResult.success ? '1px solid rgba(34, 197, 94, 0.25)' : '1px solid rgba(239, 68, 68, 0.25)',
+                color: testResult.success ? '#22c55e' : '#ef4444'
               }}
             >
-              {testResult.success ? <Check size={16} /> : <AlertCircle size={16} />}
+              {testResult.success ? <Check size={15} weight="bold" /> : <WarningCircle size={15} weight="bold" />}
               <span>{testResult.message}</span>
             </div>
           )}
@@ -315,34 +332,34 @@ export function ApiKeyModal({ isOpen, onClose, onSaved }: ApiKeyModalProps) {
           {saveSuccess && (
             <div 
               style={{ 
-                padding: '10px 14px', 
-                borderRadius: '4px', 
+                padding: '9px 12px', 
+                borderRadius: '6px', 
                 marginBottom: '16px',
                 display: 'flex', 
                 alignItems: 'center', 
-                gap: '10px',
+                gap: '8px',
                 fontSize: '12px',
-                background: 'rgba(74, 222, 128, 0.08)',
-                border: '1px solid rgba(74, 222, 128, 0.2)',
-                color: '#4ade80'
+                background: 'rgba(34, 197, 94, 0.08)',
+                border: '1px solid rgba(34, 197, 94, 0.25)',
+                color: '#22c55e'
               }}
             >
-              <Check size={16} />
+              <Check size={15} weight="bold" />
               <span>Kunci API berhasil disimpan secara privat di database akun Anda!</span>
             </div>
           )}
 
           {/* Action Buttons */}
-          <div className="flex gap-2 justify-end mt-4 pt-4" style={{ borderTop: '1px solid var(--border-hairline)' }}>
+          <div className="flex gap-2 justify-end mt-4 pt-3" style={{ borderTop: '1px solid var(--border-hairline)' }}>
             {geminiApiKey && (
               <button 
                 type="button" 
                 className="btn" 
                 onClick={handleClear}
-                style={{ color: '#f87171', borderColor: 'rgba(239, 68, 68, 0.25)', marginRight: 'auto' }}
+                style={{ color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.25)', marginRight: 'auto', height: '36px', fontSize: '12px' }}
                 title="Hapus Kunci API yang tersimpan"
               >
-                <Trash2 size={14} /> Hapus
+                <Trash size={14} /> Hapus
               </button>
             )}
 
@@ -351,20 +368,20 @@ export function ApiKeyModal({ isOpen, onClose, onSaved }: ApiKeyModalProps) {
               className="btn" 
               onClick={handleTestKey}
               disabled={testing || !keyInput.trim()}
-              style={{ height: '38px', padding: '0 14px' }}
+              style={{ height: '36px', padding: '0 12px', fontSize: '12px' }}
             >
-              {testing ? <Loader2 size={14} className="animate-spin" /> : <ShieldCheck size={14} />}
-              {testing ? 'Menguji...' : 'Uji Koneksi'}
+              {testing ? <CircleNotch size={14} className="animate-spin" /> : <ShieldCheck size={14} />}
+              <span>{testing ? 'Menguji...' : 'Uji Koneksi'}</span>
             </button>
 
             <button 
               type="submit" 
               className="btn-primary" 
               disabled={saving || !keyInput.trim()}
-              style={{ height: '38px', padding: '0 18px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+              style={{ height: '36px', padding: '0 16px', fontSize: '12px' }}
             >
-              {saving ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
-              {saving ? 'Menyimpan...' : 'Simpan Kunci API'}
+              {saving ? <CircleNotch size={14} className="animate-spin" /> : <Check size={14} weight="bold" />}
+              <span>{saving ? 'Menyimpan...' : 'Simpan Kunci API'}</span>
             </button>
           </div>
         </form>
