@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowLeft, faWifi, faShieldHalved, faCopy } from '@fortawesome/free-solid-svg-icons';
+import toast from 'react-hot-toast';
 import { useStore } from '../store';
 import { VideoTile } from '../components/meeting/VideoTile';
 import { MeetingControls } from '../components/meeting/MeetingControls';
@@ -199,6 +200,33 @@ export function MeetingRoom() {
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                 <FontAwesomeIcon icon={faShieldHalved} className="text-cyan" style={{ fontSize: '10px' }} /> E2E Encrypted
               </span>
+              <span>•</span>
+              <button 
+                onClick={() => {
+                  navigator.clipboard.writeText(window.location.href);
+                  toast.success('Link meeting disalin!');
+                }}
+                style={{ 
+                  background: 'var(--surface-input)', 
+                  border: '1px solid var(--border-color)', 
+                  color: 'var(--text-primary)', 
+                  cursor: 'pointer', 
+                  padding: '2px 8px', 
+                  borderRadius: '4px', 
+                  display: 'inline-flex', 
+                  alignItems: 'center', 
+                  gap: '6px',
+                  transition: 'background 0.2s',
+                  fontSize: '0.6875rem',
+                  fontFamily: 'Geist Mono, monospace'
+                }}
+                title="Salin Link"
+                onMouseOver={e => e.currentTarget.style.background = 'var(--surface-hover)'}
+                onMouseOut={e => e.currentTarget.style.background = 'var(--surface-input)'}
+              >
+                <FontAwesomeIcon icon={faCopy} style={{ fontSize: '10px' }} />
+                {roomId || 'skillo-global-room'}
+              </button>
             </div>
           </div>
         </div>

@@ -25,6 +25,7 @@ import { ThemeSwitcher } from '../components/ThemeSwitcher';
 export function Home() {
   const { 
     projects, 
+    userId,
     setActiveProject, 
     deleteProject, 
     logout, 
@@ -35,7 +36,6 @@ export function Home() {
     username, 
     friends, 
     geminiApiKey,
-    userId,
     friendRequests,
     fetchFriendRequests
   } = useStore();
