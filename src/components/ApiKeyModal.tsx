@@ -144,8 +144,8 @@ export function ApiKeyModal({ isOpen, onClose, onSaved }: ApiKeyModalProps) {
           <FontAwesomeIcon icon={faXmark} className="text-[14px]" />
         </button>
 
-        {/* Modal Header: Balanced Sizing */}
-        <div className="flex items-center gap-3 mb-4">
+        {/* Modal Header: Aligned with Security Card below */}
+        <div className="flex items-start gap-3 mb-4">
           <div 
             style={{ 
               width: '34px', 
@@ -162,11 +162,11 @@ export function ApiKeyModal({ isOpen, onClose, onSaved }: ApiKeyModalProps) {
           >
             <FontAwesomeIcon icon={faKey} className="text-[15px]" />
           </div>
-          <div>
-            <h2 style={{ margin: 0, fontSize: '16px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.02em', fontFamily: 'Geist, sans-serif' }}>
+          <div style={{ paddingLeft: '2px' }}>
+            <h2 style={{ margin: 0, fontSize: '16px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.02em', fontFamily: 'Geist, sans-serif', lineHeight: 1.3 }}>
               Pengaturan Kunci API Gemini
             </h2>
-            <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+            <span style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'block', marginTop: '2px', lineHeight: 1.4 }}>
               Integrasi privat AI Mastery Generator
             </span>
           </div>
@@ -207,14 +207,15 @@ export function ApiKeyModal({ isOpen, onClose, onSaved }: ApiKeyModalProps) {
               style={{ 
                 display: 'inline-flex', 
                 alignItems: 'center', 
-                gap: '6px', 
-                fontSize: '11px', 
-                fontFamily: 'Geist Mono, monospace', 
+                gap: '5px', 
+                fontSize: '9px', 
+                fontFamily: 'Geist, sans-serif', 
                 color: '#22c55e',
-                fontWeight: 600
+                fontWeight: 600,
+                letterSpacing: '0.01em'
               }}
             >
-              <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#22c55e' }} />
+              <span style={{ width: '5px', height: '5px', borderRadius: '50%', backgroundColor: '#22c55e' }} />
               Tersimpan & Aktif
             </span>
           ) : (
@@ -222,14 +223,15 @@ export function ApiKeyModal({ isOpen, onClose, onSaved }: ApiKeyModalProps) {
               style={{ 
                 display: 'inline-flex', 
                 alignItems: 'center', 
-                gap: '6px', 
-                fontSize: '11px', 
-                fontFamily: 'Geist Mono, monospace', 
+                gap: '5px', 
+                fontSize: '9px', 
+                fontFamily: 'Geist, sans-serif', 
                 color: '#f59e0b',
-                fontWeight: 600
+                fontWeight: 600,
+                letterSpacing: '0.01em'
               }}
             >
-              <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#f59e0b' }} />
+              <span style={{ width: '5px', height: '5px', borderRadius: '50%', backgroundColor: '#f59e0b' }} />
               Belum Dikonfigurasi
             </span>
           )}
