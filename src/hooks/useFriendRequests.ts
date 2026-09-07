@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useStore } from '../store';
 import { supabase } from '../supabaseClient';
 import toast from 'react-hot-toast';
+import { playFriendRequest, playAchievement } from '../utils/audio';
 
 export function useFriendRequests() {
   const { isAuthenticated, userId, fetchFriendRequests, fetchFriends } = useStore();
@@ -33,6 +34,7 @@ export function useFriendRequests() {
             .single();
             
           const senderName = data?.username || 'Seseorang';
+          playFriendRequest();
           toast.success(`${senderName} mengirimkan permintaan pertemanan!`, {
             icon: '👋',
             duration: 5000,
@@ -62,6 +64,7 @@ export function useFriendRequests() {
               .select('username')
               .eq('id', payload.new.receiver_id)
               .single();
+            playAchievement();
             toast.success(`${data?.username || 'Teman Anda'} menerima permintaan Anda!`, { icon: '🎉' });
             fetchFriends();
           } else if (payload.new.status === 'rejected') {

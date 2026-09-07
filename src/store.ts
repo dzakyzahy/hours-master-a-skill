@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { supabase, isSupabaseConfigured } from './supabaseClient';
+import { playTimerStart, playTimerStop } from './utils/audio';
 
 export interface SkillPhase {
   title: string;
@@ -86,6 +87,9 @@ interface AppState {
   theme: 'dark' | 'light';
   toggleTheme: () => void;
   setTheme: (t: 'dark' | 'light') => void;
+  soundEnabled: boolean;
+  setSoundEnabled: (enabled: boolean) => void;
+  toggleSound: () => void;
   geminiApiKey: string;
   setGeminiApiKey: (key: string) => Promise<void>;
   clearGeminiApiKey: () => Promise<void>;
@@ -505,6 +509,9 @@ export const useStore = create<AppState>()(
       theme: 'dark',
       toggleTheme: () => set((state) => ({ theme: state.theme === 'dark' ? 'light' : 'dark' })),
       setTheme: (t: 'dark' | 'light') => set({ theme: t }),
+      soundEnabled: true,
+      setSoundEnabled: (enabled) => set({ soundEnabled: enabled }),
+      toggleSound: () => set((state) => ({ soundEnabled: !state.soundEnabled })),
 
       geminiApiKey: '',
       setGeminiApiKey: async (key: string) => {
@@ -742,6 +749,7 @@ export const useStore = create<AppState>()(
             lastTimerTick: null
           });
 
+          playTimerStop();
           get().syncTotalHoursToSupabase();
 
           // Sync timer_state to Supabase
@@ -771,6 +779,8 @@ export const useStore = create<AppState>()(
             timerProjectId: projId,
             lastTimerTick: now
           });
+
+          playTimerStart();
 
           if (isSupabaseConfigured) {
             try {
@@ -856,6 +866,7 @@ export const useStore = create<AppState>()(
         userEmail: state.userEmail,
         friends: state.friends,
         theme: state.theme,
+        soundEnabled: state.soundEnabled,
         projects: state.projects,
         activeProjectId: state.activeProjectId,
         activeTimer: state.activeTimer,

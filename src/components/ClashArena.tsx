@@ -10,6 +10,7 @@ import {
   faBolt
 } from '@fortawesome/free-solid-svg-icons';
 import type { FriendUser } from '../store';
+import { playDuelStart } from '../utils/audio';
 
 interface ClashArenaProps {
   friends: FriendUser[];
@@ -66,7 +67,10 @@ export function ClashArena({ friends, myUsername, myTotalHours }: ClashArenaProp
           </button>
           <button 
             className={viewMode === '1v1' ? 'btn-primary' : 'btn'}
-            onClick={() => setViewMode('1v1')}
+            onClick={() => {
+              setViewMode('1v1');
+              playDuelStart();
+            }}
             style={{ height: '28px', fontSize: '11px', padding: '0 12px', gap: '5px' }}
           >
             <FontAwesomeIcon icon={faHandFist} style={{ fontSize: '11px' }} /> 1 VS 1

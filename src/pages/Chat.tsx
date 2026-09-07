@@ -15,6 +15,7 @@ import { ClashArena } from '../components/ClashArena';
 import { supabase, isSupabaseConfigured } from '../supabaseClient';
 import toast from 'react-hot-toast';
 import { ThemeSwitcher } from '../components/ThemeSwitcher';
+import { playMessageSent, playMessageReceived } from '../utils/audio';
 
 interface LocalChatMessage {
   id: string;
@@ -137,6 +138,9 @@ export function Chat() {
                 }
                 const next = [...prev, payload];
                 saveMessagesToStorage(next);
+                if (sender !== myUser) {
+                  playMessageReceived();
+                }
                 return next;
               });
             }
@@ -166,6 +170,7 @@ export function Chat() {
               }
               const next = [...prev, msg.payload];
               saveMessagesToStorage(next);
+              playMessageReceived();
               return next;
             });
           }
@@ -220,6 +225,7 @@ export function Chat() {
       if (prev.some(m => m.id === newMsgObj.id)) return prev;
       const next = [...prev, newMsgObj];
       saveMessagesToStorage(next);
+      playMessageSent();
       return next;
     });
 

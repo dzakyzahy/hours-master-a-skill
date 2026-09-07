@@ -8,12 +8,15 @@ import {
   faShieldHalved, 
   faCircleCheck, 
   faKey, 
-  faFingerprint 
+  faFingerprint,
+  faVolumeHigh,
+  faVolumeXmark
 } from '@fortawesome/free-solid-svg-icons';
 import { supabase, isSupabaseConfigured } from '../supabaseClient';
 import { useStore } from '../store';
 import { ApiKeyModal } from '../components/ApiKeyModal';
 import { ThemeSwitcher } from '../components/ThemeSwitcher';
+import { playMessageReceived } from '../utils/audio';
 
 declare global {
   interface Window {
@@ -25,7 +28,7 @@ declare global {
 }
 
 export function Profile() {
-  const { username, userEmail, geminiApiKey, loadGeminiApiKey } = useStore();
+  const { username, userEmail, geminiApiKey, loadGeminiApiKey, soundEnabled, toggleSound } = useStore();
   const navigate = useNavigate();
   const [newUsername, setNewUsername] = useState(username || 'diky');
   const [email, setEmail] = useState(userEmail || (username === 'diky' ? 'dikydwi442@gmail.com' : 'dzakyzr3@gmail.com'));
@@ -338,6 +341,68 @@ export function Profile() {
                 <span style={{ width: '5px', height: '5px', borderRadius: '50%', backgroundColor: '#22c55e' }} />
                 Siap
               </span>
+            </div>
+          </div>
+
+          {/* Sound & Audio FX Section */}
+          <div style={{ marginBottom: '24px', paddingBottom: '22px', borderBottom: '1px solid var(--border-hairline)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div 
+                  style={{ 
+                    width: '34px', 
+                    height: '34px', 
+                    borderRadius: '6px', 
+                    background: 'var(--surface-input)', 
+                    border: '1px solid var(--border-hairline)', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    color: soundEnabled ? 'var(--accent-primary)' : 'var(--text-secondary)',
+                    flexShrink: 0
+                  }}
+                >
+                  <FontAwesomeIcon icon={soundEnabled ? faVolumeHigh : faVolumeXmark} style={{ fontSize: '14px' }} />
+                </div>
+                <div>
+                  <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', display: 'block' }}>
+                    Efek Suara & Audio
+                  </span>
+                  <span style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'block', marginTop: '2px' }}>
+                    Notifikasi synth pesan, timer, & duel
+                  </span>
+                </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {soundEnabled && (
+                  <button
+                    type="button"
+                    onClick={() => playMessageReceived()}
+                    className="btn"
+                    style={{ height: '28px', padding: '0 10px', fontSize: '11px', gap: '4px' }}
+                    title="Dengarkan contoh suara notifikasi"
+                  >
+                    Uji Suara
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={toggleSound}
+                  style={{
+                    padding: '4px 12px',
+                    borderRadius: '6px',
+                    fontSize: '11.5px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    border: soundEnabled ? '1px solid rgba(14, 165, 233, 0.3)' : '1px solid var(--border-hairline)',
+                    background: soundEnabled ? 'rgba(14, 165, 233, 0.1)' : 'var(--surface-input)',
+                    color: soundEnabled ? 'var(--accent-primary)' : 'var(--text-secondary)',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  {soundEnabled ? 'Aktif' : 'Mati'}
+                </button>
+              </div>
             </div>
           </div>
 
