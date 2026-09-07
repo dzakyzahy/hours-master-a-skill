@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Save, ArrowLeft, Shield, CheckCircle2 } from 'lucide-react';
+import { User, Save, ArrowLeft, Shield, CheckCircle2, Key, Fingerprint } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { useStore } from '../store';
+import { ApiKeyModal } from '../components/ApiKeyModal';
 
 declare global {
   interface Window {
@@ -14,7 +15,7 @@ declare global {
 }
 
 export function Profile() {
-  const { username, userEmail } = useStore();
+  const { username, userEmail, geminiApiKey, loadGeminiApiKey } = useStore();
   const navigate = useNavigate();
   const [newUsername, setNewUsername] = useState(username || 'diky');
   const [email, setEmail] = useState(userEmail || (username === 'diky' ? 'dikydwi442@gmail.com' : 'dzakyzr3@gmail.com'));
@@ -22,6 +23,7 @@ export function Profile() {
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState('');
   const [updateStatus, setUpdateStatus] = useState('');
+  const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
 
   const isDiky = (username || '').toLowerCase() === 'diky';
   const roleTitle = isDiky ? 'UI/UX & Mobile Design Lead' : 'Tech Lead & Full-Stack Architect';
@@ -47,7 +49,8 @@ export function Profile() {
       } catch {}
     }
     loadProfile();
-  }, []);
+    loadGeminiApiKey();
+  }, [loadGeminiApiKey]);
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -216,6 +219,35 @@ export function Profile() {
             </h2>
           </div>
           
+          {/* Gemini AI Key & Biometrics Section */}
+          <div style={{ marginBottom: '24px', paddingBottom: '20px', borderBottom: '1px solid var(--border-hairline)' }}>
+            <h3 style={{ margin: '0 0 6px', fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Key size={14} style={{ color: geminiApiKey ? '#4ade80' : 'var(--accent-cyan)' }} />
+              Kunci API Gemini (AI Mastery)
+            </h3>
+            <p style={{ margin: '0 0 12px', fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+              Tersimpan privat di database akun Supabase Anda dengan proteksi Row Level Security.
+            </p>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--surface-input)', border: '1px solid var(--border-hairline)', borderRadius: '4px', marginBottom: '12px' }}>
+              <span style={{ fontSize: '11px', fontFamily: 'Geist Mono, monospace', color: geminiApiKey ? '#4ade80' : 'var(--text-secondary)' }}>
+                {geminiApiKey ? `${geminiApiKey.substring(0, 8)}••••••••••••` : 'Belum Dikonfigurasi'}
+              </span>
+              <button 
+                type="button" 
+                className="btn" 
+                style={{ height: '28px', padding: '0 10px', fontSize: '11px' }}
+                onClick={() => setIsApiKeyModalOpen(true)}
+              >
+                {geminiApiKey ? 'Ubah Kunci' : 'Konfigurasi'}
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', color: 'var(--text-secondary)', fontFamily: 'Geist Mono, monospace' }}>
+              <Fingerprint size={14} style={{ color: 'var(--accent-cyan)' }} />
+              <span>Biometric Sensor: Siap Digunakan</span>
+            </div>
+          </div>
+
           <div className="mb-6">
             <h3 style={{ margin: '0 0 6px', fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)' }}>
               Pembaruan Aplikasi
@@ -255,6 +287,11 @@ export function Profile() {
           </div>
         </div>
       </div>
+
+      <ApiKeyModal
+        isOpen={isApiKeyModalOpen}
+        onClose={() => setIsApiKeyModalOpen(false)}
+      />
     </div>
   );
 }

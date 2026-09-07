@@ -57,6 +57,10 @@ interface AppState {
   toggleTheme: () => void;
   clockEnabled: boolean;
   toggleClock: () => void;
+  geminiApiKey: string;
+  setGeminiApiKey: (key: string) => Promise<void>;
+  clearGeminiApiKey: () => Promise<void>;
+  loadGeminiApiKey: () => Promise<string>;
 
   // Projects
   projects: Project[];
@@ -265,6 +269,105 @@ export const useStore = create<AppState>()(
       clockEnabled: true,
       toggleClock: () => set((state) => ({ clockEnabled: !state.clockEnabled })),
 
+      geminiApiKey: '',
+      setGeminiApiKey: async (key: string) => {
+        const trimmed = key.trim();
+        set({ geminiApiKey: trimmed });
+        try {
+          if (trimmed) {
+            localStorage.setItem('skillo_gemini_key_secure', btoa(trimmed));
+          } else {
+            localStorage.removeItem('skillo_gemini_key_secure');
+          }
+        } catch {}
+
+        const isSupabaseConfigured = Boolean(
+          import.meta.env.VITE_SUPABASE_URL && 
+          !import.meta.env.VITE_SUPABASE_URL.includes('your-project')
+        );
+        if (isSupabaseConfigured) {
+          try {
+            const { data: authData } = await supabase.auth.getUser();
+            if (authData?.user) {
+              const { error } = await supabase.from('user_secrets').upsert({
+                user_id: authData.user.id,
+                secret_type: 'gemini_api_key',
+                secret_value: trimmed,
+                updated_at: new Date().toISOString()
+              }, { onConflict: 'user_id,secret_type' });
+
+              if (error) {
+                await supabase.from('profiles').update({
+                  gemini_api_key: trimmed
+                }).eq('id', authData.user.id);
+              }
+            }
+          } catch (err) {
+            console.warn("Supabase secret sync:", err);
+          }
+        }
+      },
+
+      clearGeminiApiKey: async () => {
+        set({ geminiApiKey: '' });
+        try {
+          localStorage.removeItem('skillo_gemini_key_secure');
+        } catch {}
+        const isSupabaseConfigured = Boolean(
+          import.meta.env.VITE_SUPABASE_URL && 
+          !import.meta.env.VITE_SUPABASE_URL.includes('your-project')
+        );
+        if (isSupabaseConfigured) {
+          try {
+            const { data: authData } = await supabase.auth.getUser();
+            if (authData?.user) {
+              await supabase.from('user_secrets').delete()
+                .eq('user_id', authData.user.id)
+                .eq('secret_type', 'gemini_api_key');
+            }
+          } catch {}
+        }
+      },
+
+      loadGeminiApiKey: async () => {
+        let key = get().geminiApiKey;
+        if (!key) {
+          try {
+            const saved = localStorage.getItem('skillo_gemini_key_secure');
+            if (saved) key = atob(saved);
+          } catch {}
+        }
+
+        const isSupabaseConfigured = Boolean(
+          import.meta.env.VITE_SUPABASE_URL && 
+          !import.meta.env.VITE_SUPABASE_URL.includes('your-project')
+        );
+        if (isSupabaseConfigured) {
+          try {
+            const { data: authData } = await supabase.auth.getUser();
+            if (authData?.user) {
+              const { data } = await supabase.from('user_secrets')
+                .select('secret_value')
+                .eq('user_id', authData.user.id)
+                .eq('secret_type', 'gemini_api_key')
+                .single();
+              if (data?.secret_value) {
+                key = data.secret_value;
+              }
+            }
+          } catch {}
+        }
+
+        if (!key && import.meta.env.VITE_GEMINI_API_KEY) {
+          key = import.meta.env.VITE_GEMINI_API_KEY;
+        }
+
+        if (key && key !== get().geminiApiKey) {
+          set({ geminiApiKey: key });
+        }
+        return key || '';
+      },
+
       projects: [
         {
           id: 'default-1',
@@ -423,7 +526,8 @@ export const useStore = create<AppState>()(
         theme: state.theme,
         clockEnabled: state.clockEnabled,
         projects: state.projects,
-        activeProjectId: state.activeProjectId
+        activeProjectId: state.activeProjectId,
+        geminiApiKey: state.geminiApiKey,
       }),
     }
   )

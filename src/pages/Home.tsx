@@ -1,15 +1,17 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Trash2, Moon, Sun, Eye, EyeOff, LogOut, Plus, User, MessageSquare, RefreshCcw, Video, Layers, Users } from 'lucide-react';
+import { Trash2, Moon, Sun, Eye, EyeOff, LogOut, Plus, User, MessageSquare, RefreshCcw, Video, Layers, Users, Key } from 'lucide-react';
 import { useStore } from '../store';
 import { AiGenerator } from '../AiGenerator';
 import { ManualProjectModal } from '../components/ManualProjectModal';
+import { ApiKeyModal } from '../components/ApiKeyModal';
 import { SkilloLogo } from '../components/SkilloLogo';
 
 export function Home() {
-  const { theme, toggleTheme, projects, setActiveProject, deleteProject, logout, restoreProject, hardDeleteProject, clockEnabled, toggleClock, username, friends } = useStore();
+  const { theme, toggleTheme, projects, setActiveProject, deleteProject, logout, restoreProject, hardDeleteProject, clockEnabled, toggleClock, username, friends, geminiApiKey } = useStore();
   const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
   const [showRecycleBin, setShowRecycleBin] = useState(false);
 
   const activeProjects = projects.filter(p => !p.deletedAt);
@@ -51,6 +53,9 @@ export function Home() {
               <Plus size={15} /> New Project
             </button>
           )}
+          <button className="btn" onClick={() => setIsApiKeyModalOpen(true)} title="Pengaturan Kunci API Gemini" style={{ width: '38px', padding: 0 }}>
+            <Key size={15} style={{ color: geminiApiKey ? '#4ade80' : 'var(--text-secondary)' }} />
+          </button>
           <button className="btn" onClick={toggleClock} title="Toggle Background Clock" style={{ width: '38px', padding: 0 }}>
             {clockEnabled ? <Eye size={15} /> : <EyeOff size={15} />}
           </button>
@@ -69,7 +74,10 @@ export function Home() {
         </div>
 
         {/* Mobile-Only Header Quick Toggles */}
-        <div className="flex gap-2 sm:hidden">
+        <div className="mobile-only-header flex gap-2">
+          <button className="btn" style={{ padding: '0 10px', height: '36px' }} onClick={() => setIsApiKeyModalOpen(true)} title="API Key">
+            <Key size={15} style={{ color: geminiApiKey ? '#4ade80' : 'var(--text-secondary)' }} />
+          </button>
           <button className="btn" style={{ padding: '0 10px', height: '36px' }} onClick={toggleTheme} title="Toggle Theme">
             {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
           </button>
@@ -215,6 +223,11 @@ export function Home() {
       <ManualProjectModal 
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)} 
+      />
+
+      <ApiKeyModal
+        isOpen={isApiKeyModalOpen}
+        onClose={() => setIsApiKeyModalOpen(false)}
       />
 
       {/* Mobile Bottom Navigation Bar */}

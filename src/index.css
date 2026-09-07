@@ -809,3 +809,86 @@ button, a {
   border-color: var(--text-secondary);
 }
 
+/* Responsive Desktop vs Mobile Header Controls */
+@media (min-width: 641px) {
+  .mobile-only-header,
+  .sm\:hidden {
+    display: none !important;
+  }
+  .desktop-header-actions {
+    display: flex !important;
+  }
+  .mobile-bottom-nav {
+    display: none !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .desktop-header-actions {
+    display: none !important;
+  }
+  .mobile-only-header {
+    display: flex !important;
+  }
+  .mobile-content-container {
+    padding-bottom: 90px !important;
+  }
+  .mobile-bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 64px;
+    background: rgba(10, 11, 13, 0.92);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-top: 1px solid var(--border-hairline);
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    padding: 0 12px;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    z-index: 80;
+  }
+  .mobile-bottom-nav .nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 10px;
+    font-family: 'Geist', sans-serif;
+    gap: 4px;
+    cursor: pointer;
+    padding: 6px 10px;
+    border-radius: 6px;
+    transition: color 0.15s ease;
+  }
+  .mobile-bottom-nav .nav-item.active,
+  .mobile-bottom-nav .nav-item:hover {
+    color: var(--text-primary);
+  }
+}
+
+/* Biometric Radar Scanner Animation */
+@keyframes biometricRadar {
+  0% {
+    transform: scale(0.92);
+    opacity: 0.7;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 0.2;
+  }
+  100% {
+    transform: scale(0.92);
+    opacity: 0.7;
+  }
+}
+.biometric-radar-ring {
+  animation: biometricRadar 2s ease-in-out infinite;
+}
+
+

@@ -227,7 +227,7 @@ export function Dashboard() {
             >
               {activeTimer ? <><Square size={15} /> Stop Timer</> : <><Play size={15} /> Start Timer</>}
             </button>
-            <div className="flex gap-2">
+            <div className="flex gap-2" style={{ width: '100%', alignItems: 'center' }}>
               <input 
                 type="number" 
                 step="0.1"
@@ -236,9 +236,14 @@ export function Dashboard() {
                 placeholder="Add hours..."
                 value={manualInput}
                 onChange={(e) => setManualInput(e.target.value)}
-                style={{ height: '38px' }}
+                style={{ height: '38px', flex: '1 1 0%', minWidth: 0 }}
               />
-              <button className="btn-primary" onClick={handleManualAdd} style={{ width: '38px', height: '38px', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <button 
+                className="btn-primary" 
+                onClick={handleManualAdd} 
+                style={{ width: '38px', height: '38px', minWidth: '38px', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+                title="Tambahkan jam"
+              >
                 <Plus size={15} />
               </button>
             </div>
