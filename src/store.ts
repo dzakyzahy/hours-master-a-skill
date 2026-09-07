@@ -63,6 +63,8 @@ interface AppState {
   username: string;
   userEmail: string;
   login: (u: string, p: string) => Promise<boolean>;
+  register: (email: string, username: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  resetPassword: (emailOrUsername: string) => Promise<{ success: boolean; message: string }>;
   logout: () => Promise<void>;
   setBiometricVerified: (status: boolean) => void;
   biometricVerified: boolean;
@@ -202,6 +204,154 @@ export const useStore = create<AppState>()(
         }
 
         return false;
+      },
+
+      register: async (email, username, password) => {
+        const cleanEmail = email.trim().toLowerCase();
+        const cleanUser = username.trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
+        const cleanPass = password.trim();
+
+        if (!cleanEmail || !cleanUser || !cleanPass) {
+          return { success: false, error: 'Semua kolom wajib diisi.' };
+        }
+        if (cleanUser.length < 3) {
+          return { success: false, error: 'Username minimal 3 karakter (huruf, angka, _).' };
+        }
+        if (cleanPass.length < 6) {
+          return { success: false, error: 'Kata sandi minimal 6 karakter.' };
+        }
+
+        if (isSupabaseConfigured) {
+          try {
+            // Check if username is already taken
+            const { data: existingUser } = await supabase
+              .from('profiles')
+              .select('id')
+              .ilike('username', cleanUser)
+              .maybeSingle();
+
+            if (existingUser) {
+              return { success: false, error: 'Username sudah digunakan. Silakan pilih username lain.' };
+            }
+
+            // Register in Supabase Auth
+            const { data: authData, error: signUpError } = await supabase.auth.signUp({
+              email: cleanEmail,
+              password: cleanPass,
+              options: {
+                data: {
+                  username: cleanUser,
+                }
+              }
+            });
+
+            if (signUpError) {
+              return { success: false, error: signUpError.message || 'Gagal mendaftarkan akun di Supabase.' };
+            }
+
+            if (authData?.user) {
+              // Ensure profile entry exists
+              await supabase.from('profiles').upsert({
+                id: authData.user.id,
+                username: cleanUser,
+                email: cleanEmail,
+                total_hours: 0,
+                role: 'Learner',
+                created_at: new Date().toISOString()
+              }, { onConflict: 'id' });
+
+              set({
+                isAuthenticated: true,
+                biometricVerified: true,
+                userId: authData.user.id,
+                username: cleanUser,
+                userEmail: cleanEmail,
+                friends: []
+              });
+
+              try {
+                localStorage.setItem('last_user', cleanUser);
+                localStorage.setItem(`presence_${cleanUser}`, Date.now().toString());
+              } catch {}
+
+              return { success: true };
+            }
+          } catch (err: any) {
+            console.warn("Supabase registration error, attempting local fallback:", err);
+          }
+        }
+
+        // Offline / Local registration fallback
+        const fallbackUserId = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `usr-${cleanUser}`;
+        set({
+          isAuthenticated: true,
+          biometricVerified: true,
+          userId: fallbackUserId,
+          username: cleanUser,
+          userEmail: cleanEmail,
+          friends: []
+        });
+
+        try {
+          localStorage.setItem('last_user', cleanUser);
+          localStorage.setItem(`presence_${cleanUser}`, Date.now().toString());
+        } catch {}
+
+        return { success: true };
+      },
+
+      resetPassword: async (emailOrUsername) => {
+        const query = emailOrUsername.trim().toLowerCase();
+        if (!query) {
+          return { success: false, message: 'Masukkan email atau username Anda.' };
+        }
+
+        if (isSupabaseConfigured) {
+          try {
+            let targetEmail = query;
+            if (!query.includes('@')) {
+              const { data: profile } = await supabase
+                .from('profiles')
+                .select('email')
+                .ilike('username', query)
+                .maybeSingle();
+
+              if (profile?.email) {
+                targetEmail = profile.email;
+              } else {
+                return { success: false, message: `Username "${query}" tidak ditemukan di sistem.` };
+              }
+            }
+
+            const { error } = await supabase.auth.resetPasswordForEmail(targetEmail, {
+              redirectTo: window.location.origin
+            });
+
+            if (error) {
+              return { success: false, message: error.message || 'Gagal mengirim email reset kata sandi.' };
+            }
+
+            return { 
+              success: true, 
+              message: `Tautan pemulihan kata sandi telah dikirim ke ${targetEmail}. Silakan periksa email Anda.` 
+            };
+          } catch (err: any) {
+            console.warn("Supabase reset password error:", err);
+          }
+        }
+
+        // Offline mode guidance
+        if (query === 'diky' || query === 'zahy') {
+          return {
+            success: true,
+            message: `Akun "${query}" pada mode lokal dapat langsung masuk menggunakan kata sandi default: 123`
+          };
+        }
+
+        return {
+          success: true,
+          message: 'Mode lokal aktif: Anda dapat langsung masuk dengan kata sandi yang Anda gunakan saat login sebelumnya.'
+        };
       },
 
       logout: async () => {
