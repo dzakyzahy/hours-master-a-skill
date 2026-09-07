@@ -630,6 +630,7 @@ export const useStore = create<AppState>()(
       partialize: (state) => ({
         isAuthenticated: state.isAuthenticated,
         biometricVerified: state.biometricVerified,
+        userId: state.userId,
         username: state.username,
         userEmail: state.userEmail,
         friends: state.friends,
