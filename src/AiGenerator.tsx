@@ -93,8 +93,8 @@ export function AiGenerator() {
   return (
     <div className="glass-panel mt-6" style={{ padding: '24px', position: 'relative' }}>
       {/* Header with Title & API Key Status Trigger (No Duplicate Button) */}
-      <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
-        <div className="flex items-center gap-2.5">
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', marginBottom: '8px', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <FontAwesomeIcon icon={faRoute} style={{ color: 'var(--accent-cyan)', fontSize: '15px' }} />
           <h2 style={{ margin: 0, fontSize: '14.5px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.015em' }}>
             AI Mastery Plan Generator
@@ -144,7 +144,7 @@ export function AiGenerator() {
             flexWrap: 'wrap'
           }}
         >
-          <div className="flex items-center gap-2.5" style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '12px', color: 'var(--text-secondary)' }}>
             <FontAwesomeIcon icon={faLock} style={{ color: '#f59e0b', flexShrink: 0, fontSize: '14px' }} />
             <span>Kunci API Gemini diperlukan untuk membuat roadmap otomatis. Kunci disimpan privat di akun Anda.</span>
           </div>
@@ -160,8 +160,8 @@ export function AiGenerator() {
       )}
 
       {/* Quick Suggestion Pills - Minimalist Template Fit */}
-      <div className="flex items-center gap-1.5 mb-4 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
-        <span style={{ fontSize: '10.5px', color: 'var(--text-placeholder)', fontFamily: 'Geist Mono, monospace', whiteSpace: 'nowrap', marginRight: '2px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', overflowX: 'auto', paddingBottom: '4px', scrollbarWidth: 'none' }}>
+        <span style={{ fontSize: '11px', color: 'var(--text-placeholder)', fontFamily: "'Geist', sans-serif", whiteSpace: 'nowrap', marginRight: '4px', fontWeight: 500 }}>
           Ide Cepat:
         </span>
         {suggestions.map(s => (
@@ -169,7 +169,7 @@ export function AiGenerator() {
             key={s}
             type="button"
             className="chip-suggestion"
-            style={{ fontSize: '10.5px', height: '24px', padding: '0 8px', borderRadius: '4px' }}
+            style={{ fontSize: '11px', height: '26px', padding: '0 10px', borderRadius: '9999px' }}
             onClick={() => setTopic(s)}
           >
             {s}
