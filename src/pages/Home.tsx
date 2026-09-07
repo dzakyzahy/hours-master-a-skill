@@ -8,7 +8,7 @@ import { ApiKeyModal } from '../components/ApiKeyModal';
 import { SkilloLogo } from '../components/SkilloLogo';
 
 export function Home() {
-  const { theme, toggleTheme, projects, setActiveProject, deleteProject, logout, restoreProject, hardDeleteProject, clockEnabled, toggleClock, username, friends, geminiApiKey, userId } = useStore();
+  const { theme, toggleTheme, projects, setActiveProject, deleteProject, logout, restoreProject, hardDeleteProject, clockEnabled, toggleClock, username, friends, geminiApiKey, userId, friendRequests, fetchFriendRequests } = useStore();
   const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
@@ -22,6 +22,10 @@ export function Home() {
     setActiveProject(id);
     navigate('/dashboard');
   };
+
+  useEffect(() => {
+    fetchFriendRequests();
+  }, [fetchFriendRequests]);
 
   const onlineFriendsCount = friends.filter(f => f.isOnline).length;
 
@@ -145,11 +149,19 @@ export function Home() {
               cursor: 'pointer',
               textDecoration: 'none',
               borderBottom: '1px solid var(--border-hairline-strong)',
-              padding: '0 0 1px'
+              padding: '0 0 1px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
             }}
             onClick={() => navigate('/chat')}
           >
             Buka Hub &rarr;
+            {friendRequests.length > 0 && (
+              <span style={{ background: '#ef4444', color: 'white', padding: '1px 5px', borderRadius: '10px', fontSize: '10px', fontWeight: 'bold' }}>
+                {friendRequests.length}
+              </span>
+            )}
           </button>
         </div>
       </div>
@@ -245,8 +257,13 @@ export function Home() {
           <Plus size={22} className="text-cyan" />
           <span>Add</span>
         </button>
-        <button className="nav-item" onClick={() => navigate('/chat')} title="Collaboration & Chat">
+        <button className="nav-item" onClick={() => navigate('/chat')} title="Collaboration & Chat" style={{ position: 'relative' }}>
           <MessageSquare size={20} className="text-purple" />
+          {friendRequests.length > 0 && (
+            <span style={{ position: 'absolute', top: '4px', right: '12px', background: '#ef4444', color: 'white', width: '16px', height: '16px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 'bold' }}>
+              {friendRequests.length}
+            </span>
+          )}
           <span>Chat</span>
         </button>
         <button className="nav-item" onClick={() => navigate('/profile')} title="Profile">
