@@ -185,16 +185,25 @@ html, body {
   display: inline-flex;
   align-items: center;
   background: var(--surface-input);
-  border: 1px solid var(--border-hairline);
+  border: 1.5px solid #ffffff;
   border-radius: 9999px;
   padding: 3px;
   gap: 3px;
   user-select: none;
-  transition: border-color 0.15s ease, background 0.15s ease;
+  transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+}
+
+[data-theme='light'] .theme-switcher-segmented {
+  border: 1.5px solid #000000;
+  background: var(--surface-input);
 }
 
 .theme-switcher-segmented:hover {
-  border-color: var(--border-hairline-strong);
+  border-color: #ffffff;
+}
+
+[data-theme='light'] .theme-switcher-segmented:hover {
+  border-color: #000000;
 }
 
 .theme-switcher-option {
@@ -206,7 +215,7 @@ html, body {
   padding: 0 10px;
   border-radius: 9999px;
   background: transparent;
-  border: none;
+  border: 1px solid transparent;
   color: var(--text-secondary);
   font-family: 'Geist', sans-serif;
   font-size: 12px;
@@ -223,13 +232,15 @@ html, body {
   background: var(--surface-card);
   color: var(--text-primary);
   font-weight: 600;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
+  border: 1px solid #ffffff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
 }
 
 [data-theme='light'] .theme-switcher-option.active {
   background: #ffffff;
   color: #0f172a;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.12);
+  border: 1px solid #000000;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.15);
 }
 
 .theme-switcher-text {
