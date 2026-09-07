@@ -182,7 +182,7 @@ export function Home() {
           borderRadius: '12px'
         }}
       >
-        <div className="flex items-center gap-2.5">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <FontAwesomeIcon icon={faUsers} style={{ color: 'var(--accent-cyan)', fontSize: '13px' }} />
           <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.01em', fontFamily: "'Geist', sans-serif" }}>
             Rekan Tim
@@ -193,7 +193,7 @@ export function Home() {
               fontFamily: "'Geist', sans-serif", 
               color: 'var(--text-secondary)',
               background: 'var(--surface-input)',
-              padding: '2px 8px',
+              padding: '3px 9px',
               borderRadius: '9999px',
               border: '1px solid var(--border-hairline)',
               fontWeight: 500
@@ -203,13 +203,16 @@ export function Home() {
           </span>
         </div>
 
-        <div className="flex items-center gap-3 flex-wrap">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
           {friends.map(f => (
             <div 
               key={f.id}
               onClick={() => navigate('/chat')}
-              className="flex items-center gap-2 cursor-pointer transition-all hover:border-white/30"
+              className="cursor-pointer transition-all hover:border-white/30"
               style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
                 background: 'var(--surface-input)',
                 border: '1px solid var(--border-hairline)',
                 fontSize: '12px',
@@ -235,8 +238,11 @@ export function Home() {
           ))}
           <button 
             type="button"
-            className="flex items-center gap-2 cursor-pointer transition-all hover:border-cyan-500/40"
+            className="cursor-pointer transition-all hover:border-cyan-500/40"
             style={{ 
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
               background: 'var(--surface-card)', 
               border: '1px solid var(--border-hairline-strong)', 
               color: 'var(--text-primary)', 
