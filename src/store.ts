@@ -104,6 +104,7 @@ interface AppState {
   login: (u: string, p: string) => Promise<boolean>;
   register: (email: string, username: string, password: string) => Promise<{ success: boolean; error?: string }>;
   resetPassword: (emailOrUsername: string) => Promise<{ success: boolean; message: string }>;
+  updatePassword: (newPassword: string) => Promise<{ success: boolean; message: string }>;
   logout: () => Promise<void>;
   setBiometricVerified: (status: boolean) => void;
   biometricVerified: boolean;
@@ -218,6 +219,10 @@ export const useStore = create<AppState>()(
                 userEmail: finalEmail, 
                 projects: userProjects,
                 activeProjectId: userProjects[0]?.id || null,
+                activeTimer: false,
+                timerStartedAt: null,
+                timerProjectId: null,
+                lastTimerTick: null,
                 friends: [] 
               });
               try {
@@ -246,6 +251,10 @@ export const useStore = create<AppState>()(
             userEmail: finalEmail, 
             projects: userProjects,
             activeProjectId: userProjects[0]?.id || null,
+            activeTimer: false,
+            timerStartedAt: null,
+            timerProjectId: null,
+            lastTimerTick: null,
             friends: [] 
           });
           try {
@@ -318,6 +327,10 @@ export const useStore = create<AppState>()(
                 userEmail: cleanEmail,
                 projects: [],
                 activeProjectId: null,
+                activeTimer: false,
+                timerStartedAt: null,
+                timerProjectId: null,
+                lastTimerTick: null,
                 friends: []
               });
 
@@ -348,6 +361,10 @@ export const useStore = create<AppState>()(
           userEmail: cleanEmail,
           projects: [],
           activeProjectId: null,
+          activeTimer: false,
+          timerStartedAt: null,
+          timerProjectId: null,
+          lastTimerTick: null,
           friends: []
         });
 
@@ -415,6 +432,25 @@ export const useStore = create<AppState>()(
         };
       },
 
+      updatePassword: async (newPassword) => {
+        const cleanPass = newPassword.trim();
+        if (!cleanPass || cleanPass.length < 6) {
+          return { success: false, message: 'Kata sandi minimal 6 karakter.' };
+        }
+        if (isSupabaseConfigured) {
+          try {
+            const { error } = await supabase.auth.updateUser({ password: cleanPass });
+            if (error) {
+              return { success: false, message: error.message || 'Gagal memperbarui kata sandi.' };
+            }
+            return { success: true, message: 'Kata sandi baru berhasil disimpan! Silakan masuk dengan kata sandi baru.' };
+          } catch (err: any) {
+            return { success: false, message: err?.message || 'Terjadi kesalahan sistem.' };
+          }
+        }
+        return { success: true, message: 'Kata sandi baru berhasil disimpan.' };
+      },
+
       logout: async () => {
         const curr = get().username;
         const uid = get().userId;
@@ -435,6 +471,10 @@ export const useStore = create<AppState>()(
           biometricVerified: false, 
           projects: [],
           activeProjectId: null,
+          activeTimer: false,
+          timerStartedAt: null,
+          timerProjectId: null,
+          lastTimerTick: null,
           friends: [], 
           friendRequests: [] 
         });

@@ -1,8 +1,9 @@
 import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { HashRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faWifi, faSquare } from '@fortawesome/free-solid-svg-icons';
+import { faWifi, faSquare, faKey } from '@fortawesome/free-solid-svg-icons';
 import { useStore } from './store';
+import { supabase } from './supabaseClient';
 import { useGlobalTimer } from './hooks/useGlobalTimer';
 import { Login } from './pages/Login';
 import { Home } from './pages/Home';
@@ -165,6 +166,190 @@ function GlobalFloatingTimer() {
   );
 }
 
+function PasswordRecoveryModal() {
+  const [isOpen, setIsOpen] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    const hash = window.location.hash || '';
+    const search = window.location.search || '';
+    return hash.includes('type=recovery') || search.includes('type=recovery');
+  });
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [feedback, setFeedback] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
+  const { updatePassword, logout } = useStore();
+
+  useEffect(() => {
+    // Listen for Supabase recovery event
+    const { data: authListener } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setIsOpen(true);
+      }
+    });
+
+    return () => {
+      authListener?.subscription?.unsubscribe();
+    };
+  }, []);
+
+  if (!isOpen) return null;
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newPassword.length < 6) {
+      setFeedback({ type: 'error', text: 'Kata sandi minimal 6 karakter.' });
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setFeedback({ type: 'error', text: 'Konfirmasi kata sandi tidak cocok.' });
+      return;
+    }
+
+    setLoading(true);
+    setFeedback(null);
+    try {
+      const res = await updatePassword(newPassword);
+      if (res.success) {
+        setFeedback({ type: 'success', text: res.message });
+        setTimeout(async () => {
+          setIsOpen(false);
+          await logout();
+          window.location.hash = '#/login';
+        }, 1800);
+      } else {
+        setFeedback({ type: 'error', text: res.message });
+      }
+    } catch (err: any) {
+      setFeedback({ type: 'error', text: err?.message || 'Gagal menyimpan kata sandi baru.' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div 
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 99999,
+        background: 'rgba(0, 0, 0, 0.65)',
+        backdropFilter: 'blur(8px)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '16px'
+      }}
+    >
+      <div 
+        className="glass-panel animate-scale-in" 
+        style={{
+          width: '100%',
+          maxWidth: '420px',
+          padding: '28px',
+          borderRadius: '16px',
+          border: '1px solid var(--border-color)',
+          boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '16px'
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div 
+            style={{
+              width: '38px',
+              height: '38px',
+              borderRadius: '10px',
+              background: 'rgba(14, 165, 233, 0.15)',
+              color: 'var(--accent-primary)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '16px'
+            }}
+          >
+            <FontAwesomeIcon icon={faKey} />
+          </div>
+          <div>
+            <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 600 }}>Setel Kata Sandi Baru</h3>
+            <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-secondary)' }}>
+              Sesi pemulihan akun aktif. Masukkan kata sandi baru Anda.
+            </p>
+          </div>
+        </div>
+
+        {feedback && (
+          <div 
+            style={{
+              padding: '10px 14px',
+              borderRadius: '8px',
+              fontSize: '12.5px',
+              background: feedback.type === 'error' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.1)',
+              color: feedback.type === 'error' ? 'var(--color-danger)' : 'var(--color-success)',
+              border: `1px solid ${feedback.type === 'error' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(16, 185, 129, 0.2)'}`
+            }}
+          >
+            {feedback.text}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div>
+            <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '6px' }}>
+              Kata Sandi Baru
+            </label>
+            <input 
+              type="password"
+              className="input-field"
+              placeholder="Minimal 6 karakter..."
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              required
+              minLength={6}
+              style={{ width: '100%' }}
+            />
+          </div>
+
+          <div>
+            <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '6px' }}>
+              Konfirmasi Kata Sandi Baru
+            </label>
+            <input 
+              type="password"
+              className="input-field"
+              placeholder="Ulangi kata sandi baru..."
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              required
+              minLength={6}
+              style={{ width: '100%' }}
+            />
+          </div>
+
+          <div style={{ display: 'flex', gap: '10px', marginTop: '8px' }}>
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={() => setIsOpen(false)}
+              style={{ flex: 1, height: '38px', fontSize: '13px' }}
+            >
+              Batal
+            </button>
+            <button
+              type="submit"
+              className="btn-primary"
+              disabled={loading}
+              style={{ flex: 2, height: '38px', fontSize: '13px' }}
+            >
+              {loading ? 'Menyimpan...' : 'Simpan Kata Sandi'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   const { theme } = useStore();
   usePresence();
@@ -198,6 +383,7 @@ export default function App() {
   return (
     <div style={{ display: 'flex', minHeight: '100vh', width: '100%', position: 'relative', overflow: 'hidden' }}>
       <OfflineBanner />
+      <PasswordRecoveryModal />
       <HashRouter>
         <Suspense fallback={<PageLoader />}>
           <Routes>
