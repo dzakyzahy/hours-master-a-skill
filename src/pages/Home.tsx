@@ -1,19 +1,20 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
-  Trash, 
-  Eye, 
-  EyeSlash, 
-  SignOut, 
-  Plus, 
-  User, 
-  ChatTeardropText, 
-  ArrowsClockwise, 
-  VideoCamera, 
-  Stack, 
-  Users, 
-  Key 
-} from '@phosphor-icons/react';
+  faTrashCan, 
+  faEye, 
+  faEyeSlash, 
+  faRightFromBracket, 
+  faPlus, 
+  faUser, 
+  faCommentDots, 
+  faArrowsRotate, 
+  faVideo, 
+  faLayerGroup, 
+  faUsers, 
+  faKey 
+} from '@fortawesome/free-solid-svg-icons';
 import { useStore } from '../store';
 import { AiGenerator } from '../AiGenerator';
 import { ManualProjectModal } from '../components/ManualProjectModal';
@@ -78,16 +79,16 @@ export function Home() {
         {/* Desktop Header Actions: Workspace Group, Utility Icons, and Separated Theme Switcher */}
         <div className="desktop-header-actions header-actions-cluster">
           {/* Workspace Primary Controls */}
-          <button className="btn" onClick={() => navigate('/meeting')} title="Masuk Focus Room">
-            <VideoCamera size={15} weight="regular" /> Focus Room
+          <button className="btn" onClick={() => navigate('/meeting')} title="Masuk Focus Room" style={{ gap: '6px' }}>
+            <FontAwesomeIcon icon={faVideo} style={{ fontSize: '13px' }} /> Focus Room
           </button>
-          <button className="btn" onClick={() => setShowRecycleBin(!showRecycleBin)} title="Lihat item yang dihapus">
-            <Trash size={15} weight="regular" />
+          <button className="btn" onClick={() => setShowRecycleBin(!showRecycleBin)} title="Lihat item yang dihapus" style={{ gap: '6px' }}>
+            <FontAwesomeIcon icon={faTrashCan} style={{ fontSize: '13px' }} />
             <span>{showRecycleBin ? 'Kembali' : `Recycle Bin (${deletedProjects.length})`}</span>
           </button>
           {!showRecycleBin && (
-            <button className="btn-primary" onClick={() => setIsModalOpen(true)} title="Buat Proyek Baru">
-              <Plus size={15} weight="bold" /> Proyek Baru
+            <button className="btn-primary" onClick={() => setIsModalOpen(true)} title="Buat Proyek Baru" style={{ gap: '6px' }}>
+              <FontAwesomeIcon icon={faPlus} style={{ fontSize: '13px' }} /> Proyek Baru
             </button>
           )}
 
@@ -101,7 +102,7 @@ export function Home() {
             title={geminiApiKey ? 'Kunci API Gemini: Terhubung' : 'Konfigurasi Kunci API Gemini'}
             style={{ position: 'relative' }}
           >
-            <Key size={16} weight={geminiApiKey ? 'fill' : 'regular'} style={{ color: geminiApiKey ? '#22c55e' : 'var(--text-secondary)' }} />
+            <FontAwesomeIcon icon={faKey} style={{ color: geminiApiKey ? '#22c55e' : 'var(--text-secondary)', fontSize: '13px' }} />
             {geminiApiKey && (
               <span 
                 style={{ 
@@ -118,19 +119,19 @@ export function Home() {
           </button>
 
           <button className="btn-icon" onClick={toggleClock} title="Toggle Jam Ambient Latar Belakang">
-            {clockEnabled ? <Eye size={16} weight="regular" /> : <EyeSlash size={16} weight="regular" />}
+            {clockEnabled ? <FontAwesomeIcon icon={faEye} style={{ fontSize: '13px' }} /> : <FontAwesomeIcon icon={faEyeSlash} style={{ fontSize: '13px' }} />}
           </button>
 
           <button className="btn-icon" onClick={() => navigate('/chat')} title="Kolaborasi & Chat Tim">
-            <ChatTeardropText size={16} weight="regular" />
+            <FontAwesomeIcon icon={faCommentDots} style={{ fontSize: '14px' }} />
           </button>
 
           <button className="btn-icon" onClick={() => navigate('/profile')} title="Pengaturan Profil Pengguna">
-            <User size={16} weight="regular" />
+            <FontAwesomeIcon icon={faUser} style={{ fontSize: '13px' }} />
           </button>
 
           <button className="btn-icon" onClick={logout} title="Keluar dari Akun">
-            <SignOut size={16} weight="regular" />
+            <FontAwesomeIcon icon={faRightFromBracket} style={{ fontSize: '13px' }} />
           </button>
 
           {/* Symmetrical Vertical Separator */}
@@ -143,11 +144,11 @@ export function Home() {
         {/* Mobile-Only Header Quick Toggles */}
         <div className="mobile-only-header flex items-center gap-2">
           <button className="btn-icon" onClick={() => setIsApiKeyModalOpen(true)} title="API Key">
-            <Key size={16} style={{ color: geminiApiKey ? '#22c55e' : 'var(--text-secondary)' }} />
+            <FontAwesomeIcon icon={faKey} style={{ color: geminiApiKey ? '#22c55e' : 'var(--text-secondary)', fontSize: '13px' }} />
           </button>
           <ThemeSwitcher compact={true} />
           <button className="btn-icon" onClick={() => setShowRecycleBin(!showRecycleBin)} title="Recycle Bin">
-            <Trash size={16} />
+            <FontAwesomeIcon icon={faTrashCan} style={{ fontSize: '13px' }} />
           </button>
         </div>
       </header>
@@ -165,7 +166,7 @@ export function Home() {
         }}
       >
         <div className="flex items-center gap-2">
-          <Users size={16} weight="regular" style={{ color: 'var(--text-secondary)' }} />
+          <FontAwesomeIcon icon={faUsers} style={{ color: 'var(--text-secondary)', fontSize: '13px' }} />
           <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>Rekan Tim:</span>
           <span style={{ fontSize: '11px', fontFamily: 'Geist Mono, monospace', color: 'var(--text-secondary)' }}>
             ({onlineFriendsCount} Online)
@@ -238,13 +239,13 @@ export function Home() {
               <p className="text-sm text-muted mb-4">Deleted on: {new Date(p.deletedAt!).toLocaleDateString()}</p>
               <div className="flex gap-2">
                 <button className="btn flex-1 text-cyan-400 hover:bg-cyan-400/20 border border-cyan-400/30" onClick={(e) => { e.stopPropagation(); restoreProject(p.id); }}>
-                  <ArrowsClockwise size={15} className="mr-2" /> Restore
+                  <FontAwesomeIcon icon={faArrowsRotate} className="mr-2" style={{ fontSize: '13px' }} /> Restore
                 </button>
                 <button className="btn flex-1 text-red-500 hover:bg-red-500/20 border border-red-500/30" onClick={(e) => {
                   e.stopPropagation();
                   if(confirm("Permanently delete this project?")) hardDeleteProject(p.id);
                 }}>
-                  <Trash size={15} className="mr-2" /> Delete Forever
+                  <FontAwesomeIcon icon={faTrashCan} className="mr-2" style={{ fontSize: '13px' }} /> Delete Forever
                 </button>
               </div>
             </div>
@@ -265,7 +266,7 @@ export function Home() {
                 onClick={(e) => { e.stopPropagation(); deleteProject(p.id); }}
                 title="Pindahkan ke Recycle Bin"
               >
-                <Trash size={14} />
+                <FontAwesomeIcon icon={faTrashCan} style={{ fontSize: '13px' }} />
               </button>
               <h3 
                 style={{ 
@@ -313,19 +314,19 @@ export function Home() {
       {/* Mobile Bottom Navigation Bar */}
       <nav className="mobile-bottom-nav">
         <button className="nav-item active" onClick={() => navigate('/')} title="Projects">
-          <Stack size={20} weight="regular" className="text-cyan" />
+          <FontAwesomeIcon icon={faLayerGroup} className="text-cyan" style={{ fontSize: '18px' }} />
           <span>Projects</span>
         </button>
         <button className="nav-item" onClick={() => navigate('/meeting')} title="Focus Room">
-          <VideoCamera size={20} weight="regular" />
+          <FontAwesomeIcon icon={faVideo} style={{ fontSize: '17px' }} />
           <span>Focus</span>
         </button>
         <button className="nav-item" onClick={() => setIsModalOpen(true)} title="New Project">
-          <Plus size={22} weight="bold" className="text-cyan" />
+          <FontAwesomeIcon icon={faPlus} className="text-cyan" style={{ fontSize: '19px' }} />
           <span>Add</span>
         </button>
         <button className="nav-item" onClick={() => navigate('/chat')} title="Collaboration & Chat" style={{ position: 'relative' }}>
-          <ChatTeardropText size={20} weight="regular" className="text-purple" />
+          <FontAwesomeIcon icon={faCommentDots} className="text-purple" style={{ fontSize: '18px' }} />
           {friendRequests.length > 0 && (
             <span style={{ position: 'absolute', top: '4px', right: '12px', background: '#ef4444', color: 'white', width: '16px', height: '16px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 'bold' }}>
               {friendRequests.length}
@@ -334,7 +335,7 @@ export function Home() {
           <span>Chat</span>
         </button>
         <button className="nav-item" onClick={() => navigate('/profile')} title="Profile">
-          <User size={20} weight="regular" />
+          <FontAwesomeIcon icon={faUser} style={{ fontSize: '17px' }} />
           <span>Profile</span>
         </button>
       </nav>

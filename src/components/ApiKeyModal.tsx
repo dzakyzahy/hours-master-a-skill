@@ -1,16 +1,17 @@
 import React, { useState, useEffect } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
-  X, 
-  Key, 
-  ShieldCheck, 
-  Check, 
-  WarningCircle, 
-  Eye, 
-  EyeSlash, 
-  ArrowSquareOut, 
-  Trash, 
-  CircleNotch 
-} from '@phosphor-icons/react';
+  faXmark, 
+  faKey, 
+  faShieldHalved, 
+  faCheck, 
+  faCircleExclamation, 
+  faEye, 
+  faEyeSlash, 
+  faArrowUpRightFromSquare, 
+  faTrashCan, 
+  faCircleNotch 
+} from '@fortawesome/free-solid-svg-icons';
 import { useStore } from '../store';
 import { GoogleGenAI } from '@google/genai';
 
@@ -140,7 +141,7 @@ export function ApiKeyModal({ isOpen, onClose, onSaved }: ApiKeyModalProps) {
           style={{ position: 'absolute', top: '18px', right: '18px', width: '32px', height: '32px' }}
           aria-label="Tutup"
         >
-          <X size={15} />
+          <FontAwesomeIcon icon={faXmark} className="text-[14px]" />
         </button>
 
         {/* Modal Header: Balanced Sizing */}
@@ -159,7 +160,7 @@ export function ApiKeyModal({ isOpen, onClose, onSaved }: ApiKeyModalProps) {
               flexShrink: 0
             }}
           >
-            <Key size={17} weight="regular" />
+            <FontAwesomeIcon icon={faKey} className="text-[15px]" />
           </div>
           <div>
             <h2 style={{ margin: 0, fontSize: '16px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.02em', fontFamily: 'Geist, sans-serif' }}>
@@ -184,7 +185,7 @@ export function ApiKeyModal({ isOpen, onClose, onSaved }: ApiKeyModalProps) {
             alignItems: 'flex-start'
           }}
         >
-          <ShieldCheck size={17} weight="fill" style={{ color: 'var(--accent-cyan)', flexShrink: 0, marginTop: '2px' }} />
+          <FontAwesomeIcon icon={faShieldHalved} style={{ color: 'var(--accent-cyan)', flexShrink: 0, marginTop: '3px', fontSize: '15px' }} />
           <div style={{ fontSize: '11.5px', lineHeight: 1.45, color: 'var(--text-secondary)' }}>
             <span style={{ color: 'var(--text-primary)', fontWeight: 600, display: 'block', marginBottom: '2px' }}>
               Keamanan Data & Privasi Terjamin
@@ -252,11 +253,11 @@ export function ApiKeyModal({ isOpen, onClose, onSaved }: ApiKeyModalProps) {
                   color: 'var(--accent-cyan)', 
                   display: 'inline-flex', 
                   alignItems: 'center', 
-                  gap: '3px',
+                  gap: '4px',
                   textDecoration: 'none'
                 }}
               >
-                Dapatkan API Key Gratis <ArrowSquareOut size={11} />
+                Dapatkan API Key Gratis <FontAwesomeIcon icon={faArrowUpRightFromSquare} style={{ fontSize: '10px' }} />
               </a>
             </div>
 
@@ -297,7 +298,7 @@ export function ApiKeyModal({ isOpen, onClose, onSaved }: ApiKeyModalProps) {
                 }}
                 title={showKey ? 'Sembunyikan Kunci' : 'Tampilkan Kunci'}
               >
-                {showKey ? <EyeSlash size={16} /> : <Eye size={16} />}
+                {showKey ? <FontAwesomeIcon icon={faEyeSlash} style={{ fontSize: '15px' }} /> : <FontAwesomeIcon icon={faEye} style={{ fontSize: '15px' }} />}
               </button>
             </div>
 
@@ -324,7 +325,7 @@ export function ApiKeyModal({ isOpen, onClose, onSaved }: ApiKeyModalProps) {
                 color: testResult.success ? '#22c55e' : '#ef4444'
               }}
             >
-              {testResult.success ? <Check size={15} weight="bold" /> : <WarningCircle size={15} weight="bold" />}
+              {testResult.success ? <FontAwesomeIcon icon={faCheck} className="text-[14px]" /> : <FontAwesomeIcon icon={faCircleExclamation} className="text-[14px]" />}
               <span>{testResult.message}</span>
             </div>
           )}
@@ -344,7 +345,7 @@ export function ApiKeyModal({ isOpen, onClose, onSaved }: ApiKeyModalProps) {
                 color: '#22c55e'
               }}
             >
-              <Check size={15} weight="bold" />
+              <FontAwesomeIcon icon={faCheck} className="text-[14px]" />
               <span>Kunci API berhasil disimpan secara privat di database akun Anda!</span>
             </div>
           )}
@@ -359,7 +360,7 @@ export function ApiKeyModal({ isOpen, onClose, onSaved }: ApiKeyModalProps) {
                 style={{ color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.25)', marginRight: 'auto', height: '36px', fontSize: '12px' }}
                 title="Hapus Kunci API yang tersimpan"
               >
-                <Trash size={14} /> Hapus
+                <FontAwesomeIcon icon={faTrashCan} style={{ fontSize: '13px' }} /> Hapus
               </button>
             )}
 
@@ -370,7 +371,7 @@ export function ApiKeyModal({ isOpen, onClose, onSaved }: ApiKeyModalProps) {
               disabled={testing || !keyInput.trim()}
               style={{ height: '36px', padding: '0 12px', fontSize: '12px' }}
             >
-              {testing ? <CircleNotch size={14} className="animate-spin" /> : <ShieldCheck size={14} />}
+              {testing ? <FontAwesomeIcon icon={faCircleNotch} spin style={{ fontSize: '13px' }} /> : <FontAwesomeIcon icon={faShieldHalved} style={{ fontSize: '13px' }} />}
               <span>{testing ? 'Menguji...' : 'Uji Koneksi'}</span>
             </button>
 
@@ -380,7 +381,7 @@ export function ApiKeyModal({ isOpen, onClose, onSaved }: ApiKeyModalProps) {
               disabled={saving || !keyInput.trim()}
               style={{ height: '36px', padding: '0 16px', fontSize: '12px' }}
             >
-              {saving ? <CircleNotch size={14} className="animate-spin" /> : <Check size={14} weight="bold" />}
+              {saving ? <FontAwesomeIcon icon={faCircleNotch} spin style={{ fontSize: '13px' }} /> : <FontAwesomeIcon icon={faCheck} style={{ fontSize: '13px' }} />}
               <span>{saving ? 'Menyimpan...' : 'Simpan Kunci API'}</span>
             </button>
           </div>

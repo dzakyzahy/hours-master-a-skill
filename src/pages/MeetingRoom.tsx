@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Wifi, ShieldCheck, Copy } from 'lucide-react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faArrowLeft, faWifi, faShieldHalved, faCopy } from '@fortawesome/free-solid-svg-icons';
 import { useStore } from '../store';
 import { VideoTile } from '../components/meeting/VideoTile';
 import { MeetingControls } from '../components/meeting/MeetingControls';
@@ -185,18 +186,18 @@ export function MeetingRoom() {
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <button className="btn" onClick={handleLeave} title="Kembali ke Beranda" style={{ padding: '8px 12px' }}>
-            <ArrowLeft size={18} /> Exit
+          <button className="btn" onClick={handleLeave} title="Kembali ke Beranda" style={{ padding: '8px 12px', gap: '6px' }}>
+            <FontAwesomeIcon icon={faArrowLeft} style={{ fontSize: '14px' }} /> Exit
           </button>
           <div>
             <h2 style={{ margin: 0, fontSize: '1rem', fontWeight: 700 }}>Mastery Focus Room</h2>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.6875rem', color: 'var(--text-muted)' }}>
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: '#4ade80' }}>
-                <Wifi size={11} /> P2P Live
+                <FontAwesomeIcon icon={faWifi} style={{ fontSize: '10px' }} /> P2P Live
               </span>
               <span>•</span>
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                <ShieldCheck size={11} className="text-cyan" /> E2E Encrypted
+                <FontAwesomeIcon icon={faShieldHalved} className="text-cyan" style={{ fontSize: '10px' }} /> E2E Encrypted
               </span>
             </div>
           </div>
@@ -219,7 +220,7 @@ export function MeetingRoom() {
             }}
             id="copy-link-btn"
           >
-            <Copy size={14} /> Copy Link ({roomId || 'Main'})
+            <FontAwesomeIcon icon={faCopy} style={{ fontSize: '12px' }} /> Copy Link ({roomId || 'Main'})
           </button>
           <div
             style={{

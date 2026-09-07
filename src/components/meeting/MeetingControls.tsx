@@ -1,4 +1,14 @@
-import { Mic, MicOff, Video, VideoOff, Monitor, PhoneOff, Users, Settings } from 'lucide-react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { 
+  faMicrophone, 
+  faMicrophoneSlash, 
+  faVideo, 
+  faVideoSlash, 
+  faDesktop, 
+  faPhoneSlash, 
+  faUsers, 
+  faGear 
+} from '@fortawesome/free-solid-svg-icons';
 
 interface MeetingControlsProps {
   isMuted: boolean;
@@ -58,7 +68,7 @@ export function MeetingControls({
           marginRight: '8px',
         }}
       >
-        <Users size={15} className="text-cyan" />
+        <FontAwesomeIcon icon={faUsers} className="text-cyan" style={{ fontSize: '13px' }} />
         <span className="tabular-nums">{participantCount}/4</span>
       </div>
 
@@ -77,7 +87,7 @@ export function MeetingControls({
           color: isMuted ? '#f87171' : 'var(--text-main)',
         }}
       >
-        {isMuted ? <MicOff size={18} /> : <Mic size={18} />}
+        <FontAwesomeIcon icon={isMuted ? faMicrophoneSlash : faMicrophone} style={{ fontSize: '16px' }} />
       </button>
 
       {/* Camera Toggle */}
@@ -95,7 +105,7 @@ export function MeetingControls({
           color: isVideoOff ? '#f87171' : 'var(--text-main)',
         }}
       >
-        {isVideoOff ? <VideoOff size={18} /> : <Video size={18} />}
+        <FontAwesomeIcon icon={isVideoOff ? faVideoSlash : faVideo} style={{ fontSize: '15px' }} />
       </button>
 
       {/* Screen Share Toggle */}
@@ -113,7 +123,7 @@ export function MeetingControls({
           color: isScreenSharing ? 'var(--accent-cyan)' : 'var(--text-main)',
         }}
       >
-        <Monitor size={18} />
+        <FontAwesomeIcon icon={faDesktop} style={{ fontSize: '15px' }} />
       </button>
 
       {/* Developer Mock Inspector Toggle */}
@@ -132,7 +142,7 @@ export function MeetingControls({
             color: showDevTools ? 'var(--accent-purple)' : 'var(--text-muted)',
           }}
         >
-          <Settings size={18} />
+          <FontAwesomeIcon icon={faGear} style={{ fontSize: '16px' }} />
         </button>
       )}
 
@@ -153,7 +163,7 @@ export function MeetingControls({
           marginLeft: '6px',
         }}
       >
-        <PhoneOff size={16} /> Leave
+        <FontAwesomeIcon icon={faPhoneSlash} style={{ fontSize: '15px' }} /> Leave
       </button>
     </div>
   );

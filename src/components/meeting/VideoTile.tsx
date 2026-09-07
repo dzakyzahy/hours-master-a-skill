@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
-import { MicOff, Monitor, Volume2 } from 'lucide-react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faMicrophoneSlash, faDesktop, faVolumeHigh } from '@fortawesome/free-solid-svg-icons';
 import type { Participant } from '../../types/meeting';
 
 interface VideoTileProps {
@@ -104,7 +105,7 @@ export function VideoTile({ participant, isDominant = false }: VideoTileProps) {
                 fontWeight: 600,
               }}
             >
-              <Volume2 size={12} /> Speaking
+              <FontAwesomeIcon icon={faVolumeHigh} style={{ fontSize: '11px' }} /> Speaking
             </div>
           )}
         </div>
@@ -130,7 +131,7 @@ export function VideoTile({ participant, isDominant = false }: VideoTileProps) {
             color: 'var(--accent-cyan)',
           }}
         >
-          <Monitor size={14} /> Screen Share
+          <FontAwesomeIcon icon={faDesktop} style={{ fontSize: '12px' }} /> Screen Share
         </div>
       )}
 
@@ -191,7 +192,7 @@ export function VideoTile({ participant, isDominant = false }: VideoTileProps) {
             }}
             title="Microphone muted"
           >
-            <MicOff size={14} />
+            <FontAwesomeIcon icon={faMicrophoneSlash} style={{ fontSize: '12px' }} />
           </div>
         )}
       </div>

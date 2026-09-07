@@ -1,14 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
-  ArrowLeft, 
-  UserPlus, 
-  Users, 
-  ChatTeardropText, 
-  PaperPlaneRight, 
-  VideoCamera,
-  Sword
-} from '@phosphor-icons/react';
+  faArrowLeft, 
+  faUserPlus, 
+  faUsers, 
+  faCommentDots, 
+  faPaperPlane, 
+  faVideo,
+  faHandFist
+} from '@fortawesome/free-solid-svg-icons';
 import { useStore, type FriendUser } from '../store';
 import { ClashArena } from '../components/ClashArena';
 import { supabase } from '../supabaseClient';
@@ -337,8 +338,8 @@ export function Chat() {
       {/* Header - Symmetrical & Clean */}
       <header className="header-topbar mb-6">
         <div className="flex items-center gap-3">
-          <button className="btn" onClick={() => navigate('/')} style={{ padding: '0 12px', height: '36px' }} title="Kembali ke Beranda">
-            <ArrowLeft size={16} /> Kembali
+          <button className="btn" onClick={() => navigate('/')} style={{ padding: '0 12px', height: '36px', gap: '6px' }} title="Kembali ke Beranda">
+            <FontAwesomeIcon icon={faArrowLeft} style={{ fontSize: '13px' }} /> Kembali
           </button>
           <div>
             <h1 style={{ margin: 0, fontSize: '18px', fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--text-primary)', fontFamily: 'Geist, sans-serif' }}>
@@ -369,9 +370,9 @@ export function Chat() {
         <button 
           className={activeTab === 'friends' ? 'btn-primary' : 'btn'}
           onClick={() => setActiveTab('friends')}
-          style={{ flex: 1, height: '34px', border: 'none', borderRadius: '4px', fontSize: '12.5px', fontWeight: activeTab === 'friends' ? 600 : 500 }}
+          style={{ flex: 1, height: '34px', border: 'none', borderRadius: '4px', fontSize: '12.5px', fontWeight: activeTab === 'friends' ? 600 : 500, gap: '6px' }}
         >
-          <Users size={15} weight="regular" /> Daftar Teman ({friends.length})
+          <FontAwesomeIcon icon={faUsers} style={{ fontSize: '13px' }} /> Daftar Teman ({friends.length})
         </button>
         <button 
           className={activeTab === 'requests' ? 'btn-primary' : 'btn'}
@@ -383,16 +384,16 @@ export function Chat() {
         <button 
           className={activeTab === 'chat' ? 'btn-primary' : 'btn'}
           onClick={() => setActiveTab('chat')}
-          style={{ flex: 1, height: '34px', border: 'none', borderRadius: '4px', fontSize: '12.5px', fontWeight: activeTab === 'chat' ? 600 : 500 }}
+          style={{ flex: 1, height: '34px', border: 'none', borderRadius: '4px', fontSize: '12.5px', fontWeight: activeTab === 'chat' ? 600 : 500, gap: '6px' }}
         >
-          <ChatTeardropText size={15} weight="regular" /> Ruang Chat
+          <FontAwesomeIcon icon={faCommentDots} style={{ fontSize: '13px' }} /> Ruang Chat
         </button>
         <button 
           className={activeTab === 'clash' ? 'btn-primary' : 'btn'}
           onClick={() => setActiveTab('clash')}
-          style={{ flex: 1, height: '34px', border: 'none', borderRadius: '4px', fontSize: '12.5px', fontWeight: activeTab === 'clash' ? 600 : 500 }}
+          style={{ flex: 1, height: '34px', border: 'none', borderRadius: '4px', fontSize: '12.5px', fontWeight: activeTab === 'clash' ? 600 : 500, gap: '6px' }}
         >
-          <Sword size={15} weight="regular" /> Clash
+          <FontAwesomeIcon icon={faHandFist} style={{ fontSize: '13px' }} /> Clash
         </button>
       </div>
 
@@ -421,8 +422,8 @@ export function Chat() {
                   }} 
                   style={{ height: '38px', fontSize: '13px' }}
                 />
-                <button type="submit" className="btn-primary" style={{ padding: '0 16px', height: '38px', whiteSpace: 'nowrap', fontSize: '12px' }} disabled={isSearching}>
-                  <UserPlus size={15} weight="bold" /> {isSearching ? 'Mencari...' : 'Cari'}
+                <button type="submit" className="btn-primary" style={{ padding: '0 16px', height: '38px', whiteSpace: 'nowrap', fontSize: '12px', gap: '6px' }} disabled={isSearching}>
+                  <FontAwesomeIcon icon={faUserPlus} style={{ fontSize: '13px' }} /> {isSearching ? 'Mencari...' : 'Cari'}
                 </button>
               </form>
 
@@ -542,18 +543,18 @@ export function Chat() {
                       <div className="flex items-center gap-2">
                         <button 
                           className="btn-primary" 
-                          style={{ padding: '0 12px', height: '32px', fontSize: '12px' }} 
+                          style={{ padding: '0 12px', height: '32px', fontSize: '12px', gap: '5px' }} 
                           onClick={() => handleStartChat(f)}
                         >
-                          <ChatTeardropText size={14} weight="bold" /> Chat
+                          <FontAwesomeIcon icon={faCommentDots} style={{ fontSize: '12px' }} /> Chat
                         </button>
                         <button 
                           className="btn" 
-                          style={{ padding: '0 12px', height: '32px', fontSize: '12px' }} 
+                          style={{ padding: '0 12px', height: '32px', fontSize: '12px', gap: '5px' }} 
                           onClick={() => navigate('/meeting')}
                           title="Ajak ke Focus Room"
                         >
-                          <VideoCamera size={14} weight="regular" /> Focus Room
+                          <FontAwesomeIcon icon={faVideo} style={{ fontSize: '12px' }} /> Focus Room
                         </button>
                       </div>
                     </div>
@@ -722,11 +723,11 @@ export function Chat() {
 
                 <button 
                   className="btn" 
-                  style={{ padding: '0 12px', height: '32px', fontSize: '12px' }} 
+                  style={{ padding: '0 12px', height: '32px', fontSize: '12px', gap: '5px' }} 
                   onClick={() => navigate('/meeting')}
                   title="Mulai Video Call"
                 >
-                  <VideoCamera size={14} /> Video Call
+                  <FontAwesomeIcon icon={faVideo} style={{ fontSize: '12px' }} /> Video Call
                 </button>
               </div>
             ) : (
@@ -790,7 +791,7 @@ export function Chat() {
                 style={{ width: '40px', height: '40px', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
                 title="Kirim pesan (Enter)"
               >
-                <PaperPlaneRight size={16} weight="fill" />
+                <FontAwesomeIcon icon={faPaperPlane} style={{ fontSize: '14px' }} />
               </button>
             </form>
           </div>

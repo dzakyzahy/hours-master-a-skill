@@ -1,4 +1,5 @@
-import { Sun, Moon } from '@phosphor-icons/react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faSun, faMoon } from '@fortawesome/free-solid-svg-icons';
 import { useStore } from '../store';
 
 interface ThemeSwitcherProps {
@@ -24,7 +25,7 @@ export function ThemeSwitcher({ compact = false, className = '' }: ThemeSwitcher
         onClick={() => setTheme('light')}
         title="Mode Terang (Light Mode)"
       >
-        <Sun size={15} weight={theme === 'light' ? 'bold' : 'regular'} />
+        <FontAwesomeIcon icon={faSun} className="text-[14px]" />
         {!compact && <span className="theme-switcher-text">Terang</span>}
       </button>
 
@@ -36,7 +37,7 @@ export function ThemeSwitcher({ compact = false, className = '' }: ThemeSwitcher
         onClick={() => setTheme('dark')}
         title="Mode Gelap (Dark Mode)"
       >
-        <Moon size={15} weight={theme === 'dark' ? 'bold' : 'regular'} />
+        <FontAwesomeIcon icon={faMoon} className="text-[14px]" />
         {!compact && <span className="theme-switcher-text">Gelap</span>}
       </button>
     </div>

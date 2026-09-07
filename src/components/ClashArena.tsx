@@ -1,5 +1,12 @@
 import { useState } from 'react';
-import { Swords, Trophy, Crown, Medal, Award } from 'lucide-react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { 
+  faHandFist, 
+  faTrophy, 
+  faCrown, 
+  faMedal, 
+  faAward 
+} from '@fortawesome/free-solid-svg-icons';
 import type { FriendUser } from '../store';
 
 interface ClashArenaProps {
@@ -38,23 +45,23 @@ export function ClashArena({ friends, myUsername, myTotalHours }: ClashArenaProp
       {/* Clash Header Controls */}
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-xl font-bold flex items-center gap-2" style={{ fontFamily: 'Instrument Serif, serif', color: 'var(--accent-purple)' }}>
-          <Swords size={24} /> Clash Arena
+          <FontAwesomeIcon icon={faHandFist} style={{ fontSize: '20px' }} /> Clash Arena
         </h2>
         
         <div style={{ display: 'flex', background: 'var(--surface-input)', border: '1px solid var(--border-hairline)', borderRadius: '6px', padding: '2px', gap: '2px' }}>
           <button 
             className={viewMode === 'leaderboard' ? 'btn-primary' : 'btn'}
             onClick={() => setViewMode('leaderboard')}
-            style={{ height: '28px', fontSize: '11px', padding: '0 12px' }}
+            style={{ height: '28px', fontSize: '11px', padding: '0 12px', gap: '5px' }}
           >
-            <Trophy size={13} /> Leaderboard
+            <FontAwesomeIcon icon={faTrophy} style={{ fontSize: '11px' }} /> Leaderboard
           </button>
           <button 
             className={viewMode === '1v1' ? 'btn-primary' : 'btn'}
             onClick={() => setViewMode('1v1')}
-            style={{ height: '28px', fontSize: '11px', padding: '0 12px' }}
+            style={{ height: '28px', fontSize: '11px', padding: '0 12px', gap: '5px' }}
           >
-            <Swords size={13} /> 1 VS 1
+            <FontAwesomeIcon icon={faHandFist} style={{ fontSize: '11px' }} /> 1 VS 1
           </button>
         </div>
       </div>
@@ -64,11 +71,11 @@ export function ClashArena({ friends, myUsername, myTotalHours }: ClashArenaProp
           <div className="flex flex-col gap-3">
             {allParticipants.map((p, index) => {
               const isTop3 = index < 3;
-              let Icon = null;
+              let iconDef = null;
               let iconColor = '';
-              if (index === 0) { Icon = Crown; iconColor = '#fbbf24'; }
-              else if (index === 1) { Icon = Medal; iconColor = '#94a3b8'; }
-              else if (index === 2) { Icon = Award; iconColor = '#b45309'; }
+              if (index === 0) { iconDef = faCrown; iconColor = '#fbbf24'; }
+              else if (index === 1) { iconDef = faMedal; iconColor = '#94a3b8'; }
+              else if (index === 2) { iconDef = faAward; iconColor = '#b45309'; }
 
               return (
                 <div 
@@ -85,13 +92,13 @@ export function ClashArena({ friends, myUsername, myTotalHours }: ClashArenaProp
                   }}
                 >
                   {/* Rank Number */}
-                  <div style={{ width: '40px', fontSize: '1.2rem', fontWeight: 800, color: Icon ? iconColor : 'var(--text-secondary)', opacity: isTop3 ? 1 : 0.5 }}>
+                  <div style={{ width: '40px', fontSize: '1.2rem', fontWeight: 800, color: iconDef ? iconColor : 'var(--text-secondary)', opacity: isTop3 ? 1 : 0.5 }}>
                     #{index + 1}
                   </div>
                   
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
-                      {Icon && <Icon size={16} color={iconColor} />}
+                      {iconDef && <FontAwesomeIcon icon={iconDef} style={{ fontSize: '14px', color: iconColor }} />}
                       <span style={{ fontWeight: 600, color: p.isMe ? '#4ade80' : 'var(--text-primary)' }}>
                         {p.isMe ? 'You' : `@${p.username}`}
                       </span>
@@ -188,7 +195,7 @@ export function ClashArena({ friends, myUsername, myTotalHours }: ClashArenaProp
             </div>
           ) : (
             <div className="flex-1 flex flex-col items-center justify-center text-center opacity-50">
-              <Swords size={48} className="mb-4" />
+              <FontAwesomeIcon icon={faHandFist} style={{ fontSize: '42px' }} className="mb-4" />
               <p>Add some friends to start clashing!</p>
             </div>
           )}

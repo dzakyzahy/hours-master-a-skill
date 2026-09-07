@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { X, Plus, Trash, Clock, Check, PencilSimple } from '@phosphor-icons/react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faXmark, faPlus, faTrashCan, faClock, faCheck, faPen } from '@fortawesome/free-solid-svg-icons';
 import { useStore, type SkillPhase, type Project } from '../store';
 
 interface EditProjectModalProps {
@@ -102,7 +103,7 @@ export function EditProjectModal({ project, isOpen, onClose }: EditProjectModalP
           style={{ position: 'absolute', top: 18, right: 18, width: '32px', height: '32px', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
           aria-label="Tutup"
         >
-          <X size={15} />
+          <FontAwesomeIcon icon={faXmark} className="text-[14px]" />
         </button>
 
         {/* Modal Header */}
@@ -121,7 +122,7 @@ export function EditProjectModal({ project, isOpen, onClose }: EditProjectModalP
               flexShrink: 0
             }}
           >
-            <PencilSimple size={17} />
+            <FontAwesomeIcon icon={faPen} className="text-[14px]" />
           </div>
           <div>
             <h2 style={{ margin: 0, fontSize: '16px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.02em', fontFamily: 'Geist, sans-serif' }}>
@@ -158,9 +159,9 @@ export function EditProjectModal({ project, isOpen, onClose }: EditProjectModalP
                 type="button" 
                 onClick={handleAddPhase} 
                 className="btn"
-                style={{ height: '28px', padding: '0 10px', fontSize: '11px', gap: '4px' }}
+                style={{ height: '28px', padding: '0 10px', fontSize: '11px', gap: '5px' }}
               >
-                <Plus size={13} /> Tambah Fase
+                <FontAwesomeIcon icon={faPlus} className="text-[11px]" /> Tambah Fase
               </button>
             </div>
             
@@ -208,7 +209,7 @@ export function EditProjectModal({ project, isOpen, onClose }: EditProjectModalP
                       style={{ width: '32px', height: '32px', padding: 0, color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.25)', flexShrink: 0 }}
                       title="Hapus Fase"
                     >
-                      <Trash size={13} />
+                      <FontAwesomeIcon icon={faTrashCan} className="text-[11px]" />
                     </button>
                   </div>
                 );
@@ -226,7 +227,7 @@ export function EditProjectModal({ project, isOpen, onClose }: EditProjectModalP
               Batal
             </button>
             <button type="submit" className="btn-primary" style={{ height: '36px', padding: '0 16px', fontSize: '12px', gap: '6px' }}>
-              <Check size={14} weight="bold" /> Simpan Perubahan
+              <FontAwesomeIcon icon={faCheck} className="text-[13px]" /> Simpan Perubahan
             </button>
           </div>
         </form>
@@ -234,7 +235,7 @@ export function EditProjectModal({ project, isOpen, onClose }: EditProjectModalP
         {/* Manual Time Entry Section */}
         <div className="mt-5 pt-4" style={{ borderTop: '1px solid var(--border-hairline)' }}>
           <div className="flex items-center gap-1.5 mb-1">
-            <Clock size={15} style={{ color: 'var(--accent-cyan)' }} />
+            <FontAwesomeIcon icon={faClock} style={{ color: 'var(--accent-cyan)', fontSize: '14px' }} />
             <span style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-primary)' }}>
               Entri Jam Belajar Manual
             </span>

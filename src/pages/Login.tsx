@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../store';
 import { SkilloLogo } from '../components/SkilloLogo';
-import { Fingerprint, ShieldCheck, CheckCircle2, AlertCircle, X } from 'lucide-react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faFingerprint, faShieldHalved, faCircleCheck, faCircleExclamation, faXmark } from '@fortawesome/free-solid-svg-icons';
 
 export function Login() {
   const [identifier, setIdentifier] = useState('');
@@ -269,7 +270,7 @@ export function Login() {
               onClick={handleBiometricLogin}
               style={{ gap: '8px', height: '42px', fontSize: '13px' }}
             >
-              <Fingerprint size={18} style={{ color: 'var(--accent-cyan)' }} />
+              <FontAwesomeIcon icon={faFingerprint} style={{ color: 'var(--accent-cyan)', fontSize: '17px' }} />
               Masuk dengan Sidik Jari (Biometric)
             </button>
           </form>
@@ -328,7 +329,7 @@ export function Login() {
               style={{ position: 'absolute', top: 16, right: 16, width: '32px', height: '32px', padding: 0 }}
               aria-label="Tutup"
             >
-              <X size={16} />
+              <FontAwesomeIcon icon={faXmark} className="text-[14px]" />
             </button>
 
             {/* High-Tech Biometric Scanner Graphic */}
@@ -364,11 +365,11 @@ export function Login() {
                 }}
               >
                 {biometricStatus === 'success' ? (
-                  <CheckCircle2 size={40} style={{ color: '#4ade80' }} />
+                  <FontAwesomeIcon icon={faCircleCheck} style={{ color: '#4ade80', fontSize: '38px' }} />
                 ) : biometricStatus === 'failed' ? (
-                  <AlertCircle size={40} style={{ color: '#ef4444' }} />
+                  <FontAwesomeIcon icon={faCircleExclamation} style={{ color: '#ef4444', fontSize: '38px' }} />
                 ) : (
-                  <Fingerprint size={42} style={{ color: 'var(--accent-cyan)' }} className="animate-pulse" />
+                  <FontAwesomeIcon icon={faFingerprint} style={{ color: 'var(--accent-cyan)', fontSize: '38px' }} className="animate-pulse" />
                 )}
               </div>
             </div>
@@ -407,7 +408,7 @@ export function Login() {
             </div>
 
             <div style={{ marginTop: '20px', fontSize: '11px', color: 'var(--text-placeholder)', fontFamily: 'Geist Mono, monospace', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-              <ShieldCheck size={13} style={{ color: 'var(--accent-cyan)' }} />
+              <FontAwesomeIcon icon={faShieldHalved} style={{ color: 'var(--accent-cyan)', fontSize: '13px' }} />
               WebAuthn / Biometric Secure Enclave
             </div>
           </div>

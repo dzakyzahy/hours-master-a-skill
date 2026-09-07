@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
-  User, 
-  FloppyDisk, 
-  ArrowLeft, 
-  Shield, 
-  CheckCircle, 
-  Key, 
-  Fingerprint 
-} from '@phosphor-icons/react';
+  faUser, 
+  faFloppyDisk, 
+  faArrowLeft, 
+  faShieldHalved, 
+  faCircleCheck, 
+  faKey, 
+  faFingerprint 
+} from '@fortawesome/free-solid-svg-icons';
 import { supabase } from '../supabaseClient';
 import { useStore } from '../store';
 import { ApiKeyModal } from '../components/ApiKeyModal';
@@ -107,8 +108,8 @@ export function Profile() {
       {/* Header with Symmetrical Back & Theme Switcher */}
       <header className="header-topbar mb-8">
         <div className="flex items-center gap-3">
-          <button className="btn" onClick={() => navigate('/')} style={{ padding: '0 12px', height: '36px' }} title="Kembali ke Beranda">
-            <ArrowLeft size={16} /> Kembali
+          <button className="btn" onClick={() => navigate('/')} style={{ padding: '0 12px', height: '36px', gap: '6px' }} title="Kembali ke Beranda">
+            <FontAwesomeIcon icon={faArrowLeft} style={{ fontSize: '13px' }} /> Kembali
           </button>
           <div>
             <h1 style={{ margin: 0, fontSize: '20px', fontWeight: 700, letterSpacing: '-0.025em', color: 'var(--text-primary)', fontFamily: 'Geist, sans-serif' }}>
@@ -165,7 +166,7 @@ export function Profile() {
         {/* Account Form */}
         <div className="glass-panel flex-1" style={{ padding: '28px' }}>
           <div className="flex items-center gap-2 mb-5">
-            <User size={16} weight="regular" style={{ color: 'var(--text-secondary)' }} />
+            <FontAwesomeIcon icon={faUser} style={{ color: 'var(--text-secondary)', fontSize: '14px' }} />
             <h2 style={{ margin: 0, fontSize: '14.5px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.015em' }}>
               Pengaturan Akun
             </h2>
@@ -213,7 +214,7 @@ export function Profile() {
 
             {msg && (
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: '#22c55e', padding: '8px 12px', background: 'rgba(34, 197, 94, 0.08)', borderRadius: '4px', border: '1px solid rgba(34, 197, 94, 0.2)' }}>
-                <CheckCircle size={15} weight="fill" />
+                <FontAwesomeIcon icon={faCircleCheck} style={{ fontSize: '14px' }} />
                 <span>{msg}</span>
               </div>
             )}
@@ -222,9 +223,9 @@ export function Profile() {
               type="submit" 
               className="btn-primary mt-2" 
               disabled={loading}
-              style={{ height: '40px' }}
+              style={{ height: '40px', gap: '6px' }}
             >
-              <FloppyDisk size={16} weight="bold" /> {loading ? 'Menyimpan...' : 'Simpan Perubahan'}
+              <FontAwesomeIcon icon={faFloppyDisk} style={{ fontSize: '14px' }} /> {loading ? 'Menyimpan...' : 'Simpan Perubahan'}
             </button>
           </form>
         </div>
@@ -232,7 +233,7 @@ export function Profile() {
         {/* System & Update Info */}
         <div className="glass-panel" style={{ width: '100%', maxWidth: '100%', padding: '28px', flex: '0 1 360px' }}>
           <div className="flex items-center gap-2 mb-5">
-            <Shield size={16} weight="regular" style={{ color: 'var(--text-secondary)' }} />
+            <FontAwesomeIcon icon={faShieldHalved} style={{ color: 'var(--text-secondary)', fontSize: '14px' }} />
             <h2 style={{ margin: 0, fontSize: '14.5px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.015em' }}>
               Informasi Sistem
             </h2>
@@ -241,7 +242,7 @@ export function Profile() {
           {/* Gemini AI Key & Biometrics Section */}
           <div style={{ marginBottom: '24px', paddingBottom: '20px', borderBottom: '1px solid var(--border-hairline)' }}>
             <h3 style={{ margin: '0 0 6px', fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Key size={14} weight="regular" style={{ color: geminiApiKey ? '#22c55e' : 'var(--accent-cyan)' }} />
+              <FontAwesomeIcon icon={faKey} style={{ color: geminiApiKey ? '#22c55e' : 'var(--accent-cyan)', fontSize: '13px' }} />
               Kunci API Gemini (AI Mastery)
             </h3>
             <p style={{ margin: '0 0 12px', fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
@@ -262,7 +263,7 @@ export function Profile() {
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', color: 'var(--text-secondary)', fontFamily: 'Geist Mono, monospace' }}>
-              <Fingerprint size={15} weight="regular" style={{ color: 'var(--accent-cyan)' }} />
+              <FontAwesomeIcon icon={faFingerprint} style={{ color: 'var(--accent-cyan)', fontSize: '14px' }} />
               <span>Biometric Sensor: Siap Digunakan</span>
             </div>
           </div>

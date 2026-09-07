@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Plus, X, Trash, FolderPlus, Check } from '@phosphor-icons/react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faPlus, faXmark, faTrashCan, faFolderPlus, faCheck } from '@fortawesome/free-solid-svg-icons';
 import { useStore, type SkillPhase } from '../store';
 
 export function ManualProjectModal({ isOpen = true, onClose }: { isOpen?: boolean; onClose: () => void }) {
@@ -74,7 +75,7 @@ export function ManualProjectModal({ isOpen = true, onClose }: { isOpen?: boolea
           style={{ position: 'absolute', top: 18, right: 18, width: '32px', height: '32px', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
           aria-label="Tutup"
         >
-          <X size={15} />
+          <FontAwesomeIcon icon={faXmark} className="text-[14px]" />
         </button>
         
         {/* Header with Icon Box */}
@@ -93,7 +94,7 @@ export function ManualProjectModal({ isOpen = true, onClose }: { isOpen?: boolea
               flexShrink: 0
             }}
           >
-            <FolderPlus size={17} />
+            <FontAwesomeIcon icon={faFolderPlus} className="text-[15px]" />
           </div>
           <div>
             <h2 style={{ margin: 0, fontSize: '16px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.02em', fontFamily: 'Geist, sans-serif' }}>
@@ -129,9 +130,9 @@ export function ManualProjectModal({ isOpen = true, onClose }: { isOpen?: boolea
             type="button"
             className="btn" 
             onClick={handleAddPhase} 
-            style={{ height: '28px', padding: '0 10px', fontSize: '11px', gap: '4px' }}
+            style={{ height: '28px', padding: '0 10px', fontSize: '11px', gap: '5px' }}
           >
-            <Plus size={13} /> Tambah Fase
+            <FontAwesomeIcon icon={faPlus} className="text-[11px]" /> Tambah Fase
           </button>
         </div>
 
@@ -154,7 +155,7 @@ export function ManualProjectModal({ isOpen = true, onClose }: { isOpen?: boolea
                   style={{ position: 'absolute', top: 10, right: 10, width: '26px', height: '26px', padding: 0, color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.2)' }}
                   title="Hapus Fase"
                 >
-                  <Trash size={13} />
+                  <FontAwesomeIcon icon={faTrashCan} className="text-[11px]" />
                 </button>
               )}
               
@@ -224,7 +225,7 @@ export function ManualProjectModal({ isOpen = true, onClose }: { isOpen?: boolea
             Batal
           </button>
           <button type="button" className="btn-primary" onClick={handleSave} style={{ height: '36px', padding: '0 16px', fontSize: '12px', gap: '6px' }}>
-            <Check size={14} weight="bold" /> Simpan Proyek
+            <FontAwesomeIcon icon={faCheck} className="text-[13px]" /> Simpan Proyek
           </button>
         </div>
       </div>

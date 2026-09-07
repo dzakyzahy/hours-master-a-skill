@@ -1,18 +1,18 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
-  Clock, 
-  Pulse, 
-  Target, 
-  Trophy, 
-  Play, 
-  Square, 
-  Plus, 
-  Trash, 
-  PencilSimple, 
-  Check, 
-  ArrowLeft 
-} from '@phosphor-icons/react';
+  faClock, 
+  faBullseye, 
+  faTrophy, 
+  faPlay, 
+  faSquare, 
+  faPlus, 
+  faTrashCan, 
+  faPen, 
+  faCheck, 
+  faArrowLeft 
+} from '@fortawesome/free-solid-svg-icons';
 import { useStore, type Project } from '../store';
 import { supabase } from '../supabaseClient';
 import { EditProjectModal } from '../components/EditProjectModal';
@@ -110,11 +110,13 @@ export function Dashboard() {
       {/* Top Header Bar */}
       <header className="header-topbar">
         <div className="flex items-center gap-3">
-          <button className="btn" onClick={() => navigate('/')} style={{ padding: '0 12px', height: '36px' }} title="Kembali ke Beranda">
-            <ArrowLeft size={16} /> Kembali
+          <button className="btn" onClick={() => navigate('/')} style={{ padding: '0 12px', height: '36px', gap: '6px' }} title="Kembali ke Beranda">
+            <FontAwesomeIcon icon={faArrowLeft} style={{ fontSize: '13px' }} /> Kembali
           </button>
-          <div className="flex items-center gap-2">
-            <Pulse size={18} weight="regular" style={{ color: 'var(--accent-cyan)' }} />
+          <div>
+            <span style={{ fontSize: '11px', fontFamily: 'Geist Mono, monospace', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Dashboard Proyek
+            </span>
             <h1 style={{ margin: 0, fontSize: '18px', fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--text-primary)', fontFamily: 'Geist, sans-serif' }}>
               {project.name}
             </h1>
@@ -127,7 +129,7 @@ export function Dashboard() {
             onClick={() => setEditProject(project)}
             title="Edit Proyek"
           >
-            <PencilSimple size={15} />
+            <FontAwesomeIcon icon={faPen} style={{ fontSize: '13px' }} />
           </button>
           <button 
             className="btn-icon"
@@ -135,7 +137,7 @@ export function Dashboard() {
             onClick={() => { deleteProject(project.id); navigate('/'); }}
             title="Pindahkan ke Tempat Sampah"
           >
-            <Trash size={15} />
+            <FontAwesomeIcon icon={faTrashCan} style={{ fontSize: '13px' }} />
           </button>
 
           <div className="header-divider" aria-hidden="true" />
@@ -152,7 +154,7 @@ export function Dashboard() {
         <div className="glass-panel flex flex-col justify-between" style={{ padding: '24px' }}>
           <div>
             <div className="flex items-center gap-2 mb-4">
-              <Trophy size={16} weight="regular" style={{ color: 'var(--text-secondary)' }} />
+              <FontAwesomeIcon icon={faTrophy} style={{ color: 'var(--text-secondary)', fontSize: '14px' }} />
               <h3 style={{ margin: 0, fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', letterSpacing: '-0.01em' }}>Total Penguasaan</h3>
             </div>
             
@@ -168,7 +170,7 @@ export function Dashboard() {
                     style={{ width: '120px', fontSize: '18px', height: '38px', fontFamily: 'Geist Mono, monospace' }}
                   />
                   <button className="btn-primary" onClick={handleSaveTotal} style={{ height: '38px', padding: '0 14px' }}>
-                    <Check size={15} weight="bold" />
+                    <FontAwesomeIcon icon={faCheck} style={{ fontSize: '13px' }} />
                   </button>
                 </div>
               ) : (
@@ -182,7 +184,7 @@ export function Dashboard() {
                     </span>
                   </div>
                   <button className="btn-icon" style={{ width: '28px', height: '28px' }} onClick={() => { setEditTotalInput(totalHours.toString()); setIsEditingTotal(true); }} title="Ubah Total Jam">
-                    <PencilSimple size={13} />
+                    <FontAwesomeIcon icon={faPen} style={{ fontSize: '11px' }} />
                   </button>
                 </>
               )}
@@ -208,7 +210,7 @@ export function Dashboard() {
         <div className="glass-panel flex flex-col justify-between" style={{ padding: '24px' }}>
           <div>
             <div className="flex items-center gap-2 mb-4">
-              <Target size={16} weight="regular" style={{ color: 'var(--text-secondary)' }} />
+              <FontAwesomeIcon icon={faBullseye} style={{ color: 'var(--text-secondary)', fontSize: '14px' }} />
               <h3 style={{ margin: 0, fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', letterSpacing: '-0.01em' }}>Target Harian</h3>
             </div>
             <div className="flex items-baseline gap-2">
@@ -235,7 +237,7 @@ export function Dashboard() {
         <div className="glass-panel flex flex-col justify-between" style={{ padding: '24px' }}>
           <div>
             <div className="flex items-center gap-2 mb-4">
-              <Clock size={16} weight="regular" style={{ color: 'var(--text-secondary)' }} />
+              <FontAwesomeIcon icon={faClock} style={{ color: 'var(--text-secondary)', fontSize: '14px' }} />
               <h3 style={{ margin: 0, fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', letterSpacing: '-0.01em' }}>Pelacak Waktu</h3>
             </div>
             {activeTimer && (
@@ -252,10 +254,10 @@ export function Dashboard() {
           <div className="flex flex-col gap-2.5">
             <button 
               className={activeTimer ? "btn" : "btn-primary"} 
-              style={{ width: '100%', height: '38px', color: activeTimer ? '#ef4444' : undefined, borderColor: activeTimer ? 'rgba(239, 68, 68, 0.3)' : undefined }} 
+              style={{ width: '100%', height: '38px', color: activeTimer ? '#ef4444' : undefined, borderColor: activeTimer ? 'rgba(239, 68, 68, 0.3)' : undefined, gap: '6px' }} 
               onClick={toggleTimer}
             >
-              {activeTimer ? <><Square size={15} weight="fill" /> Hentikan Timer</> : <><Play size={15} weight="fill" /> Mulai Fokus</>}
+              {activeTimer ? <><FontAwesomeIcon icon={faSquare} style={{ fontSize: '13px' }} /> Hentikan Timer</> : <><FontAwesomeIcon icon={faPlay} style={{ fontSize: '12px' }} /> Mulai Fokus</>}
             </button>
             <div className="flex gap-2" style={{ width: '100%', alignItems: 'center' }}>
               <input 
@@ -274,7 +276,7 @@ export function Dashboard() {
                 style={{ width: '38px', height: '38px', minWidth: '38px', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
                 title="Tambahkan jam"
               >
-                <Plus size={16} weight="bold" />
+                <FontAwesomeIcon icon={faPlus} style={{ fontSize: '13px' }} />
               </button>
             </div>
           </div>
