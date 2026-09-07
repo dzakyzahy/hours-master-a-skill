@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { GoogleGenAI } from '@google/genai';
-import { Sparkles, Loader2, Key, ShieldCheck } from 'lucide-react';
+import { Sparkle, CircleNotch, Key, ShieldCheck } from '@phosphor-icons/react';
 import { useStore, type SkillPhase } from './store';
 import { ApiKeyModal } from './components/ApiKeyModal';
 
@@ -83,10 +83,10 @@ export function AiGenerator() {
   };
 
   const suggestions = [
-    'UI/UX Mobile Design',
-    'React & React Native',
-    'Machine Learning & Python',
-    'Public Speaking'
+    'Machine Learning',
+    'Mobile App Dev',
+    'Piano & Musik',
+    'UI/UX Design'
   ];
 
   return (
@@ -94,8 +94,8 @@ export function AiGenerator() {
       {/* Header with Title & API Key Status Trigger */}
       <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
         <div className="flex items-center gap-2">
-          <Sparkles size={16} style={{ color: 'var(--text-secondary)' }} />
-          <h2 style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
+          <Sparkle size={16} weight="fill" style={{ color: 'var(--accent-cyan)' }} />
+          <h2 style={{ margin: 0, fontSize: '14.5px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.015em' }}>
             AI Mastery Plan Generator
           </h2>
         </div>
@@ -104,17 +104,17 @@ export function AiGenerator() {
           type="button"
           className="btn" 
           onClick={() => setIsKeyModalOpen(true)}
-          style={{ height: '28px', padding: '0 10px', fontSize: '11px', fontFamily: 'Geist Mono, monospace', gap: '6px' }}
+          style={{ height: '30px', padding: '0 10px', fontSize: '11px', fontFamily: 'Geist Mono, monospace', gap: '6px' }}
           title="Kelola Kunci API Gemini Anda"
         >
-          <Key size={12} style={{ color: effectiveKey ? '#4ade80' : '#f59e0b' }} />
+          <Key size={13} weight={effectiveKey ? 'fill' : 'regular'} style={{ color: effectiveKey ? '#22c55e' : '#f59e0b' }} />
           <span>{effectiveKey ? 'API Key: Aktif' : 'Konfigurasi API Key'}</span>
           <span 
             style={{ 
-              width: '5px', 
-              height: '5px', 
+              width: '6px', 
+              height: '6px', 
               borderRadius: '50%', 
-              backgroundColor: effectiveKey ? '#4ade80' : '#f59e0b' 
+              backgroundColor: effectiveKey ? '#22c55e' : '#f59e0b' 
             }} 
           />
         </button>
@@ -132,40 +132,40 @@ export function AiGenerator() {
             alignItems: 'center', 
             justifyContent: 'space-between', 
             padding: '10px 14px', 
-            background: 'rgba(245, 158, 11, 0.05)', 
-            border: '1px solid rgba(245, 158, 11, 0.2)', 
-            borderRadius: '4px', 
-            marginBottom: '14px',
-            gap: '10px',
+            background: 'rgba(245, 158, 11, 0.06)', 
+            border: '1px solid rgba(245, 158, 11, 0.25)', 
+            borderRadius: '6px', 
+            marginBottom: '16px',
+            gap: '12px',
             flexWrap: 'wrap'
           }}
         >
-          <div className="flex items-center gap-2" style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-            <ShieldCheck size={16} style={{ color: '#f59e0b', flexShrink: 0 }} />
+          <div className="flex items-center gap-2.5" style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+            <ShieldCheck size={18} weight="fill" style={{ color: '#f59e0b', flexShrink: 0 }} />
             <span>Kunci API Gemini diperlukan untuk membuat roadmap otomatis. Kunci disimpan privat di akun Anda.</span>
           </div>
           <button 
             type="button" 
             className="btn-primary" 
-            style={{ height: '30px', padding: '0 12px', fontSize: '11px' }}
+            style={{ height: '30px', padding: '0 12px', fontSize: '11px', gap: '5px' }}
             onClick={() => setIsKeyModalOpen(true)}
           >
-            <Key size={12} /> Masukkan Kunci API
+            <Key size={13} /> Masukkan Kunci API
           </button>
         </div>
       )}
 
-      {/* Quick Suggestion Pills */}
-      <div className="flex items-center gap-2 mb-4 overflow-x-auto pb-1">
-        <span style={{ fontSize: '11px', color: 'var(--text-placeholder)', fontFamily: 'Geist Mono, monospace', whiteSpace: 'nowrap' }}>
+      {/* Quick Suggestion Pills - Minimalist Template Fit */}
+      <div className="flex items-center gap-1.5 mb-4 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+        <span style={{ fontSize: '10.5px', color: 'var(--text-placeholder)', fontFamily: 'Geist Mono, monospace', whiteSpace: 'nowrap', marginRight: '2px' }}>
           Ide Cepat:
         </span>
         {suggestions.map(s => (
           <button
             key={s}
             type="button"
-            className="btn"
-            style={{ fontSize: '11px', height: '28px', padding: '0 10px', whiteSpace: 'nowrap', fontFamily: 'Geist Mono, monospace', color: 'var(--text-secondary)' }}
+            className="chip-suggestion"
+            style={{ fontSize: '10.5px', height: '24px', padding: '0 8px', borderRadius: '4px' }}
             onClick={() => setTopic(s)}
           >
             {s}
@@ -177,25 +177,30 @@ export function AiGenerator() {
         <input 
           type="text" 
           className="input-field flex-1" 
-          placeholder="Ketik topik: e.g. Machine Learning, Mobile App, Piano..."
+          placeholder="Ketik topik keahlian: e.g. Machine Learning, Mobile App, Piano..."
           value={topic}
           onChange={(e) => setTopic(e.target.value)}
           disabled={loading}
+          style={{ height: '38px', fontSize: '12.5px', fontFamily: 'Geist, sans-serif' }}
           onKeyDown={(e) => { if (e.key === 'Enter') handleGenerate(); }}
         />
         <button 
           className="btn-primary" 
           onClick={handleGenerate}
           disabled={loading || !topic.trim()}
-          style={{ height: '40px', padding: '0 20px', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+          style={{ height: '38px', padding: '0 16px', whiteSpace: 'nowrap', fontSize: '12px' }}
         >
-          {loading ? <Loader2 size={15} className="animate-spin" /> : <Sparkles size={15} />}
-          {loading ? 'Membuat Roadmap...' : 'Generate Plan'}
+          {loading ? (
+            <CircleNotch size={14} className="animate-spin" />
+          ) : (
+            <Sparkle size={14} weight="fill" />
+          )}
+          <span>{loading ? 'Membuat Roadmap...' : 'Generate Plan'}</span>
         </button>
       </div>
 
       {error && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '12px', fontSize: '12px', color: '#f87171' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '12px', fontSize: '12px', color: '#ef4444' }}>
           <span>{error}</span>
           {!effectiveKey && (
             <button 
