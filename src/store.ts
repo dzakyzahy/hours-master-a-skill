@@ -572,14 +572,26 @@ export const useStore = create<AppState>()(
           .from('friend_requests')
           .select('*, profiles!sender_id(username)')
           .eq('receiver_id', uid)
-          .eq('status', 'pending');
+          .eq('status', 'pending')
+          .order('created_at', { ascending: false });
           
         if (data) {
-          const reqs = data.map(d => ({
-            ...d,
-            sender_username: (d.profiles as any)?.username
-          }));
-          set({ friendRequests: reqs });
+          const friendIds = new Set(get().friends.map(f => f.id));
+          const seenSenders = new Set<string>();
+          const deduped: FriendRequest[] = [];
+
+          for (const d of data) {
+            // If sender is already our friend, skip
+            if (friendIds.has(d.sender_id)) continue;
+            // Only show 1 request per sender
+            if (seenSenders.has(d.sender_id)) continue;
+            seenSenders.add(d.sender_id);
+            deduped.push({
+              ...d,
+              sender_username: (d.profiles as any)?.username
+            });
+          }
+          set({ friendRequests: deduped });
         }
       },
       
@@ -597,11 +609,17 @@ export const useStore = create<AppState>()(
         }
           
         if (data) {
-          const reqs = data.map(d => ({
-            ...d,
-            receiver_username: (d.profiles as any)?.username
-          }));
-          set({ sentFriendRequests: reqs });
+          const seenReceivers = new Set<string>();
+          const deduped: FriendRequest[] = [];
+          for (const d of data) {
+            if (seenReceivers.has(d.receiver_id)) continue;
+            seenReceivers.add(d.receiver_id);
+            deduped.push({
+              ...d,
+              receiver_username: (d.profiles as any)?.username
+            });
+          }
+          set({ sentFriendRequests: deduped });
         }
       },
       
@@ -609,41 +627,39 @@ export const useStore = create<AppState>()(
         const uid = await get().ensureValidUserId();
         if (!uid || !receiverId || uid === receiverId) return false;
 
+        // If already friends, return true immediately
+        if (get().friends.some(f => f.id === receiverId)) {
+          return true;
+        }
+
         try {
           // Check if already sent and pending
-          const { data: existing } = await supabase
+          const { data: existingList } = await supabase
             .from('friend_requests')
             .select('id, status')
             .eq('sender_id', uid)
             .eq('receiver_id', receiverId)
-            .maybeSingle();
+            .limit(2);
 
-          if (existing) {
-            if (existing.status === 'pending') {
-              await get().fetchSentFriendRequests();
-              return true;
-            }
-            if (existing.status === 'rejected') {
-              await supabase
-                .from('friend_requests')
-                .update({ status: 'pending' })
-                .eq('id', existing.id);
+          if (existingList && existingList.length > 0) {
+            const hasPending = existingList.some(r => r.status === 'pending');
+            if (hasPending) {
               await get().fetchSentFriendRequests();
               return true;
             }
           }
 
           // If the other person already sent a request to me, automatically accept it!
-          const { data: incoming } = await supabase
+          const { data: incomingList } = await supabase
             .from('friend_requests')
             .select('id, status')
             .eq('sender_id', receiverId)
             .eq('receiver_id', uid)
             .eq('status', 'pending')
-            .maybeSingle();
+            .limit(1);
 
-          if (incoming) {
-            await get().acceptFriendRequest(incoming.id, receiverId);
+          if (incomingList && incomingList.length > 0) {
+            await get().acceptFriendRequest(incomingList[0].id, receiverId);
             return true;
           }
 
@@ -664,26 +680,43 @@ export const useStore = create<AppState>()(
         }
       },
       
-      acceptFriendRequest: async (requestId, senderId) => {
+      acceptFriendRequest: async (_requestId, senderId) => {
         const uid = await get().ensureValidUserId();
         if (!uid) return false;
         
-        await supabase.from('friend_requests').update({ status: 'accepted' }).eq('id', requestId);
+        // Resolve ALL pending requests between senderId and uid in both directions
+        await supabase
+          .from('friend_requests')
+          .update({ status: 'accepted' })
+          .or(`and(sender_id.eq.${senderId},receiver_id.eq.${uid}),and(sender_id.eq.${uid},receiver_id.eq.${senderId})`)
+          .eq('status', 'pending');
+
         const { error } = await supabase.from('friends').insert({ user_id_1: senderId, user_id_2: uid });
         
         if (!error || (error as any)?.code === '23505') {
           await get().fetchFriends();
           await get().fetchFriendRequests();
+          await get().fetchSentFriendRequests();
           return true;
         }
         return false;
       },
       
       rejectFriendRequest: async (requestId) => {
-        const { error } = await supabase
-          .from('friend_requests')
-          .update({ status: 'rejected' })
-          .eq('id', requestId);
+        const uid = await get().ensureValidUserId();
+        const targetReq = get().friendRequests.find(r => r.id === requestId);
+        const senderId = targetReq?.sender_id;
+
+        let query = supabase.from('friend_requests').update({ status: 'rejected' });
+        if (senderId && uid) {
+          query = query
+            .or(`and(sender_id.eq.${senderId},receiver_id.eq.${uid}),and(sender_id.eq.${uid},receiver_id.eq.${senderId})`)
+            .eq('status', 'pending');
+        } else {
+          query = query.eq('id', requestId);
+        }
+
+        const { error } = await query;
         if (!error) {
           await get().fetchFriendRequests();
           return true;

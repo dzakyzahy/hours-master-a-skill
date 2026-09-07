@@ -177,22 +177,20 @@ export function AiGenerator() {
         ))}
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-2">
+      <div className="ai-plan-form">
         <input 
           type="text" 
-          className="input-field flex-1" 
+          className="ai-plan-input" 
           placeholder="Ketik topik keahlian: e.g. Machine Learning, Mobile App, Piano..."
           value={topic}
           onChange={(e) => setTopic(e.target.value)}
           disabled={loading}
-          style={{ height: '53px', fontSize: '13.5px', fontFamily: 'Geist, sans-serif', padding: '0 16px' }}
           onKeyDown={(e) => { if (e.key === 'Enter') handleGenerate(); }}
         />
         <button 
-          className="btn-primary" 
+          className="ai-plan-btn" 
           onClick={handleGenerate}
           disabled={loading || !topic.trim()}
-          style={{ height: '53px', minHeight: '53px', padding: '0 20px', whiteSpace: 'nowrap', fontSize: '13px', gap: '8px' }}
         >
           {loading ? (
             <FontAwesomeIcon icon={faCircleNotch} spin style={{ fontSize: '14px' }} />
