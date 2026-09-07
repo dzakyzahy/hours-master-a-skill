@@ -1,33 +1,41 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { GoogleGenAI } from '@google/genai';
-import { Sparkles, Loader2 } from 'lucide-react';
+import { Sparkles, Loader2, Key, ShieldCheck } from 'lucide-react';
 import { useStore, type SkillPhase } from './store';
-
-const API_KEY = import.meta.env.VITE_GEMINI_API_KEY || "";
+import { ApiKeyModal } from './components/ApiKeyModal';
 
 export function AiGenerator() {
   const [topic, setTopic] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const addProject = useStore(state => state.addProject);
+  const [isKeyModalOpen, setIsKeyModalOpen] = useState(false);
+  const { addProject, geminiApiKey, loadGeminiApiKey } = useStore();
+
+  useEffect(() => {
+    loadGeminiApiKey();
+  }, [loadGeminiApiKey]);
+
+  const effectiveKey = (geminiApiKey || import.meta.env.VITE_GEMINI_API_KEY || '').trim();
 
   const handleGenerate = async () => {
     if (!topic.trim()) return;
-    if (!API_KEY) {
-      setError('Gemini API Key is not configured. Please add VITE_GEMINI_API_KEY to your .env file.');
+    
+    if (!effectiveKey) {
+      setIsKeyModalOpen(true);
       return;
     }
+
     setLoading(true);
     setError('');
 
     try {
-      const ai = new GoogleGenAI({ apiKey: API_KEY });
+      const ai = new GoogleGenAI({ apiKey: effectiveKey });
       const prompt = `Create a 5-phase mastery plan for learning "${topic}". 
       The total hours should be around 750-1000 hours.
       Output exactly 5 phases.`;
 
       const interaction = await ai.interactions.create({
-        model: 'gemini-3.6-flash',
+        model: 'gemini-2.5-flash',
         input: prompt,
         response_format: {
           type: "text",
@@ -57,48 +65,157 @@ export function AiGenerator() {
 
       const data = JSON.parse(interaction.output_text || '{}');
       if (data && Array.isArray(data.phases) && data.phases.length > 0) {
-        addProject(data.project_name || "Custom Project", data.phases as SkillPhase[]);
+        addProject(data.project_name || topic.trim(), data.phases as SkillPhase[]);
         setTopic('');
       } else {
-        setError('Failed to generate a valid plan.');
+        setError('Format respon AI tidak sesuai. Coba ulangi dengan topik yang lebih spesifik.');
       }
     } catch (err: any) {
-      console.error(err);
-      setError(err.message || 'An error occurred during generation.');
+      console.error("AI Generation error:", err);
+      if (err.message && (err.message.includes('API_KEY_INVALID') || err.message.includes('API key not valid'))) {
+        setError('Kunci API Gemini tidak valid atau kuota habis. Silakan periksa kunci Anda.');
+      } else {
+        setError(err.message || 'Terjadi kendala koneksi ke server Gemini.');
+      }
     } finally {
       setLoading(false);
     }
   };
 
+  const suggestions = [
+    'UI/UX Mobile Design',
+    'React & React Native',
+    'Machine Learning & Python',
+    'Public Speaking'
+  ];
+
   return (
-    <div className="glass-panel mt-6">
-      <div className="flex items-center gap-2 mb-4">
-        <Sparkles size={24} className="text-purple" />
-        <h3 style={{ margin: 0 }}>AI Mastery Plan Generator</h3>
+    <div className="glass-panel mt-6" style={{ padding: '24px', position: 'relative' }}>
+      {/* Header with Title & API Key Status Trigger */}
+      <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
+        <div className="flex items-center gap-2">
+          <Sparkles size={16} style={{ color: 'var(--text-secondary)' }} />
+          <h2 style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
+            AI Mastery Plan Generator
+          </h2>
+        </div>
+
+        <button 
+          type="button"
+          className="btn" 
+          onClick={() => setIsKeyModalOpen(true)}
+          style={{ height: '28px', padding: '0 10px', fontSize: '11px', fontFamily: 'Geist Mono, monospace', gap: '6px' }}
+          title="Kelola Kunci API Gemini Anda"
+        >
+          <Key size={12} style={{ color: effectiveKey ? '#4ade80' : '#f59e0b' }} />
+          <span>{effectiveKey ? 'API Key: Aktif' : 'Konfigurasi API Key'}</span>
+          <span 
+            style={{ 
+              width: '5px', 
+              height: '5px', 
+              borderRadius: '50%', 
+              backgroundColor: effectiveKey ? '#4ade80' : '#f59e0b' 
+            }} 
+          />
+        </button>
       </div>
-      <p className="text-muted text-sm mb-4">
-        Enter any skill you want to master, and our AI will automatically generate a custom 5-phase roadmap for you.
+
+      <p style={{ margin: '0 0 16px', fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+        Masukkan keahlian yang ingin Anda kuasai, AI akan membuatkan roadmap belajar terstruktur 5 fase secara otomatis.
       </p>
-      <div className="flex gap-2">
+
+      {/* Unconfigured Key Notice Banner */}
+      {!effectiveKey && (
+        <div 
+          style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'space-between', 
+            padding: '10px 14px', 
+            background: 'rgba(245, 158, 11, 0.05)', 
+            border: '1px solid rgba(245, 158, 11, 0.2)', 
+            borderRadius: '4px', 
+            marginBottom: '14px',
+            gap: '10px',
+            flexWrap: 'wrap'
+          }}
+        >
+          <div className="flex items-center gap-2" style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+            <ShieldCheck size={16} style={{ color: '#f59e0b', flexShrink: 0 }} />
+            <span>Kunci API Gemini diperlukan untuk membuat roadmap otomatis. Kunci disimpan privat di akun Anda.</span>
+          </div>
+          <button 
+            type="button" 
+            className="btn-primary" 
+            style={{ height: '30px', padding: '0 12px', fontSize: '11px' }}
+            onClick={() => setIsKeyModalOpen(true)}
+          >
+            <Key size={12} /> Masukkan Kunci API
+          </button>
+        </div>
+      )}
+
+      {/* Quick Suggestion Pills */}
+      <div className="flex items-center gap-2 mb-4 overflow-x-auto pb-1">
+        <span style={{ fontSize: '11px', color: 'var(--text-placeholder)', fontFamily: 'Geist Mono, monospace', whiteSpace: 'nowrap' }}>
+          Ide Cepat:
+        </span>
+        {suggestions.map(s => (
+          <button
+            key={s}
+            type="button"
+            className="btn"
+            style={{ fontSize: '11px', height: '28px', padding: '0 10px', whiteSpace: 'nowrap', fontFamily: 'Geist Mono, monospace', color: 'var(--text-secondary)' }}
+            onClick={() => setTopic(s)}
+          >
+            {s}
+          </button>
+        ))}
+      </div>
+
+      <div className="flex flex-col sm:flex-row gap-2">
         <input 
           type="text" 
-          className="input-field" 
-          placeholder="e.g. Machine Learning, Piano, Japanese..."
+          className="input-field flex-1" 
+          placeholder="Ketik topik: e.g. Machine Learning, Mobile App, Piano..."
           value={topic}
           onChange={(e) => setTopic(e.target.value)}
           disabled={loading}
+          onKeyDown={(e) => { if (e.key === 'Enter') handleGenerate(); }}
         />
         <button 
-          className="btn btn-primary" 
+          className="btn-primary" 
           onClick={handleGenerate}
           disabled={loading || !topic.trim()}
-          style={{ whiteSpace: 'nowrap' }}
+          style={{ height: '40px', padding: '0 20px', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
         >
-          {loading ? <Loader2 size={18} className="animate-spin" /> : <Sparkles size={18} />}
-          {loading ? 'Generating...' : 'Generate Plan'}
+          {loading ? <Loader2 size={15} className="animate-spin" /> : <Sparkles size={15} />}
+          {loading ? 'Membuat Roadmap...' : 'Generate Plan'}
         </button>
       </div>
-      {error && <p className="text-sm mt-2" style={{ color: '#ef4444' }}>{error}</p>}
+
+      {error && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '12px', fontSize: '12px', color: '#f87171' }}>
+          <span>{error}</span>
+          {!effectiveKey && (
+            <button 
+              type="button"
+              className="btn" 
+              style={{ height: '26px', padding: '0 8px', fontSize: '11px', color: 'var(--text-primary)' }}
+              onClick={() => setIsKeyModalOpen(true)}
+            >
+              Buka Pengaturan Kunci
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Api Key Modal Dialog */}
+      <ApiKeyModal 
+        isOpen={isKeyModalOpen} 
+        onClose={() => setIsKeyModalOpen(false)} 
+        onSaved={() => setError('')}
+      />
     </div>
   );
 }

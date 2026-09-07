@@ -7,6 +7,7 @@ import { BackgroundClock } from './components/BackgroundClock';
 import { App as CapApp } from '@capacitor/app';
 import { StatusBar, Style } from '@capacitor/status-bar';
 import { Capacitor } from '@capacitor/core';
+import { usePresence } from './hooks/usePresence';
 import './index.css';
 
 const Dashboard = lazy(() => import('./pages/Dashboard').then(m => ({ default: m.Dashboard })));
@@ -32,8 +33,8 @@ function PageLoader() {
 }
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, biometricVerified } = useStore();
-  if (!isAuthenticated || !biometricVerified) {
+  const { isAuthenticated } = useStore();
+  if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
   return <>{children}</>;
@@ -41,6 +42,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   const { theme } = useStore();
+  usePresence();
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);

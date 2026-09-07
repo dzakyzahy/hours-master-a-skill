@@ -14,14 +14,6 @@ export function EditProjectModal({ project, isOpen, onClose }: EditProjectModalP
   const { updateProject, addManualTime } = useStore();
   const [addMinutes, setAddMinutes] = useState('');
 
-  const [prevProjectId, setPrevProjectId] = useState(project.id);
-  if (project.id !== prevProjectId) {
-    setPrevProjectId(project.id);
-    setName(project.name);
-    setPhases(project.phases);
-    setAddMinutes('');
-  }
-
   if (!isOpen) return null;
 
   const handleAddPhase = () => {

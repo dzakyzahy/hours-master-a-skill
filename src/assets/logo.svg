@@ -1,25 +1,27 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
-  <!-- Rounded Squircle Base with Precision Chamfer -->
-  <rect width="512" height="512" rx="128" fill="#090D16" />
-  <rect x="8" y="8" width="496" height="496" rx="120" stroke="#1E293B" stroke-width="4" stroke-opacity="0.6" />
-  
-  <!-- Subtle Top Edge Light Specular -->
-  <path d="M128 12 H384" stroke="white" stroke-width="2" stroke-opacity="0.1" stroke-linecap="round" />
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" fill="none">
+  <!-- Skillo Pure Geometric Logo Mark -->
+  <defs>
+    <filter id="cyanGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="6" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
 
-  <!-- Monolithic Architectural Hourglass / 'H' Geometry -->
-  <!-- Left Upper Wing -->
-  <polygon points="176,144 246,144 246,248 206,248" fill="#F8FAFC" />
-  <!-- Right Upper Wing -->
-  <polygon points="266,144 336,144 306,248 266,248" fill="#F8FAFC" />
-  
-  <!-- Left Lower Wing -->
-  <polygon points="206,264 246,264 246,368 176,368" fill="#F8FAFC" />
-  <!-- Right Lower Wing -->
-  <polygon points="266,264 306,264 336,368 266,368" fill="#F8FAFC" />
+  <!-- Left Upper Wing (Right Triangle) -->
+  <polygon points="76,40 186,40 186,200" fill="#FFFFFF" />
 
-  <!-- Central Laser Seam in Electric Cyan -->
-  <rect x="251" y="132" width="10" height="248" rx="5" fill="#00E5FF" />
-  
-  <!-- Precision Vertex Focal Ring -->
-  <circle cx="256" cy="256" r="4" fill="#FFFFFF" />
+  <!-- Left Lower Wing (Right Triangle) -->
+  <polygon points="186,200 186,360 76,360" fill="#FFFFFF" />
+
+  <!-- Right Upper Wing (Right Triangle) -->
+  <polygon points="214,40 324,40 214,200" fill="#FFFFFF" />
+
+  <!-- Right Lower Wing (Right Triangle) -->
+  <polygon points="214,200 324,360 214,360" fill="#FFFFFF" />
+
+  <!-- Central Laser Core Beam in Vibrant Cyan -->
+  <rect x="196" y="40" width="8" height="320" fill="#00E5FF" filter="url(#cyanGlow)" />
 </svg>

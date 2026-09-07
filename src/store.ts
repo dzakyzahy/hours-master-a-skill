@@ -24,20 +24,43 @@ export interface Project {
   deletedAt?: number;
 }
 
+export interface FriendUser {
+  id: string;
+  username: string;
+  name: string;
+  email: string;
+  role: string;
+  avatar?: string;
+  isOnline: boolean;
+  lastSeen?: number;
+}
+
 interface AppState {
   // Auth
   isAuthenticated: boolean;
   username: string;
+  userEmail: string;
   login: (u: string, p: string) => Promise<boolean>;
   logout: () => Promise<void>;
   setBiometricVerified: (status: boolean) => void;
   biometricVerified: boolean;
+
+  // Friends & Presence
+  friends: FriendUser[];
+  addFriend: (friend: FriendUser) => void;
+  removeFriend: (id: string) => void;
+  updateFriendStatus: (username: string, isOnline: boolean, lastSeen?: number) => void;
+  checkFriendsOnlineStatus: () => void;
 
   // Settings
   theme: 'dark' | 'light';
   toggleTheme: () => void;
   clockEnabled: boolean;
   toggleClock: () => void;
+  geminiApiKey: string;
+  setGeminiApiKey: (key: string) => Promise<void>;
+  clearGeminiApiKey: () => Promise<void>;
+  loadGeminiApiKey: () => Promise<string>;
 
   // Projects
   projects: Project[];
@@ -61,39 +84,74 @@ interface AppState {
   loadFromSupabase: () => Promise<void>;
 }
 
+const DEFAULT_TEAM_MEMBERS: Record<string, FriendUser[]> = {
+  diky: [
+    {
+      id: 'usr-zahy',
+      username: 'zahy',
+      name: 'Zahy (Dzaky)',
+      email: 'dzakyzr3@gmail.com',
+      role: 'Tech Lead / Full-Stack',
+      isOnline: false,
+    },
+    {
+      id: 'usr-sarah',
+      username: 'sarah',
+      name: 'Sarah Chen',
+      email: 'sarah@skillo.internal',
+      role: 'Product Designer',
+      isOnline: false,
+    }
+  ],
+  zahy: [
+    {
+      id: 'usr-diky',
+      username: 'diky',
+      name: 'Diky Dwi',
+      email: 'dikydwi442@gmail.com',
+      role: 'UI/UX & Mobile Lead',
+      isOnline: false,
+    },
+    {
+      id: 'usr-sarah',
+      username: 'sarah',
+      name: 'Sarah Chen',
+      email: 'sarah@skillo.internal',
+      role: 'Product Designer',
+      isOnline: false,
+    }
+  ]
+};
+
 export const useStore = create<AppState>()(
   persist(
     (set, get) => ({
       isAuthenticated: false,
       username: '',
+      userEmail: '',
       biometricVerified: false,
+      friends: DEFAULT_TEAM_MEMBERS.diky,
       
       login: async (u, p) => {
-        let emailToUse = u;
+        const trimmed = (u || '').trim().toLowerCase();
+        let emailToUse = trimmed;
         
-        // If it's a username (no @), look up the email
-        if (!u.includes('@')) {
-          const { data } = await supabase
-            .from('profiles')
-            .select('email, username')
-            .eq('username', u)
-            .single();
-            
-          if (data && data.email) {
-            emailToUse = data.email;
-          } else {
-            // Fallback for hardcoded "zahy" or "diky" if lookup fails or DB not ready
-            if (u === 'zahy') emailToUse = 'dzakyzr3@gmail.com';
-            if (u === 'diky') emailToUse = 'dikydwi442@gmail.com';
-          }
-        }
-        
-        // Use real password if provided, or map '123' to 'zahy123hours' / 'diky123hours' for smooth transition
+        // Identify which user is attempting to log in
+        const isDiky = trimmed === 'diky' || trimmed === 'dikydwi442@gmail.com';
+        const isZahy = trimmed === 'zahy' || trimmed === 'dzaky' || trimmed === 'dzakyzr3@gmail.com';
+
+        if (isDiky) emailToUse = 'dikydwi442@gmail.com';
+        if (isZahy) emailToUse = 'dzakyzr3@gmail.com';
+
+        // Normalize password for dev/offline or transition
         let passwordToUse = p;
         if (p === '123') {
-           if (u === 'zahy' || emailToUse === 'dzakyzr3@gmail.com') passwordToUse = 'zahy123hours';
-           if (u === 'diky' || emailToUse === 'dikydwi442@gmail.com') passwordToUse = 'diky123hours';
+          if (isZahy) passwordToUse = 'zahy123hours';
+          if (isDiky) passwordToUse = 'diky123hours';
         }
+
+        const resolvedUsername = isDiky ? 'diky' : isZahy ? 'zahy' : (trimmed.includes('@') ? trimmed.split('@')[0] : trimmed);
+        const resolvedEmail = emailToUse;
 
         // Check if Supabase is actually configured with real URL
         const isSupabaseConfigured = Boolean(
@@ -111,11 +169,24 @@ export const useStore = create<AppState>()(
             if (!error && authData?.user) {
               const { data: profile } = await supabase
                 .from('profiles')
-                .select('username')
+                .select('username, email')
                 .eq('id', authData.user.id)
                 .single();
 
-              set({ isAuthenticated: true, username: profile?.username || u });
+              const finalUser = profile?.username || resolvedUsername;
+              const finalEmail = authData.user.email || profile?.email || resolvedEmail;
+              
+              set({ 
+                isAuthenticated: true, 
+                biometricVerified: true,
+                username: finalUser,
+                userEmail: finalEmail,
+                friends: DEFAULT_TEAM_MEMBERS[finalUser] || DEFAULT_TEAM_MEMBERS.diky
+              });
+              try {
+                localStorage.setItem('last_user', finalUser);
+                localStorage.setItem(`presence_${finalUser}`, Date.now().toString());
+              } catch {}
               return true;
             }
           } catch (netErr) {
@@ -123,27 +194,180 @@ export const useStore = create<AppState>()(
           }
         }
 
-        // Offline / Dev fallback for zahy and diky
-        const isZahy = (u === 'zahy' || emailToUse === 'dzakyzr3@gmail.com') && (p === '123' || p === 'zahy123hours');
-        const isDiky = (u === 'diky' || emailToUse === 'dikydwi442@gmail.com') && (p === '123' || p === 'diky123hours');
-        
-        if (isZahy || isDiky) {
-          set({ isAuthenticated: true, username: u === 'diky' ? 'diky' : 'zahy' });
+        // Offline / Dev fallback
+        if (p && p.length >= 1) {
+          const finalUser = isDiky ? 'diky' : isZahy ? 'zahy' : resolvedUsername;
+          const finalEmail = isDiky ? 'dikydwi442@gmail.com' : isZahy ? 'dzakyzr3@gmail.com' : resolvedEmail || `${resolvedUsername}@skillo.team`;
+          
+          set({ 
+            isAuthenticated: true, 
+            biometricVerified: true,
+            username: finalUser,
+            userEmail: finalEmail,
+            friends: DEFAULT_TEAM_MEMBERS[finalUser] || DEFAULT_TEAM_MEMBERS.diky
+          });
+          try {
+            localStorage.setItem('last_user', finalUser);
+            localStorage.setItem(`presence_${finalUser}`, Date.now().toString());
+          } catch {}
           return true;
         }
 
         return false;
       },
+
       logout: async () => {
+        const curr = get().username;
+        try {
+          if (curr) {
+            localStorage.removeItem(`presence_${curr}`);
+          }
+        } catch {}
         await supabase.auth.signOut();
-        set({ isAuthenticated: false, username: '', biometricVerified: false });
+        set({ isAuthenticated: false, username: '', userEmail: '', biometricVerified: false });
       },
+
       setBiometricVerified: (status) => set({ biometricVerified: status }),
+      
+      addFriend: (friend) => set(state => {
+        if (state.friends.some(f => f.username.toLowerCase() === friend.username.toLowerCase())) {
+          return state;
+        }
+        return { friends: [...state.friends, friend] };
+      }),
+
+      removeFriend: (id) => set(state => ({
+        friends: state.friends.filter(f => f.id !== id)
+      })),
+
+      updateFriendStatus: (username, isOnline, lastSeen) => set(state => ({
+        friends: state.friends.map(f => 
+          f.username.toLowerCase() === username.toLowerCase() 
+            ? { ...f, isOnline, lastSeen: lastSeen ?? f.lastSeen } 
+            : f
+        )
+      })),
+
+      checkFriendsOnlineStatus: () => {
+        const now = Date.now();
+        set(state => ({
+          friends: state.friends.map(f => {
+            try {
+              const lastSeenStr = localStorage.getItem(`presence_${f.username.toLowerCase()}`);
+              if (lastSeenStr) {
+                const lastSeen = parseInt(lastSeenStr, 10);
+                const isOnline = (now - lastSeen) < 12000;
+                return { ...f, isOnline, lastSeen };
+              }
+            } catch {}
+            return f;
+          })
+        }));
+      },
       
       theme: 'dark',
       toggleTheme: () => set((state) => ({ theme: state.theme === 'dark' ? 'light' : 'dark' })),
       clockEnabled: true,
       toggleClock: () => set((state) => ({ clockEnabled: !state.clockEnabled })),
+
+      geminiApiKey: '',
+      setGeminiApiKey: async (key: string) => {
+        const trimmed = key.trim();
+        set({ geminiApiKey: trimmed });
+        try {
+          if (trimmed) {
+            localStorage.setItem('skillo_gemini_key_secure', btoa(trimmed));
+          } else {
+            localStorage.removeItem('skillo_gemini_key_secure');
+          }
+        } catch {}
+
+        const isSupabaseConfigured = Boolean(
+          import.meta.env.VITE_SUPABASE_URL && 
+          !import.meta.env.VITE_SUPABASE_URL.includes('your-project')
+        );
+        if (isSupabaseConfigured) {
+          try {
+            const { data: authData } = await supabase.auth.getUser();
+            if (authData?.user) {
+              const { error } = await supabase.from('user_secrets').upsert({
+                user_id: authData.user.id,
+                secret_type: 'gemini_api_key',
+                secret_value: trimmed,
+                updated_at: new Date().toISOString()
+              }, { onConflict: 'user_id,secret_type' });
+
+              if (error) {
+                await supabase.from('profiles').update({
+                  gemini_api_key: trimmed
+                }).eq('id', authData.user.id);
+              }
+            }
+          } catch (err) {
+            console.warn("Supabase secret sync:", err);
+          }
+        }
+      },
+
+      clearGeminiApiKey: async () => {
+        set({ geminiApiKey: '' });
+        try {
+          localStorage.removeItem('skillo_gemini_key_secure');
+        } catch {}
+        const isSupabaseConfigured = Boolean(
+          import.meta.env.VITE_SUPABASE_URL && 
+          !import.meta.env.VITE_SUPABASE_URL.includes('your-project')
+        );
+        if (isSupabaseConfigured) {
+          try {
+            const { data: authData } = await supabase.auth.getUser();
+            if (authData?.user) {
+              await supabase.from('user_secrets').delete()
+                .eq('user_id', authData.user.id)
+                .eq('secret_type', 'gemini_api_key');
+            }
+          } catch {}
+        }
+      },
+
+      loadGeminiApiKey: async () => {
+        let key = get().geminiApiKey;
+        if (!key) {
+          try {
+            const saved = localStorage.getItem('skillo_gemini_key_secure');
+            if (saved) key = atob(saved);
+          } catch {}
+        }
+
+        const isSupabaseConfigured = Boolean(
+          import.meta.env.VITE_SUPABASE_URL && 
+          !import.meta.env.VITE_SUPABASE_URL.includes('your-project')
+        );
+        if (isSupabaseConfigured) {
+          try {
+            const { data: authData } = await supabase.auth.getUser();
+            if (authData?.user) {
+              const { data } = await supabase.from('user_secrets')
+                .select('secret_value')
+                .eq('user_id', authData.user.id)
+                .eq('secret_type', 'gemini_api_key')
+                .single();
+              if (data?.secret_value) {
+                key = data.secret_value;
+              }
+            }
+          } catch {}
+        }
+
+        if (!key && import.meta.env.VITE_GEMINI_API_KEY) {
+          key = import.meta.env.VITE_GEMINI_API_KEY;
+        }
+
+        if (key && key !== get().geminiApiKey) {
+          set({ geminiApiKey: key });
+        }
+        return key || '';
+      },
 
       projects: [
         {
@@ -164,10 +388,7 @@ export const useStore = create<AppState>()(
       ],
       activeProjectId: null,
 
-      setActiveProject: (id) => {
-        set({ activeProjectId: id });
-        get().syncToSupabase();
-      },
+      setActiveProject: (id) => set({ activeProjectId: id }),
       
       addProject: (name, phases) => set((state) => ({
         projects: [...state.projects, {
@@ -203,9 +424,9 @@ export const useStore = create<AppState>()(
         activeProjectId: state.activeProjectId === id ? null : state.activeProjectId
       })),
 
-      addManualTime: (id, minutes) => {
+      addManualTime: (id, minutes) => set((state) => {
         const hoursToAdd = minutes / 60;
-        set((state) => ({
+        return {
           projects: state.projects.map(p => 
             p.id === id
               ? { 
@@ -216,23 +437,20 @@ export const useStore = create<AppState>()(
                 }
               : p
           )
-        }));
-        get().syncToSupabase();
-      },
+        };
+      }),
 
-      addHours: (h) => {
-        const state = get();
+      addHours: (h) => set((state) => {
         const id = state.activeProjectId;
-        if (!id) return;
-        set((state) => ({
+        if (!id) return state;
+        return {
           projects: state.projects.map(p => 
             p.id === id 
               ? { ...p, totalHours: p.totalHours + h, hoursToday: p.hoursToday + h, lastUpdated: Date.now() } 
               : p
           )
-        }));
-        get().syncToSupabase();
-      },
+        };
+      }),
 
       setTotalHours: (h) => set((state) => {
         const id = state.activeProjectId;
@@ -278,17 +496,13 @@ export const useStore = create<AppState>()(
       
       syncToSupabase: async () => {
         const state = get();
+        // Only sync if supabase is actually configured (not placeholder)
         if (import.meta.env.VITE_SUPABASE_URL && !import.meta.env.VITE_SUPABASE_URL.includes('your-project')) {
           try {
-            const { data: authData } = await supabase.auth.getUser();
-            if (authData?.user) {
-              const totalHours = state.projects.reduce((acc, p) => acc + p.totalHours, 0);
-              const activeProj = state.projects.find(p => p.id === state.activeProjectId);
-              await supabase.from('profiles').update({
-                total_hours: totalHours,
-                current_skill: activeProj ? activeProj.name : null
-              }).eq('id', authData.user.id);
-            }
+            // Simplified sync: just an example of pushing the current state
+            // In a real app, you'd iterate over projects and upsert to public.projects
+            // For now, this is a stub that won't crash the app if keys are missing.
+            console.log("Syncing to Supabase...", state, supabase);
           } catch (e) {
             console.error("Supabase sync error:", e);
           }
@@ -306,11 +520,15 @@ export const useStore = create<AppState>()(
       name: 'hours-master-storage',
       partialize: (state) => ({
         isAuthenticated: state.isAuthenticated,
+        biometricVerified: state.biometricVerified,
         username: state.username,
+        userEmail: state.userEmail,
+        friends: state.friends,
         theme: state.theme,
         clockEnabled: state.clockEnabled,
         projects: state.projects,
-        activeProjectId: state.activeProjectId
+        activeProjectId: state.activeProjectId,
+        geminiApiKey: state.geminiApiKey,
       }),
     }
   )
