@@ -336,13 +336,29 @@ export function Chat() {
   return (
     <div className="no-drag mobile-content-container" style={{ padding: '28px 16px 80px', flex: 1, display: 'flex', flexDirection: 'column', height: '100vh', maxWidth: '960px', margin: '0 auto', width: '100%' }}>
       {/* Header - Symmetrical & Clean */}
-      <header className="header-topbar mb-6">
-        <div className="flex items-center gap-3">
-          <button className="btn" onClick={() => navigate('/')} style={{ padding: '0 12px', height: '36px', gap: '6px' }} title="Kembali ke Beranda">
-            <FontAwesomeIcon icon={faArrowLeft} style={{ fontSize: '13px' }} /> Kembali
+      <header className="header-topbar mb-6" style={{ borderBottom: '1px solid var(--border-hairline)', paddingBottom: '16px' }}>
+        <div className="flex items-center gap-4">
+          <button 
+            className="btn" 
+            onClick={() => navigate('/')} 
+            style={{ 
+              padding: '0 12px', 
+              height: '34px', 
+              fontSize: '12px', 
+              fontWeight: 500, 
+              gap: '6px', 
+              borderRadius: '6px',
+              border: '1px solid var(--border-hairline-strong)',
+              background: 'var(--surface-input)',
+              color: 'var(--text-secondary)'
+            }} 
+            title="Kembali ke Beranda"
+          >
+            <FontAwesomeIcon icon={faArrowLeft} style={{ fontSize: '11px' }} />
+            <span>Kembali</span>
           </button>
           <div>
-            <h1 style={{ margin: 0, fontSize: '18px', fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--text-primary)', fontFamily: 'Geist, sans-serif' }}>
+            <h1 style={{ margin: 0, fontSize: '18px', fontWeight: 600, letterSpacing: '-0.02em', color: 'var(--text-primary)', fontFamily: "'Geist', sans-serif" }}>
               Collaboration Hub
             </h1>
             <p style={{ margin: '2px 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>
@@ -723,21 +739,22 @@ export function Chat() {
 
                 <button 
                   className="btn" 
-                  style={{ padding: '0 12px', height: '32px', fontSize: '12px', gap: '5px' }} 
+                  style={{ padding: '0 12px', height: '32px', fontSize: '12px', gap: '6px', borderRadius: '6px' }} 
                   onClick={() => navigate('/meeting')}
                   title="Mulai Video Call"
                 >
-                  <FontAwesomeIcon icon={faVideo} style={{ fontSize: '12px' }} /> Video Call
+                  <FontAwesomeIcon icon={faVideo} style={{ fontSize: '12px', color: 'var(--accent-cyan)' }} />
+                  <span>Video Call</span>
                 </button>
               </div>
             ) : (
-              <div style={{ padding: '16px', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '13px' }}>Pilih rekan tim terlebih dahulu</div>
+              <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '13px' }}>Pilih rekan tim terlebih dahulu</div>
             )}
 
             {/* Message Feed: Dedicated 1-on-1 Conversation Only */}
-            <div className="flex-1 overflow-y-auto pr-1 flex flex-col gap-2 mb-3" style={{ maxHeight: 'calc(100vh - 360px)' }}>
+            <div className="flex-1 overflow-y-auto pr-1 flex flex-col gap-3 mb-4" style={{ maxHeight: 'calc(100vh - 360px)', padding: '8px 4px' }}>
               {activeConversationMessages.length === 0 && (
-                <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-placeholder)', fontSize: '12px', fontFamily: 'Geist Mono, monospace' }}>
+                <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--text-placeholder)', fontSize: '12px', fontFamily: 'Geist Mono, monospace' }}>
                   Belum ada pesan dengan @{currentFriendUsername}. Mulai percakapan di bawah.
                 </div>
               )}
@@ -747,25 +764,40 @@ export function Chat() {
                 return (
                   <div 
                     key={m.id} 
-                    className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: isMe ? 'flex-end' : 'flex-start',
+                      width: '100%',
+                      margin: '2px 0'
+                    }}
                   >
                     <div 
                       style={{ 
-                        maxWidth: '80%', 
-                        padding: '8px 12px', 
-                        borderRadius: '6px',
+                        width: 'fit-content',
+                        maxWidth: '75%', 
+                        padding: '9px 14px', 
+                        borderRadius: isMe ? '14px 14px 2px 14px' : '14px 14px 14px 2px',
                         backgroundColor: isMe ? 'var(--cta-primary-bg)' : 'var(--surface-input)',
                         color: isMe ? 'var(--cta-primary-text)' : 'var(--text-primary)',
                         border: isMe ? 'none' : '1px solid var(--border-hairline)',
-                        fontWeight: 400,
+                        fontWeight: 450,
                         fontSize: '13px',
                         lineHeight: 1.5,
-                        boxShadow: isMe ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'
+                        wordBreak: 'break-word',
+                        boxShadow: isMe ? '0 1px 4px rgba(0,0,0,0.12)' : 'none'
                       }}
                     >
                       {m.text}
                     </div>
-                    <span style={{ fontSize: '10px', fontFamily: 'Geist Mono, monospace', color: 'var(--text-placeholder)', marginTop: '2px', padding: '0 2px' }}>
+                    <span style={{ 
+                      fontSize: '10px', 
+                      fontFamily: 'Geist Mono, monospace', 
+                      color: 'var(--text-placeholder)', 
+                      marginTop: '3px', 
+                      padding: '0 4px',
+                      alignSelf: isMe ? 'flex-end' : 'flex-start'
+                    }}>
                       {new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </span>
                   </div>
@@ -775,23 +807,23 @@ export function Chat() {
             </div>
 
             {/* Input message form */}
-            <form onSubmit={handleSendMessage} className="flex gap-2 items-center">
+            <form onSubmit={handleSendMessage} className="flex gap-2 items-center" style={{ paddingTop: '8px', borderTop: '1px solid var(--border-hairline)' }}>
               <input 
                 type="text" 
                 className="input-field flex-1" 
                 placeholder={`Kirim pesan ke @${currentFriendInChat?.username || 'rekan'}...`}
                 value={newMessage} 
                 onChange={e => setNewMessage(e.target.value)} 
-                style={{ height: '40px', fontSize: '13px' }}
+                style={{ height: '40px', fontSize: '13px', borderRadius: '6px' }}
               />
               <button 
                 type="submit" 
                 className="btn-primary" 
                 disabled={!newMessage.trim() || isSending}
-                style={{ width: '40px', height: '40px', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+                style={{ width: '40px', height: '40px', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, borderRadius: '6px' }}
                 title="Kirim pesan (Enter)"
               >
-                <FontAwesomeIcon icon={faPaperPlane} style={{ fontSize: '14px' }} />
+                <FontAwesomeIcon icon={faPaperPlane} style={{ fontSize: '13px' }} />
               </button>
             </form>
           </div>
