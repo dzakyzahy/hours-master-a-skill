@@ -407,6 +407,13 @@ export const useStore = create<AppState>()(
             });
 
             if (error) {
+              const errMsg = (error.message || '').toLowerCase();
+              if (errMsg.includes('rate limit')) {
+                return { 
+                  success: false, 
+                  message: 'Batas pengiriman email Supabase tercapai (rate limit). Layanan email Supabase membatasi frekuensi demi keamanan. Silakan coba beberapa menit lagi, atau gunakan kata sandi default/lokal (123) untuk akun demo.' 
+                };
+              }
               return { success: false, message: error.message || 'Gagal mengirim email reset kata sandi.' };
             }
 

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { GoogleGenAI } from '@google/genai';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faRoute, faBolt, faCircleNotch, faKey, faLock } from '@fortawesome/free-solid-svg-icons';
+import { faRoute, faWandMagicSparkles, faCircleNotch, faKey, faLock } from '@fortawesome/free-solid-svg-icons';
 import { useStore, type SkillPhase } from './store';
 import { ApiKeyModal } from './components/ApiKeyModal';
 
@@ -195,7 +195,7 @@ export function AiGenerator() {
           {loading ? (
             <FontAwesomeIcon icon={faCircleNotch} spin style={{ fontSize: '14px' }} />
           ) : (
-            <FontAwesomeIcon icon={faBolt} style={{ fontSize: '13px' }} />
+            <FontAwesomeIcon icon={faWandMagicSparkles} style={{ fontSize: '13px' }} />
           )}
           <span>{loading ? 'Membuat Roadmap...' : 'Generate Plan'}</span>
         </button>
