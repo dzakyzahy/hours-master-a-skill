@@ -264,21 +264,9 @@ export function Home() {
           ))}
           <button 
             type="button"
-            className="cursor-pointer transition-all hover:border-[var(--border-color-hover)]"
-            style={{ 
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '8px',
-              background: 'var(--surface-card)', 
-              border: '1px solid var(--border-hairline-strong)', 
-              color: 'var(--text-primary)', 
-              fontSize: '12px', 
-              fontFamily: "'Geist', sans-serif",
-              borderRadius: '9999px',
-              padding: '6px 14px',
-              fontWeight: 500
-            }}
+            className="btn-buka-hub"
             onClick={() => navigate('/chat')}
+            title="Buka Skillo Hub untuk Chat, Focus Room, dan Kolaborasi"
           >
             <span>Buka Hub &rarr;</span>
             {friendRequests.length > 0 && (

@@ -110,6 +110,7 @@ interface AppState {
   biometricVerified: boolean;
 
   // Friends & Presence
+  ensureValidUserId: () => Promise<string | null>;
   friends: FriendUser[];
   friendRequests: FriendRequest[];
   sentFriendRequests: FriendRequest[];
@@ -482,10 +483,34 @@ export const useStore = create<AppState>()(
 
       setBiometricVerified: (status) => set({ biometricVerified: status }),
       
-      fetchFriends: async () => {
-        const uid = get().userId;
+      ensureValidUserId: async (): Promise<string | null> => {
+        let uid = get().userId;
+        const currentUsername = get().username;
         const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(uid);
-        if (!uid || !isUUID) return;
+        if (isUUID) return uid;
+
+        if (currentUsername && isSupabaseConfigured) {
+          try {
+            const { data: myProf } = await supabase
+              .from('profiles')
+              .select('id')
+              .ilike('username', currentUsername)
+              .maybeSingle();
+
+            if (myProf?.id) {
+              set({ userId: myProf.id });
+              return myProf.id;
+            }
+          } catch (e) {
+            console.warn('ensureValidUserId lookup failed:', e);
+          }
+        }
+        return null;
+      },
+
+      fetchFriends: async () => {
+        const uid = await get().ensureValidUserId();
+        if (!uid) return;
         const { data } = await supabase
           .from('friends')
           .select('id, user_id_1, user_id_2')
@@ -514,9 +539,8 @@ export const useStore = create<AppState>()(
       },
       
       fetchFriendRequests: async () => {
-        const uid = get().userId;
-        const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(uid);
-        if (!uid || !isUUID) return;
+        const uid = await get().ensureValidUserId();
+        if (!uid) return;
         const { data } = await supabase
           .from('friend_requests')
           .select('*, profiles!sender_id(username)')
@@ -533,9 +557,8 @@ export const useStore = create<AppState>()(
       },
       
       fetchSentFriendRequests: async () => {
-        const uid = get().userId;
-        const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(uid);
-        if (!uid || !isUUID) return;
+        const uid = await get().ensureValidUserId();
+        if (!uid) return;
         const { data, error } = await supabase
           .from('friend_requests')
           .select('*, profiles!receiver_id(username)')
@@ -556,35 +579,57 @@ export const useStore = create<AppState>()(
       },
       
       sendFriendRequest: async (receiverId) => {
-        let uid = get().userId;
-        const currentUsername = get().username;
-        if (!uid) return false;
-
-        const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(uid);
-        if (!isUUID && currentUsername) {
-          try {
-            const { data: myProf } = await supabase
-              .from('profiles')
-              .select('id')
-              .ilike('username', currentUsername)
-              .maybeSingle();
-
-            if (myProf?.id) {
-              uid = myProf.id;
-              set({ userId: myProf.id });
-            }
-          } catch {}
-        }
+        const uid = await get().ensureValidUserId();
+        if (!uid || !receiverId || uid === receiverId) return false;
 
         try {
+          // Check if already sent and pending
+          const { data: existing } = await supabase
+            .from('friend_requests')
+            .select('id, status')
+            .eq('sender_id', uid)
+            .eq('receiver_id', receiverId)
+            .maybeSingle();
+
+          if (existing) {
+            if (existing.status === 'pending') {
+              await get().fetchSentFriendRequests();
+              return true;
+            }
+            if (existing.status === 'rejected') {
+              await supabase
+                .from('friend_requests')
+                .update({ status: 'pending' })
+                .eq('id', existing.id);
+              await get().fetchSentFriendRequests();
+              return true;
+            }
+          }
+
+          // If the other person already sent a request to me, automatically accept it!
+          const { data: incoming } = await supabase
+            .from('friend_requests')
+            .select('id, status')
+            .eq('sender_id', receiverId)
+            .eq('receiver_id', uid)
+            .eq('status', 'pending')
+            .maybeSingle();
+
+          if (incoming) {
+            await get().acceptFriendRequest(incoming.id, receiverId);
+            return true;
+          }
+
           const { error } = await supabase
             .from('friend_requests')
-            .insert({ sender_id: uid, receiver_id: receiverId });
+            .insert({ sender_id: uid, receiver_id: receiverId, status: 'pending' });
 
           if (error) {
             console.error('sendFriendRequest error:', error);
             return false;
           }
+
+          await get().fetchSentFriendRequests();
           return true;
         } catch (err) {
           console.error('sendFriendRequest exception:', err);
@@ -593,15 +638,15 @@ export const useStore = create<AppState>()(
       },
       
       acceptFriendRequest: async (requestId, senderId) => {
-        const uid = get().userId;
+        const uid = await get().ensureValidUserId();
         if (!uid) return false;
         
         await supabase.from('friend_requests').update({ status: 'accepted' }).eq('id', requestId);
         const { error } = await supabase.from('friends').insert({ user_id_1: senderId, user_id_2: uid });
         
         if (!error) {
-          get().fetchFriends();
-          get().fetchFriendRequests();
+          await get().fetchFriends();
+          await get().fetchFriendRequests();
           return true;
         }
         return false;
@@ -613,7 +658,7 @@ export const useStore = create<AppState>()(
           .update({ status: 'rejected' })
           .eq('id', requestId);
         if (!error) {
-          get().fetchFriendRequests();
+          await get().fetchFriendRequests();
           return true;
         }
         return false;

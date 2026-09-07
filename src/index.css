@@ -191,7 +191,7 @@ html, body {
   flex-shrink: 0;
 }
 
-/* Dedicated Theme Switcher (Separated from Workspace Actions) */
+/* Dedicated Theme Switcher (Ultra-Smooth Spring Transition) */
 .theme-switcher-segmented {
   display: inline-flex;
   align-items: center;
@@ -201,7 +201,9 @@ html, body {
   padding: 3px;
   gap: 3px;
   user-select: none;
-  transition: background 0.15s ease, box-shadow 0.15s ease;
+  transition: background 0.25s cubic-bezier(0.16, 1, 0.3, 1), 
+              border-color 0.25s cubic-bezier(0.16, 1, 0.3, 1), 
+              box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 [data-theme='light'] .theme-switcher-segmented {
@@ -213,9 +215,9 @@ html, body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 5px;
+  gap: 6px;
   height: 28px;
-  padding: 0 10px;
+  padding: 0 11px;
   border-radius: 9999px;
   background: transparent;
   border: 1.5px solid transparent;
@@ -224,11 +226,24 @@ html, body {
   font-size: 12px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.theme-switcher-option svg {
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .theme-switcher-option:hover {
   color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+[data-theme='light'] .theme-switcher-option:hover {
+  background: rgba(15, 23, 42, 0.04);
+}
+
+.theme-switcher-option:active {
+  transform: scale(0.95);
 }
 
 .theme-switcher-option.active {
@@ -236,21 +251,64 @@ html, body {
   color: var(--text-primary);
   font-weight: 600;
   border: 1.5px solid #ffffff;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  transform: scale(1.02);
+}
+
+.theme-switcher-option.active svg {
+  transform: scale(1.15) rotate(8deg);
 }
 
 [data-theme='light'] .theme-switcher-option.active {
   background: #ffffff;
   color: #0f172a;
   border: 1.5px solid #000000;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.15);
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.12);
 }
 
 .theme-switcher-text {
   line-height: 1;
 }
 
-/* Interactive Buttons */
+/* Buka Hub Button with explicit high-contrast theme border */
+.btn-buka-hub {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface-card);
+  border: 1.5px solid #000000 !important;
+  color: var(--text-primary);
+  font-size: 12px;
+  font-family: 'Geist', sans-serif;
+  border-radius: 9999px;
+  padding: 6px 14px;
+  font-weight: 500;
+  cursor: pointer;
+  user-select: none;
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), 
+              box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1), 
+              background 0.2s ease,
+              border-color 0.2s ease;
+}
+
+[data-theme='dark'] .btn-buka-hub {
+  border: 1.5px solid #ffffff !important;
+}
+
+.btn-buka-hub:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+[data-theme='dark'] .btn-buka-hub:hover {
+  box-shadow: 0 4px 14px rgba(255, 255, 255, 0.15);
+}
+
+.btn-buka-hub:active {
+  transform: scale(0.97);
+}
+
+/* Interactive Buttons (Smooth Micro-Physics) */
 .btn {
   background: transparent;
   color: var(--text-primary);
@@ -263,7 +321,7 @@ html, body {
   font-weight: 500;
   font-size: 12.5px;
   letter-spacing: -0.01em;
-  transition: border-color 0.15s ease, background 0.15s ease, transform 0.1s ease;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -278,15 +336,18 @@ html, body {
 
 .btn:hover {
   border-color: var(--border-hairline-strong);
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(255, 255, 255, 0.04);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
 }
 
 [data-theme='light'] .btn:hover {
   background: rgba(15, 23, 42, 0.04);
+  box-shadow: 0 3px 8px rgba(15, 23, 42, 0.06);
 }
 
 .btn:active {
-  transform: scale(0.98);
+  transform: scale(0.97) translateY(0);
 }
 
 .btn-icon {
@@ -301,7 +362,7 @@ html, body {
   background: transparent;
   color: var(--text-secondary);
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 [data-theme='light'] .btn-icon {
@@ -312,10 +373,11 @@ html, body {
   background: var(--surface-input);
   color: var(--text-primary);
   border-color: var(--border-hairline-strong);
+  transform: translateY(-1px) scale(1.03);
 }
 
 .btn-icon:active {
-  transform: scale(0.97);
+  transform: scale(0.95);
 }
 
 .btn-primary {
@@ -331,7 +393,7 @@ html, body {
   letter-spacing: -0.01em;
   cursor: pointer;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-  transition: background 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -340,11 +402,12 @@ html, body {
 
 .btn-primary:hover:not(:disabled) {
   background: var(--cta-primary-hover);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(14, 165, 233, 0.35);
 }
 
 .btn-primary:active:not(:disabled) {
-  transform: scale(0.98);
+  transform: scale(0.97) translateY(0);
 }
 
 .btn-primary:disabled {

@@ -8,7 +8,8 @@ import {
   faCommentDots, 
   faPaperPlane, 
   faVideo,
-  faHandFist
+  faHandFist,
+  faClock
 } from '@fortawesome/free-solid-svg-icons';
 import { useStore, type FriendUser } from '../store';
 import { ClashArena } from '../components/ClashArena';
@@ -80,6 +81,8 @@ export function Chat() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [hasSearched, setHasSearched] = useState(false);
+  const [communityUsers, setCommunityUsers] = useState<any[]>([]);
   const [selectedFriend, setSelectedFriend] = useState<FriendUser | null>(null);
   const effectiveSelectedFriend = selectedFriend || friends[0] || null;
 
@@ -255,73 +258,117 @@ export function Chat() {
     setActiveTab('chat');
   };
 
+  const loadCommunityUsers = useCallback(async () => {
+    try {
+      const { data } = await supabase
+        .from('profiles')
+        .select('id, username, email, total_hours')
+        .order('username', { ascending: true });
+
+      if (data) {
+        const friendIds = new Set(friends.map(f => f.id));
+        const myName = currentUsername.toLowerCase();
+        const pendingReceiverIds = new Set(sentFriendRequests.map(r => r.receiver_id));
+
+        const available = data
+          .filter(u => (u.username || '').toLowerCase() !== myName && !friendIds.has(u.id))
+          .map(u => ({
+            ...u,
+            isPending: pendingReceiverIds.has(u.id)
+          }));
+
+        setCommunityUsers(available);
+      }
+    } catch (err) {
+      console.warn('Failed to load community users:', err);
+    }
+  }, [friends, currentUsername, sentFriendRequests]);
+
+  useEffect(() => {
+    let active = true;
+    const fetchAsync = async () => {
+      try {
+        const { data } = await supabase
+          .from('profiles')
+          .select('id, username, email, total_hours')
+          .order('username', { ascending: true });
+
+        if (data && active) {
+          const friendIds = new Set(friends.map(f => f.id));
+          const myName = currentUsername.toLowerCase();
+          const pendingReceiverIds = new Set(sentFriendRequests.map(r => r.receiver_id));
+
+          const available = data
+            .filter(u => (u.username || '').toLowerCase() !== myName && !friendIds.has(u.id))
+            .map(u => ({
+              ...u,
+              isPending: pendingReceiverIds.has(u.id)
+            }));
+
+          setCommunityUsers(available);
+        }
+      } catch (err) {
+        console.warn('Failed to load community users:', err);
+      }
+    };
+    fetchAsync();
+    return () => { active = false; };
+  }, [friends, currentUsername, sentFriendRequests]);
+
   const handleSearchUsers = useCallback(async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    const query = searchQuery.trim().toLowerCase();
-    if (!query) return;
+    const query = searchQuery.trim().toLowerCase().replace(/^@/, '');
+    if (!query) {
+      setSearchResults([]);
+      setHasSearched(false);
+      return;
+    }
     setIsSearching(true);
-    setSearchResults([]);
+    setHasSearched(true);
     
     try {
-      let req = supabase
+      const { data, error } = await supabase
         .from('profiles')
-        .select('id, username, email')
+        .select('id, username, email, total_hours')
         .ilike('username', `%${query}%`)
         .limit(10);
         
-      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId);
-      if (isUUID) {
-        req = req.neq('id', userId);
-      }
-
-      const { data, error } = await req;
       if (error) {
         console.warn("Supabase profile search warning:", error);
       }
         
       if (data) {
-        const friendIds = friends.map(f => f.id);
+        const friendIds = new Set(friends.map(f => f.id));
         const myName = currentUsername.toLowerCase();
-        // Exclude existing friends and self
-        const filtered = data.filter(u => 
-          !friendIds.includes(u.id) && 
-          (u.username || '').toLowerCase() !== myName
-        );
+        const pendingReceiverIds = new Set(sentFriendRequests.map(r => r.receiver_id));
 
-        if (filtered.length > 0) {
-          // Check for pending requests
-          let pendingIds = new Set<string>();
-          if (isUUID) {
-            const { data: pendingReqs } = await supabase
-              .from('friend_requests')
-              .select('receiver_id')
-              .eq('sender_id', userId)
-              .eq('status', 'pending');
-            
-            pendingIds = new Set((pendingReqs || []).map(r => r.receiver_id));
-          }
-          
-          setSearchResults(filtered.map(u => ({
+        const filtered = data
+          .filter(u => !friendIds.has(u.id) && (u.username || '').toLowerCase() !== myName)
+          .map(u => ({
             ...u,
-            isPending: pendingIds.has(u.id)
-          })));
-        } else {
-          setSearchResults([]);
-        }
+            isPending: pendingReceiverIds.has(u.id)
+          }));
+
+        setSearchResults(filtered);
+      } else {
+        setSearchResults([]);
       }
     } catch(err) {
       console.error(err);
     } finally {
       setIsSearching(false);
     }
-  }, [searchQuery, userId, currentUsername, friends]);
+  }, [searchQuery, friends, currentUsername, sentFriendRequests]);
 
   useEffect(() => {
     const delay = setTimeout(() => {
       if (searchQuery.trim().length > 0) {
         handleSearchUsers();
+      } else {
+        setSearchResults([]);
+        setHasSearched(false);
       }
-    }, 500);
+    }, 350);
     return () => clearTimeout(delay);
   }, [searchQuery, handleSearchUsers]);
 
@@ -330,6 +377,9 @@ export function Chat() {
     if (success) {
       toast.success(`Permintaan pertemanan terkirim ke ${receiverUsername}`);
       setSearchResults(prev => prev.map(item => item.id === receiverId ? { ...item, isPending: true } : item));
+      setCommunityUsers(prev => prev.map(item => item.id === receiverId ? { ...item, isPending: true } : item));
+      await fetchSentFriendRequests();
+      await loadCommunityUsers();
     } else {
       toast.error('Gagal mengirim permintaan pertemanan');
     }
@@ -471,16 +521,49 @@ export function Chat() {
               <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '6px', display: 'block' }}>
                 Cari & Tambah Teman Baru
               </label>
+
+              {/* Quick Suggestions Chips */}
+              <div className="flex items-center gap-2 mb-3" style={{ flexWrap: 'wrap' }}>
+                <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Pengguna di Sistem:</span>
+                {['diky', 'zahy', 'gg442'].filter(u => u !== currentUsername).map(suggestedName => (
+                  <button
+                    key={suggestedName}
+                    type="button"
+                    onClick={() => {
+                      setSearchQuery(suggestedName);
+                      const filtered = communityUsers.filter(u => (u.username || '').toLowerCase() === suggestedName);
+                      if (filtered.length > 0) {
+                        setSearchResults(filtered);
+                        setHasSearched(true);
+                      }
+                    }}
+                    style={{
+                      padding: '2px 8px',
+                      borderRadius: '9999px',
+                      fontSize: '11px',
+                      background: 'var(--surface-card)',
+                      border: '1px solid var(--border-hairline-strong)',
+                      color: 'var(--accent-primary)',
+                      cursor: 'pointer',
+                      fontFamily: 'Geist Mono, monospace'
+                    }}
+                  >
+                    @{suggestedName}
+                  </button>
+                ))}
+              </div>
+
               <form onSubmit={handleSearchUsers} className="flex gap-2 mb-4">
                 <input 
                   type="text" 
                   className="input-field flex-1" 
-                  placeholder="Ketik username teman..." 
+                  placeholder="Ketik username teman (contoh: diky, zahy)..." 
                   value={searchQuery} 
                   onChange={e => {
                     setSearchQuery(e.target.value);
                     if (e.target.value.trim() === '') {
                       setSearchResults([]);
+                      setHasSearched(false);
                     }
                   }} 
                   style={{ height: '38px', fontSize: '13px' }}
@@ -497,9 +580,12 @@ export function Chat() {
                   {searchResults.map(u => (
                     <div key={u.id} className="flex items-center justify-between p-2 bg-slate-800/60 rounded border border-slate-700/30">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded bg-slate-700 flex items-center justify-center font-bold text-xs uppercase">{u.username.substring(0,2)}</div>
+                        <div className="w-8 h-8 rounded bg-slate-700 flex items-center justify-center font-bold text-xs uppercase text-white">
+                          {(u.username || 'U').substring(0, 2)}
+                        </div>
                         <div className="flex flex-col">
-                          <span className="text-sm font-medium">{u.username}</span>
+                          <span className="text-sm font-medium text-white">@{u.username}</span>
+                          {u.email && <span className="text-xs text-slate-400">{u.email}</span>}
                         </div>
                       </div>
                       <button 
@@ -511,10 +597,78 @@ export function Chat() {
                           }
                         }}
                       >
-                        {u.isPending ? 'Menunggu...' : '+ Add'}
+                        {u.isPending ? '✓ Menunggu...' : '+ Tambah Teman'}
                       </button>
                     </div>
                   ))}
+                </div>
+              )}
+
+              {/* Search Not Found Feedback */}
+              {hasSearched && searchResults.length === 0 && searchQuery.trim() !== '' && (
+                <div style={{
+                  padding: '12px 14px',
+                  borderRadius: '8px',
+                  background: 'var(--surface-input)',
+                  border: '1px solid var(--border-hairline)',
+                  marginBottom: '16px',
+                  fontSize: '12px',
+                  color: 'var(--text-secondary)'
+                }}>
+                  Tidak ditemukan pengguna dengan nama "@{searchQuery.replace(/^@/, '')}". 
+                  Pengguna lain yang terdaftar di database saat ini: 
+                  <strong style={{ color: 'var(--text-primary)', marginLeft: '4px' }}>
+                    {['diky', 'zahy', 'gg442'].filter(u => u !== currentUsername).join(', ')}
+                  </strong>
+                </div>
+              )}
+
+              {/* Community Members List (When Not Searching) */}
+              {!hasSearched && communityUsers.length > 0 && (
+                <div className="mb-6 p-4 rounded-lg bg-slate-800/30 border border-slate-700/40">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 style={{ margin: 0, fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                      Pengguna Terdaftar di Komunitas
+                    </h3>
+                    <span style={{ fontSize: '11px', fontFamily: 'Geist Mono, monospace', color: 'var(--text-secondary)' }}>
+                      {communityUsers.length} pengguna
+                    </span>
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    {communityUsers.map(u => (
+                      <div key={u.id} className="flex items-center justify-between p-2.5 bg-slate-800/50 rounded border border-slate-700/30">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded bg-slate-700 flex items-center justify-center font-bold text-xs uppercase text-white">
+                            {(u.username || 'U').substring(0, 2)}
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="text-sm font-medium text-white">@{u.username}</span>
+                            {u.email && <span className="text-xs text-slate-400">{u.email}</span>}
+                          </div>
+                        </div>
+                        <button 
+                          className={u.isPending ? "btn text-xs px-3 py-1 h-auto opacity-70" : "btn-primary text-xs px-3 py-1 h-auto"} 
+                          disabled={u.isPending}
+                          onClick={() => {
+                            if (!u.isPending) {
+                              handleSendRequest(u.id, u.username);
+                            }
+                          }}
+                        >
+                          {u.isPending ? (
+                            <span className="flex items-center gap-1">
+                              <FontAwesomeIcon icon={faClock} style={{ fontSize: '10px' }} /> Menunggu Persetujuan
+                            </span>
+                          ) : (
+                            <span className="flex items-center gap-1">
+                              <FontAwesomeIcon icon={faUserPlus} style={{ fontSize: '10px' }} /> + Tambah Teman
+                            </span>
+                          )}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
