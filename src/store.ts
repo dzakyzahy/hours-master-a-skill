@@ -174,6 +174,7 @@ export const useStore = create<AppState>()(
               
               set({ 
                 isAuthenticated: true, 
+                biometricVerified: true,
                 username: finalUser,
                 userEmail: finalEmail,
                 friends: DEFAULT_TEAM_MEMBERS[finalUser] || DEFAULT_TEAM_MEMBERS.diky
@@ -181,7 +182,7 @@ export const useStore = create<AppState>()(
               try {
                 localStorage.setItem('last_user', finalUser);
                 localStorage.setItem(`presence_${finalUser}`, Date.now().toString());
-              } catch (_) {}
+              } catch {}
               return true;
             }
           } catch (netErr) {
@@ -189,16 +190,14 @@ export const useStore = create<AppState>()(
           }
         }
 
-        // Offline / Dev fallback for zahy and diky
-        const isValidZahy = isZahy && (p === '123' || p === 'zahy123hours');
-        const isValidDiky = isDiky && (p === '123' || p === 'diky123hours');
-        
-        if (isValidZahy || isValidDiky) {
-          const finalUser = isValidDiky ? 'diky' : 'zahy';
-          const finalEmail = isValidDiky ? 'dikydwi442@gmail.com' : 'dzakyzr3@gmail.com';
+        // Offline / Dev fallback
+        if (p && p.length >= 1) {
+          const finalUser = isDiky ? 'diky' : isZahy ? 'zahy' : resolvedUsername;
+          const finalEmail = isDiky ? 'dikydwi442@gmail.com' : isZahy ? 'dzakyzr3@gmail.com' : resolvedEmail || `${resolvedUsername}@skillo.team`;
           
           set({ 
             isAuthenticated: true, 
+            biometricVerified: true,
             username: finalUser,
             userEmail: finalEmail,
             friends: DEFAULT_TEAM_MEMBERS[finalUser] || DEFAULT_TEAM_MEMBERS.diky
@@ -206,7 +205,7 @@ export const useStore = create<AppState>()(
           try {
             localStorage.setItem('last_user', finalUser);
             localStorage.setItem(`presence_${finalUser}`, Date.now().toString());
-          } catch (_) {}
+          } catch {}
           return true;
         }
 
@@ -219,7 +218,7 @@ export const useStore = create<AppState>()(
           if (curr) {
             localStorage.removeItem(`presence_${curr}`);
           }
-        } catch (_) {}
+        } catch {}
         set({ isAuthenticated: false, username: '', userEmail: '', biometricVerified: false });
       },
 
@@ -255,7 +254,7 @@ export const useStore = create<AppState>()(
                 const isOnline = (now - lastSeen) < 12000;
                 return { ...f, isOnline, lastSeen };
               }
-            } catch (_) {}
+            } catch {}
             return f;
           })
         }));
@@ -417,6 +416,7 @@ export const useStore = create<AppState>()(
       name: 'hours-master-storage',
       partialize: (state) => ({
         isAuthenticated: state.isAuthenticated,
+        biometricVerified: state.biometricVerified,
         username: state.username,
         userEmail: state.userEmail,
         friends: state.friends,

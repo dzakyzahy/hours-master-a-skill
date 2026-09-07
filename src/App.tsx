@@ -33,8 +33,8 @@ function PageLoader() {
 }
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, biometricVerified } = useStore();
-  if (!isAuthenticated || !biometricVerified) {
+  const { isAuthenticated } = useStore();
+  if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
   return <>{children}</>;

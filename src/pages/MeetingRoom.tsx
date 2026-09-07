@@ -163,15 +163,6 @@ export function MeetingRoom() {
     navigate('/');
   };
 
-  // Sync local participant name when username changes
-  useEffect(() => {
-    if (username) {
-      setParticipants(prev =>
-        prev.map(p => (p.isLocal ? { ...p, name: username } : p))
-      );
-    }
-  }, [username]);
-
   // Dev Tool Simulation Helpers (for testing without live signaling)
   const addMockPeer = () => {
     if (participants.length >= 4) return;
@@ -207,9 +198,10 @@ export function MeetingRoom() {
     );
   };
 
+  const displayParticipants = participants.map(p => (p.isLocal ? { ...p, name: username || p.name } : p));
   // Find screen sharing participant if any
-  const sharingParticipant = participants.find(p => p.isScreenSharing);
-  const participantCount = participants.length;
+  const sharingParticipant = displayParticipants.find(p => p.isScreenSharing);
+  const participantCount = displayParticipants.length;
 
   return (
     <div
@@ -316,7 +308,7 @@ export function MeetingRoom() {
                 height: '100%',
               }}
             >
-              {participants
+              {displayParticipants
                 .filter(p => p.id !== sharingParticipant.id)
                 .map(p => (
                   <div key={p.id} style={{ height: '160px', flexShrink: 0 }}>
@@ -345,7 +337,7 @@ export function MeetingRoom() {
               maxHeight: '800px',
             }}
           >
-            {participants.map(p => (
+            {displayParticipants.map(p => (
               <VideoTile key={p.id} participant={p} />
             ))}
           </div>

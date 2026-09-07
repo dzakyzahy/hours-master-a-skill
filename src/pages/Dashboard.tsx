@@ -67,7 +67,7 @@ export function Dashboard() {
   const currentPhase = phases.find(p => totalHours >= p.hoursStart && totalHours <= p.hoursEnd) || phases[phases.length - 1] || { title: 'Unknown', hoursStart: 0, hoursEnd: 100, desc: '' };
   const targetTotal = phases[phases.length - 1]?.hoursEnd || 10000;
   const phaseProgress = Math.min(((totalHours - currentPhase.hoursStart) / Math.max(1, currentPhase.hoursEnd - currentPhase.hoursStart)) * 100, 100);
-  const goalProgress = Math.min((hoursToday / dailyGoal) * 100, 100);
+  const goalProgress = Math.min((hoursToday / (dailyGoal || 1)) * 100, 100);
   
   const handleManualAdd = () => {
     const h = parseFloat(manualInput);
@@ -286,6 +286,7 @@ export function Dashboard() {
 
       {editProject && (
         <EditProjectModal
+          key={editProject.id}
           project={editProject}
           isOpen={Boolean(editProject)}
           onClose={() => setEditProject(null)}

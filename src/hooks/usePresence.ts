@@ -17,14 +17,14 @@ export function usePresence() {
       if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
         broadcastChannel = new BroadcastChannel('skillo_presence_sync');
       }
-    } catch (_) {}
+    } catch {}
 
     // 1. Initial Heartbeat & Broadcast
     const sendHeartbeat = () => {
       const now = Date.now();
       try {
         localStorage.setItem(`presence_${currentUsername}`, now.toString());
-      } catch (_) {}
+      } catch {}
 
       if (broadcastChannel) {
         try {
@@ -33,7 +33,7 @@ export function usePresence() {
             username: currentUsername,
             timestamp: now,
           });
-        } catch (_) {}
+        } catch {}
       }
 
       // Check current friends' online timestamps
@@ -58,7 +58,7 @@ export function usePresence() {
               username: currentUsername,
               timestamp: Date.now(),
             });
-          } catch (_) {}
+          } catch {}
         } else if (data.type === 'ACK' && data.username && data.username !== currentUsername) {
           updateFriendStatus(data.username, true, data.timestamp);
         } else if (data.type === 'LOGOUT' && data.username && data.username !== currentUsername) {
@@ -121,7 +121,7 @@ export function usePresence() {
           username: currentUsername,
           timestamp: Date.now(),
         });
-      } catch (_) {}
+      } catch {}
     };
 
     window.addEventListener('beforeunload', handleUnload);

@@ -44,7 +44,7 @@ export function Profile() {
           const { data } = await supabase.from('profiles').select('username').eq('id', authData.user.id).single();
           if (data?.username) setNewUsername(data.username);
         }
-      } catch (_) {}
+      } catch {}
     }
     loadProfile();
   }, []);

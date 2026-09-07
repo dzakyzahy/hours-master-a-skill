@@ -18,7 +18,9 @@ export function Chat() {
   
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFriend, setSelectedFriend] = useState<FriendUser | null>(null);
-  const [localMessages, setLocalMessages] = useState<LocalChatMessage[]>([
+  const effectiveSelectedFriend = selectedFriend || friends[0] || null;
+
+  const [localMessages, setLocalMessages] = useState<LocalChatMessage[]>(() => [
     {
       id: 'msg-welcome',
       sender: username === 'diky' ? 'zahy' : 'diky',
@@ -38,13 +40,6 @@ export function Chat() {
     }, 3000);
     return () => clearInterval(timer);
   }, [checkFriendsOnlineStatus]);
-
-  // Set default selected friend if none selected
-  useEffect(() => {
-    if (!selectedFriend && friends.length > 0) {
-      setSelectedFriend(friends[0]);
-    }
-  }, [friends, selectedFriend]);
 
   // Scroll to bottom of messages
   useEffect(() => {
@@ -66,7 +61,7 @@ export function Chat() {
           }
         };
       }
-    } catch (_) {}
+    } catch {}
 
     return () => {
       if (bc) bc.close();
@@ -75,12 +70,12 @@ export function Chat() {
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newMessage.trim() || !selectedFriend) return;
+    if (!newMessage.trim() || !effectiveSelectedFriend) return;
 
     const newMsgObj: LocalChatMessage = {
       id: 'msg_' + Date.now(),
       sender: username || 'diky',
-      recipient: selectedFriend.username,
+      recipient: effectiveSelectedFriend.username,
       text: newMessage.trim(),
       timestamp: Date.now(),
     };
@@ -94,7 +89,7 @@ export function Chat() {
         bc.postMessage({ type: 'NEW_CHAT_MSG', payload: newMsgObj });
         bc.close();
       }
-    } catch (_) {}
+    } catch {}
 
     setNewMessage('');
   };
@@ -123,7 +118,7 @@ export function Chat() {
     alert(`Teman @${newFriend.username} berhasil ditambahkan ke daftar!`);
   };
 
-  const currentFriendInChat = friends.find(f => f.username.toLowerCase() === selectedFriend?.username.toLowerCase()) || selectedFriend;
+  const currentFriendInChat = friends.find(f => f.username.toLowerCase() === effectiveSelectedFriend?.username.toLowerCase()) || effectiveSelectedFriend;
 
   return (
     <div className="no-drag mobile-content-container" style={{ padding: '28px 16px 80px', flex: 1, display: 'flex', flexDirection: 'column', height: '100vh', maxWidth: '960px', margin: '0 auto', width: '100%' }}>
