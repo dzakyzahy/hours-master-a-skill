@@ -70,35 +70,63 @@ export function AiGenerator() {
     }
   };
 
+  const suggestions = [
+    'UI/UX Mobile Design',
+    'React & React Native',
+    'Machine Learning & Python',
+    'Public Speaking'
+  ];
+
   return (
-    <div className="glass-panel mt-6">
-      <div className="flex items-center gap-2 mb-4">
-        <Sparkles size={24} className="text-purple" />
-        <h3 style={{ margin: 0 }}>AI Mastery Plan Generator</h3>
+    <div className="glass-panel mt-6" style={{ padding: '24px' }}>
+      <div className="flex items-center gap-2 mb-2">
+        <Sparkles size={16} style={{ color: 'var(--text-secondary)' }} />
+        <h2 style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
+          AI Mastery Plan Generator
+        </h2>
       </div>
-      <p className="text-muted text-sm mb-4">
-        Enter any skill you want to master, and our AI will automatically generate a custom 5-phase roadmap for you.
+      <p style={{ margin: '0 0 16px', fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+        Masukkan keahlian yang ingin Anda kuasai, AI akan membuatkan roadmap belajar terstruktur 5 fase secara otomatis.
       </p>
-      <div className="flex gap-2">
+
+      {/* Quick Suggestion Pills */}
+      <div className="flex items-center gap-2 mb-4 overflow-x-auto pb-1">
+        <span style={{ fontSize: '11px', color: 'var(--text-placeholder)', fontFamily: 'Geist Mono, monospace', whiteSpace: 'nowrap' }}>
+          Ide Cepat:
+        </span>
+        {suggestions.map(s => (
+          <button
+            key={s}
+            type="button"
+            className="btn"
+            style={{ fontSize: '11px', height: '28px', padding: '0 10px', whiteSpace: 'nowrap', fontFamily: 'Geist Mono, monospace', color: 'var(--text-secondary)' }}
+            onClick={() => setTopic(s)}
+          >
+            {s}
+          </button>
+        ))}
+      </div>
+
+      <div className="flex flex-col sm:flex-row gap-2">
         <input 
           type="text" 
-          className="input-field" 
-          placeholder="e.g. Machine Learning, Piano, Japanese..."
+          className="input-field flex-1" 
+          placeholder="Ketik topik: e.g. Machine Learning, Mobile App, Piano..."
           value={topic}
           onChange={(e) => setTopic(e.target.value)}
           disabled={loading}
         />
         <button 
-          className="btn btn-primary" 
+          className="btn-primary" 
           onClick={handleGenerate}
           disabled={loading || !topic.trim()}
-          style={{ whiteSpace: 'nowrap' }}
+          style={{ height: '40px', padding: '0 18px', whiteSpace: 'nowrap' }}
         >
-          {loading ? <Loader2 size={18} className="animate-spin" /> : <Sparkles size={18} />}
-          {loading ? 'Generating...' : 'Generate Plan'}
+          {loading ? <Loader2 size={15} className="animate-spin" /> : <Sparkles size={15} />}
+          {loading ? 'Membuat Roadmap...' : 'Generate Plan'}
         </button>
       </div>
-      {error && <p className="text-sm mt-2" style={{ color: '#ef4444' }}>{error}</p>}
+      {error && <p style={{ fontSize: '12px', color: '#f87171', marginTop: '10px' }}>{error}</p>}
     </div>
   );
 }

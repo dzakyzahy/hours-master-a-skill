@@ -1,251 +1,436 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, UserPlus, Users, MessageSquare, Send, Video } from 'lucide-react';
-import { supabase } from '../supabaseClient';
-import { useStore } from '../store';
-import { MeetingRoom } from '../components/MeetingRoom';
+import { useStore, type FriendUser } from '../store';
+
+interface LocalChatMessage {
+  id: string;
+  sender: string;
+  recipient: string;
+  text: string;
+  timestamp: number;
+}
 
 export function Chat() {
   const navigate = useNavigate();
-  const { username } = useStore();
+  const { username, friends, addFriend, checkFriendsOnlineStatus } = useStore();
   const [activeTab, setActiveTab] = useState<'friends' | 'chat'>('friends');
   
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<any[]>([]);
-  const [friendRequests, setFriendRequests] = useState<any[]>([]);
-  const [friends, setFriends] = useState<any[]>([]);
-  
-  const [activeRoom, setActiveRoom] = useState<any>(null);
-  const [inMeeting, setInMeeting] = useState(false);
-  const [messages, setMessages] = useState<any[]>([]);
+  const [selectedFriend, setSelectedFriend] = useState<FriendUser | null>(null);
+  const [localMessages, setLocalMessages] = useState<LocalChatMessage[]>([
+    {
+      id: 'msg-welcome',
+      sender: username === 'diky' ? 'zahy' : 'diky',
+      recipient: username || 'diky',
+      text: 'Halo! Selamat datang di Skillo Hub. Siap kolaborasi proyek hari ini?',
+      timestamp: Date.now() - 3600000,
+    }
+  ]);
   const [newMessage, setNewMessage] = useState('');
-  
-  const [myUserId, setMyUserId] = useState<string>('');
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const fetchFriendRequests = useCallback(async (uid: string) => {
-    try {
-      const { data } = await supabase.from('friend_requests')
-        .select('*, sender:profiles!sender_id(username, email)')
-        .eq('receiver_id', uid)
-        .eq('status', 'pending');
-      if (data) setFriendRequests(data);
-    } catch (err) {
-      console.warn("Could not fetch friend requests:", err);
-    }
-  }, []);
-
-  const fetchFriends = useCallback(async (uid: string) => {
-    try {
-      const { data } = await supabase.from('friends').select('*').or(`user_id_1.eq.${uid},user_id_2.eq.${uid}`);
-      if (data) {
-        const friendIds = data.map(f => f.user_id_1 === uid ? f.user_id_2 : f.user_id_1);
-        if (friendIds.length > 0) {
-          const { data: profiles } = await supabase.from('profiles').select('id, username').in('id', friendIds);
-          if (profiles) setFriends(profiles);
-        }
-      }
-    } catch (err) {
-      console.warn("Could not fetch friends:", err);
-    }
-  }, []);
-
+  // Sync friends status continuously
   useEffect(() => {
-    let active = true;
+    checkFriendsOnlineStatus();
+    const timer = setInterval(() => {
+      checkFriendsOnlineStatus();
+    }, 3000);
+    return () => clearInterval(timer);
+  }, [checkFriendsOnlineStatus]);
 
-    async function loadData() {
-      const { data: authData } = await supabase.auth.getUser();
-      if (!active) return;
-      const uid = authData?.user?.id || '';
-      setMyUserId(uid);
-
-      if (uid) {
-        fetchFriendRequests(uid);
-        fetchFriends(uid);
-      }
+  // Set default selected friend if none selected
+  useEffect(() => {
+    if (!selectedFriend && friends.length > 0) {
+      setSelectedFriend(friends[0]);
     }
-    loadData();
+  }, [friends, selectedFriend]);
 
-    const friendSub = supabase.channel('friends_updates')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'friend_requests' }, () => {
-        if (myUserId) fetchFriendRequests(myUserId);
-      })
-      .subscribe();
+  // Scroll to bottom of messages
+  useEffect(() => {
+    if (activeTab === 'chat') {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [localMessages, activeTab]);
+
+  // Broadcast channel for real-time local chat across windows
+  useEffect(() => {
+    let bc: BroadcastChannel | null = null;
+    try {
+      if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+        bc = new BroadcastChannel('skillo_chat_channel');
+        bc.onmessage = (event) => {
+          const msg = event.data;
+          if (msg && msg.type === 'NEW_CHAT_MSG') {
+            setLocalMessages(prev => [...prev, msg.payload]);
+          }
+        };
+      }
+    } catch (_) {}
 
     return () => {
-      active = false;
-      supabase.removeChannel(friendSub);
+      if (bc) bc.close();
     };
-  }, [fetchFriendRequests, fetchFriends, myUserId]);
+  }, []);
 
-  useEffect(() => {
-    if (!activeRoom) return;
-    
-    const fetchMsgs = async () => {
-      const { data } = await supabase.from('chat_messages').select('*').eq('room_id', activeRoom.id).order('created_at', { ascending: true });
-      if (data) setMessages(data);
-    };
-    fetchMsgs();
-
-    const msgSub = supabase.channel(`room_${activeRoom.id}`)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: `room_id=eq.${activeRoom.id}` }, payload => {
-        setMessages(prev => [...prev, payload.new]);
-      })
-      .subscribe();
-
-    return () => { supabase.removeChannel(msgSub); };
-  }, [activeRoom]);
-
-  const searchUsers = async (e: React.FormEvent) => {
+  const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!searchQuery) return;
-    const { data } = await supabase.from('profiles').select('id, username, email')
-      .or(`username.ilike.%${searchQuery}%,email.ilike.%${searchQuery}%`)
-      .neq('id', myUserId);
-    if (data) setSearchResults(data);
-  };
+    if (!newMessage.trim() || !selectedFriend) return;
 
-  const sendRequest = async (receiverId: string) => {
-    await supabase.from('friend_requests').insert({ sender_id: myUserId, receiver_id: receiverId });
-    alert("Request sent!");
-  };
+    const newMsgObj: LocalChatMessage = {
+      id: 'msg_' + Date.now(),
+      sender: username || 'diky',
+      recipient: selectedFriend.username,
+      text: newMessage.trim(),
+      timestamp: Date.now(),
+    };
 
-  const respondRequest = async (reqId: string, status: 'accepted' | 'rejected') => {
-    await supabase.from('friend_requests').update({ status }).eq('id', reqId);
-    if (status === 'accepted') {
-      const req = friendRequests.find(r => r.id === reqId);
-      if (req) {
-         await supabase.from('friends').insert({ user_id_1: req.sender_id, user_id_2: req.receiver_id });
-         fetchFriends(myUserId);
+    setLocalMessages(prev => [...prev, newMsgObj]);
+
+    // Broadcast across windows
+    try {
+      if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+        const bc = new BroadcastChannel('skillo_chat_channel');
+        bc.postMessage({ type: 'NEW_CHAT_MSG', payload: newMsgObj });
+        bc.close();
       }
-    }
-    fetchFriendRequests(myUserId);
-  };
+    } catch (_) {}
 
-  const startChat = async (friend: any) => {
-    // Check if direct room exists (simplified: just create a new room or use existing logic)
-    // For simplicity, we just create a room named with their username
-    const { data: room } = await supabase.from('chat_rooms').insert({ name: `DM with ${friend.username}` }).select().single();
-    if (room) {
-      await supabase.from('chat_participants').insert([
-        { room_id: room.id, user_id: myUserId },
-        { room_id: room.id, user_id: friend.id }
-      ]);
-      setActiveRoom(room);
-      setActiveTab('chat');
-    }
-  };
-
-  const sendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newMessage.trim() || !activeRoom) return;
-    await supabase.from('chat_messages').insert({ room_id: activeRoom.id, sender_id: myUserId, content: newMessage });
     setNewMessage('');
   };
 
+  const handleStartChat = (friend: FriendUser) => {
+    setSelectedFriend(friend);
+    setActiveTab('chat');
+  };
+
+  const handleAddCustomFriend = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!searchQuery.trim()) return;
+
+    const trimmed = searchQuery.trim().toLowerCase();
+    const newFriend: FriendUser = {
+      id: 'usr_' + Date.now(),
+      username: trimmed.replace('@', ''),
+      name: trimmed.charAt(0).toUpperCase() + trimmed.slice(1),
+      email: trimmed.includes('@') ? trimmed : `${trimmed}@skillo.team`,
+      role: 'Team Collaborator',
+      isOnline: false,
+    };
+
+    addFriend(newFriend);
+    setSearchQuery('');
+    alert(`Teman @${newFriend.username} berhasil ditambahkan ke daftar!`);
+  };
+
+  const currentFriendInChat = friends.find(f => f.username.toLowerCase() === selectedFriend?.username.toLowerCase()) || selectedFriend;
+
   return (
-    <div style={{ padding: '32px', flex: 1, display: 'flex', flexDirection: 'column', height: '100vh' }} className="no-drag">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-4">
-          <button className="btn" onClick={() => navigate('/')}><ArrowLeft size={20} /></button>
-          <h1 style={{ margin: 0 }}>Collaboration Hub</h1>
+    <div className="no-drag mobile-content-container" style={{ padding: '28px 16px 80px', flex: 1, display: 'flex', flexDirection: 'column', height: '100vh', maxWidth: '960px', margin: '0 auto', width: '100%' }}>
+      {/* Header - Responsive */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+        <div className="flex items-center gap-3">
+          <button className="btn" onClick={() => navigate('/')} style={{ padding: '0 12px', height: '36px' }}>
+            <ArrowLeft size={16} />
+          </button>
+          <div>
+            <h1 style={{ margin: 0, fontFamily: 'Instrument Serif, Georgia, serif', fontSize: '1.75rem', fontWeight: 400, color: 'var(--text-primary)' }}>
+              Collaboration Hub
+            </h1>
+            <p style={{ margin: '2px 0 0', fontSize: '13px', color: 'var(--text-secondary)' }}>
+              Teman, status kehadiran online & chat tim
+            </p>
+          </div>
         </div>
+
         {username && (
-          <div className="text-xs text-muted font-mono px-3 py-1.5 rounded-lg border border-slate-700 bg-slate-900/60">
-            Signed in as: <span className="text-cyan font-bold">{username}</span>
+          <div style={{ alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 12px', borderRadius: '4px', border: '1px solid var(--border-hairline)', background: 'var(--surface-input)', fontSize: '11px', fontFamily: 'Geist Mono, monospace' }}>
+            <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#4ade80' }} />
+            <span style={{ color: 'var(--text-secondary)' }}>Masuk sebagai:</span>
+            <span style={{ color: 'var(--text-primary)', fontWeight: 600 }} className="capitalize">{username}</span>
           </div>
         )}
       </div>
 
-      <div className="flex gap-4 mb-6">
-        <button className={`btn ${activeTab === 'friends' ? 'btn-primary' : ''}`} onClick={() => setActiveTab('friends')}><Users size={18} className="mr-2"/> Friends</button>
-        <button className={`btn ${activeTab === 'chat' ? 'btn-primary' : ''}`} onClick={() => setActiveTab('chat')}><MessageSquare size={18} className="mr-2"/> Active Chat</button>
+      {/* Sleek Minimalist Tabs */}
+      <div style={{ display: 'flex', background: 'var(--surface-card)', border: '1px solid var(--border-hairline)', borderRadius: '6px', padding: '3px', gap: '4px', marginBottom: '16px' }}>
+        <button 
+          className={activeTab === 'friends' ? 'btn-primary' : 'btn'}
+          onClick={() => setActiveTab('friends')}
+          style={{ flex: 1, height: '36px', border: 'none', borderRadius: '4px', fontSize: '13px', fontWeight: 500 }}
+        >
+          <Users size={15} /> Daftar Teman ({friends.length})
+        </button>
+        <button 
+          className={activeTab === 'chat' ? 'btn-primary' : 'btn'}
+          onClick={() => setActiveTab('chat')}
+          style={{ flex: 1, height: '36px', border: 'none', borderRadius: '4px', fontSize: '13px', fontWeight: 500 }}
+        >
+          <MessageSquare size={15} /> Ruang Chat
+        </button>
       </div>
 
-      <div className="glass-panel flex-1" style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      {/* Main Glass Panel */}
+      <div className="glass-panel flex-1" style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', padding: '24px' }}>
+        
+        {/* TAB 1: FRIENDS LIST & ONLINE STATUS */}
         {activeTab === 'friends' && (
           <div className="flex flex-col gap-6" style={{ overflowY: 'auto' }}>
-            {/* Search & Add */}
+            {/* Search & Add Friend */}
             <div>
-              <h3 className="mb-2">Add Friend</h3>
-              <form onSubmit={searchUsers} className="flex gap-2">
-                <input type="text" className="input-field flex-1" placeholder="Search by username or email..." value={searchQuery} onChange={e=>setSearchQuery(e.target.value)} />
-                <button type="submit" className="btn btn-primary">Search</button>
+              <label style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-secondary)', marginBottom: '8px', display: 'block' }}>
+                Tambah Teman Baru
+              </label>
+              <form onSubmit={handleAddCustomFriend} className="flex gap-2">
+                <input 
+                  type="text" 
+                  className="input-field flex-1" 
+                  placeholder="Ketik username atau email teman..." 
+                  value={searchQuery} 
+                  onChange={e => setSearchQuery(e.target.value)} 
+                />
+                <button type="submit" className="btn-primary" style={{ padding: '0 16px', height: '40px', whiteSpace: 'nowrap' }}>
+                  <UserPlus size={15} /> Tambah
+                </button>
               </form>
-              <div className="mt-2 flex flex-col gap-2">
-                {searchResults.map(u => (
-                  <div key={u.id} className="flex justify-between items-center p-2 rounded" style={{ background: 'var(--input-bg)' }}>
-                    <span>{u.username} <small className="text-muted">({u.email})</small></span>
-                    <button className="btn text-cyan" onClick={() => sendRequest(u.id)}><UserPlus size={16} /></button>
-                  </div>
-                ))}
-              </div>
             </div>
 
-            {/* Friend Requests */}
-            {friendRequests.length > 0 && (
-              <div>
-                <h3 className="mb-2 text-purple">Pending Requests</h3>
-                <div className="flex flex-col gap-2">
-                  {friendRequests.map(r => (
-                    <div key={r.id} className="flex justify-between items-center p-2 rounded" style={{ background: 'var(--input-bg)' }}>
-                      <span>{r.sender?.username} wants to connect</span>
-                      <div className="flex gap-2">
-                        <button className="btn btn-primary" style={{ padding: '4px 8px' }} onClick={() => respondRequest(r.id, 'accepted')}>Accept</button>
-                        <button className="btn" style={{ padding: '4px 8px' }} onClick={() => respondRequest(r.id, 'rejected')}>Reject</button>
+            {/* List of Friends with Live Online / Offline Presence */}
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <h2 style={{ margin: 0, fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
+                  Teman & Rekan Tim
+                </h2>
+                <span style={{ fontSize: '11px', fontFamily: 'Geist Mono, monospace', color: 'var(--text-secondary)' }}>
+                  {friends.filter(f => f.isOnline).length} sedang online
+                </span>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                {friends.length === 0 && (
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '13px', padding: '16px', textAlign: 'center' }}>
+                    Belum ada teman. Tambahkan teman melalui form di atas.
+                  </p>
+                )}
+
+                {friends.map(f => {
+                  const initials = f.name.substring(0, 2).toUpperCase();
+                  return (
+                    <div 
+                      key={f.id} 
+                      style={{ 
+                        padding: '12px 14px', 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        justifyContent: 'space-between',
+                        gap: '12px',
+                        flexWrap: 'wrap',
+                        background: 'var(--surface-input)',
+                        border: '1px solid var(--border-hairline)',
+                        borderRadius: '4px'
+                      }}
+                    >
+                      {/* Left: Avatar + Info */}
+                      <div className="flex items-center gap-3" style={{ minWidth: '200px' }}>
+                        <div style={{ position: 'relative' }}>
+                          <div 
+                            style={{ 
+                              width: '38px', 
+                              height: '38px', 
+                              borderRadius: '4px', 
+                              background: 'var(--surface-card)',
+                              border: '1px solid var(--border-hairline-strong)',
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              justifyContent: 'center',
+                              fontWeight: 600,
+                              fontFamily: 'Geist Mono, monospace',
+                              fontSize: '13px',
+                              color: 'var(--text-primary)'
+                            }}
+                          >
+                            {initials}
+                          </div>
+                          {/* Online Badge Dot */}
+                          <span 
+                            style={{
+                              position: 'absolute',
+                              bottom: '-2px',
+                              right: '-2px',
+                              width: '8px',
+                              height: '8px',
+                              borderRadius: '50%',
+                              backgroundColor: f.isOnline ? '#4ade80' : '#64748b',
+                              border: '1.5px solid var(--surface-card)'
+                            }}
+                          />
+                        </div>
+
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)' }}>{f.name}</span>
+                            <span style={{ fontSize: '11px', fontFamily: 'Geist Mono, monospace', color: 'var(--text-secondary)' }}>@{f.username}</span>
+                          </div>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            {f.isOnline ? (
+                              <span style={{ fontSize: '11px', color: '#4ade80', fontFamily: 'Geist Mono, monospace' }}>
+                                ● Online
+                              </span>
+                            ) : (
+                              <span style={{ fontSize: '11px', color: 'var(--text-secondary)', fontFamily: 'Geist Mono, monospace' }}>
+                                ○ Offline
+                              </span>
+                            )}
+                            <span style={{ color: 'var(--border-hairline-strong)' }}>·</span>
+                            <span style={{ fontSize: '11px', color: 'var(--text-secondary)', fontFamily: 'Geist Mono, monospace' }}>{f.role}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Right: Actions */}
+                      <div className="flex items-center gap-2">
+                        <button 
+                          className="btn-primary" 
+                          style={{ padding: '0 12px', height: '32px', fontSize: '12px' }} 
+                          onClick={() => handleStartChat(f)}
+                        >
+                          <MessageSquare size={13} /> Chat
+                        </button>
+                        <button 
+                          className="btn" 
+                          style={{ padding: '0 12px', height: '32px', fontSize: '12px' }} 
+                          onClick={() => navigate('/meeting')}
+                          title="Ajak ke Focus Room"
+                        >
+                          <Video size={13} /> Focus Room
+                        </button>
                       </div>
                     </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Friends List */}
-            <div>
-              <h3 className="mb-2">My Friends</h3>
-              <div className="flex flex-col gap-2">
-                {friends.length === 0 ? <p className="text-muted">No friends yet. Search and add some!</p> : null}
-                {friends.map(f => (
-                  <div key={f.id} className="flex justify-between items-center p-2 rounded" style={{ background: 'var(--input-bg)' }}>
-                    <span>{f.username}</span>
-                    <button className="btn btn-primary" style={{ padding: '4px 12px' }} onClick={() => startChat(f)}>
-                      <MessageSquare size={16} className="mr-2"/> Message
-                    </button>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>
         )}
 
+        {/* TAB 2: ACTIVE CHAT ROOM */}
         {activeTab === 'chat' && (
-          <div className="flex flex-col h-full">
-            {inMeeting && activeRoom ? (
-               <div className="flex-1">
-                 <MeetingRoom roomId={activeRoom.id} roomName={activeRoom.name} onLeave={() => setInMeeting(false)} />
-               </div>
-            ) : !activeRoom ? (
-              <div className="flex-1 flex items-center justify-center text-muted">Select a friend to start chatting</div>
-            ) : (
-              <>
-                <div className="flex justify-between items-center mb-4 pb-2 border-b border-gray-700">
-                  <h3 className="m-0">{activeRoom.name}</h3>
-                  <button className="btn btn-primary bg-purple-600 hover:bg-purple-700" onClick={() => setInMeeting(true)}>
-                    <Video size={18} className="mr-2"/> Start Meeting
-                  </button>
-                </div>
-                <div className="flex-1 overflow-y-auto mb-4 flex flex-col gap-2 pr-2">
-                  {messages.map(m => (
-                    <div key={m.id} className={`p-2 rounded max-w-[80%] ${m.sender_id === myUserId ? 'bg-cyan text-black self-end' : 'bg-gray-800 self-start'}`}>
-                      {m.content}
+          <div className="flex flex-col h-full" style={{ minHeight: '350px' }}>
+            {/* Chat Target Header */}
+            {currentFriendInChat ? (
+              <div className="flex items-center justify-between pb-3 mb-3" style={{ borderBottom: '1px solid var(--border-hairline)' }}>
+                <div className="flex items-center gap-3">
+                  <div style={{ position: 'relative' }}>
+                    <div 
+                      style={{ 
+                        width: '36px', 
+                        height: '36px', 
+                        borderRadius: '4px', 
+                        background: 'var(--surface-input)',
+                        border: '1px solid var(--border-hairline-strong)',
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        justifyContent: 'center',
+                        fontWeight: 600,
+                        fontSize: '12px',
+                        fontFamily: 'Geist Mono, monospace',
+                        color: 'var(--text-primary)'
+                      }}
+                    >
+                      {currentFriendInChat.name.substring(0, 2).toUpperCase()}
                     </div>
-                  ))}
+                    <span 
+                      style={{
+                        position: 'absolute',
+                        bottom: '-2px',
+                        right: '-2px',
+                        width: '8px',
+                        height: '8px',
+                        borderRadius: '50%',
+                        backgroundColor: currentFriendInChat.isOnline ? '#4ade80' : '#64748b',
+                        border: '1.5px solid var(--surface-card)'
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)' }}>{currentFriendInChat.name}</span>
+                      <span style={{ fontSize: '11px', fontFamily: 'Geist Mono, monospace', color: 'var(--text-secondary)' }}>@{currentFriendInChat.username}</span>
+                    </div>
+                    <div style={{ fontSize: '11px', fontFamily: 'Geist Mono, monospace' }}>
+                      {currentFriendInChat.isOnline ? (
+                        <span style={{ color: '#4ade80' }}>● Active Now</span>
+                      ) : (
+                        <span style={{ color: 'var(--text-secondary)' }}>○ Offline</span>
+                      )}
+                    </div>
+                  </div>
                 </div>
-                <form onSubmit={sendMessage} className="flex gap-2">
-                  <input type="text" className="input-field flex-1" placeholder="Type a message..." value={newMessage} onChange={e=>setNewMessage(e.target.value)} />
-                  <button type="submit" className="btn btn-primary"><Send size={18} /></button>
-                </form>
-              </>
+
+                <button 
+                  className="btn" 
+                  style={{ padding: '0 12px', height: '32px', fontSize: '12px' }} 
+                  onClick={() => navigate('/meeting')}
+                >
+                  <Video size={13} /> Video Call
+                </button>
+              </div>
+            ) : (
+              <div style={{ padding: '16px', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '13px' }}>Pilih teman terlebih dahulu</div>
             )}
+
+            {/* Message Feed */}
+            <div className="flex-1 overflow-y-auto pr-1 flex flex-col gap-2 mb-3" style={{ maxHeight: 'calc(100vh - 360px)' }}>
+              {localMessages.map(m => {
+                const isMe = m.sender.toLowerCase() === (username || 'diky').toLowerCase();
+                return (
+                  <div 
+                    key={m.id} 
+                    className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}
+                  >
+                    <div 
+                      style={{ 
+                        maxWidth: '80%', 
+                        padding: '9px 13px', 
+                        borderRadius: '4px',
+                        backgroundColor: isMe ? 'var(--cta-primary-bg)' : 'var(--surface-input)',
+                        color: isMe ? 'var(--cta-primary-text)' : 'var(--text-primary)',
+                        border: isMe ? 'none' : '1px solid var(--border-hairline)',
+                        fontWeight: 400,
+                        fontSize: '13px',
+                        lineHeight: 1.5,
+                      }}
+                    >
+                      {m.text}
+                    </div>
+                    <span style={{ fontSize: '10px', fontFamily: 'Geist Mono, monospace', color: 'var(--text-placeholder)', marginTop: '3px', padding: '0 2px' }}>
+                      {new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </div>
+                );
+              })}
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* Input message form */}
+            <form onSubmit={handleSendMessage} className="flex gap-2">
+              <input 
+                type="text" 
+                className="input-field flex-1" 
+                placeholder={`Kirim pesan ke @${currentFriendInChat?.username || 'teman'}...`}
+                value={newMessage} 
+                onChange={e => setNewMessage(e.target.value)} 
+              />
+              <button 
+                type="submit" 
+                className="btn-primary" 
+                disabled={!newMessage.trim()}
+                style={{ width: '40px', height: '40px', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              >
+                <Send size={15} />
+              </button>
+            </form>
           </div>
         )}
       </div>

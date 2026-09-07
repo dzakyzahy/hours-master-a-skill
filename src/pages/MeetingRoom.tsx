@@ -163,14 +163,29 @@ export function MeetingRoom() {
     navigate('/');
   };
 
-  // Dev Tool Simulation Helpers (for Diky & testing without live signaling)
+  // Sync local participant name when username changes
+  useEffect(() => {
+    if (username) {
+      setParticipants(prev =>
+        prev.map(p => (p.isLocal ? { ...p, name: username } : p))
+      );
+    }
+  }, [username]);
+
+  // Dev Tool Simulation Helpers (for testing without live signaling)
   const addMockPeer = () => {
     if (participants.length >= 4) return;
-    const names = ['Zahy (Tech Lead)', 'Diky (UI/UX)', 'Sarah (Designer)'];
-    const nextName = names[participants.length - 1] || `Peer ${participants.length}`;
+    const currentUsr = (username || '').toLowerCase();
+    const candidatePeers = [
+      { name: 'Zahy (Tech Lead)', usr: 'zahy' },
+      { name: 'Diky (UI/UX)', usr: 'diky' },
+      { name: 'Sarah (Designer)', usr: 'sarah' }
+    ].filter(p => !p.usr.includes(currentUsr) && !currentUsr.includes(p.usr));
+
+    const nextPeer = candidatePeers[participants.length - 1] || candidatePeers[0] || { name: `Peer ${participants.length}` };
     const newPeer: Participant = {
       id: `peer-${Date.now()}`,
-      name: nextName,
+      name: nextPeer.name,
       isAudioMuted: false,
       isVideoOff: false,
       isScreenSharing: false,
@@ -216,26 +231,26 @@ export function MeetingRoom() {
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          padding: '16px 24px',
+          padding: '12px 16px',
           borderBottom: '1px solid var(--border-color)',
           backgroundColor: 'var(--bg-panel)',
           backdropFilter: 'var(--glass-blur)',
           zIndex: 20,
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <button className="btn" onClick={handleLeave} title="Back to Dashboard">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <button className="btn" onClick={handleLeave} title="Kembali ke Beranda" style={{ padding: '8px 12px' }}>
             <ArrowLeft size={18} /> Exit
           </button>
           <div>
-            <h2 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 700 }}>Mastery Focus Room #1</h2>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+            <h2 style={{ margin: 0, fontSize: '1rem', fontWeight: 700 }}>Mastery Focus Room</h2>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.6875rem', color: 'var(--text-muted)' }}>
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: '#4ade80' }}>
-                <Wifi size={12} /> Live P2P (Max 4)
+                <Wifi size={11} /> P2P Live
               </span>
               <span>•</span>
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                <ShieldCheck size={12} className="text-cyan" /> E2E Encrypted
+                <ShieldCheck size={11} className="text-cyan" /> E2E Encrypted
               </span>
             </div>
           </div>

@@ -24,14 +24,33 @@ export interface Project {
   deletedAt?: number;
 }
 
+export interface FriendUser {
+  id: string;
+  username: string;
+  name: string;
+  email: string;
+  role: string;
+  avatar?: string;
+  isOnline: boolean;
+  lastSeen?: number;
+}
+
 interface AppState {
   // Auth
   isAuthenticated: boolean;
   username: string;
+  userEmail: string;
   login: (u: string, p: string) => Promise<boolean>;
   logout: () => void;
   setBiometricVerified: (status: boolean) => void;
   biometricVerified: boolean;
+
+  // Friends & Presence
+  friends: FriendUser[];
+  addFriend: (friend: FriendUser) => void;
+  removeFriend: (id: string) => void;
+  updateFriendStatus: (username: string, isOnline: boolean, lastSeen?: number) => void;
+  checkFriendsOnlineStatus: () => void;
 
   // Settings
   theme: 'dark' | 'light';
@@ -60,39 +79,74 @@ interface AppState {
   loadFromSupabase: () => Promise<void>;
 }
 
+const DEFAULT_TEAM_MEMBERS: Record<string, FriendUser[]> = {
+  diky: [
+    {
+      id: 'usr-zahy',
+      username: 'zahy',
+      name: 'Zahy (Dzaky)',
+      email: 'dzakyzr3@gmail.com',
+      role: 'Tech Lead / Full-Stack',
+      isOnline: false,
+    },
+    {
+      id: 'usr-sarah',
+      username: 'sarah',
+      name: 'Sarah Chen',
+      email: 'sarah@skillo.internal',
+      role: 'Product Designer',
+      isOnline: false,
+    }
+  ],
+  zahy: [
+    {
+      id: 'usr-diky',
+      username: 'diky',
+      name: 'Diky Dwi',
+      email: 'dikydwi442@gmail.com',
+      role: 'UI/UX & Mobile Lead',
+      isOnline: false,
+    },
+    {
+      id: 'usr-sarah',
+      username: 'sarah',
+      name: 'Sarah Chen',
+      email: 'sarah@skillo.internal',
+      role: 'Product Designer',
+      isOnline: false,
+    }
+  ]
+};
+
 export const useStore = create<AppState>()(
   persist(
     (set, get) => ({
       isAuthenticated: false,
       username: '',
+      userEmail: '',
       biometricVerified: false,
+      friends: DEFAULT_TEAM_MEMBERS.diky,
       
       login: async (u, p) => {
-        let emailToUse = u;
+        const trimmed = (u || '').trim().toLowerCase();
+        let emailToUse = trimmed;
         
-        // If it's a username (no @), look up the email
-        if (!u.includes('@')) {
-          const { data } = await supabase
-            .from('profiles')
-            .select('email, username')
-            .eq('username', u)
-            .single();
-            
-          if (data && data.email) {
-            emailToUse = data.email;
-          } else {
-            // Fallback for hardcoded "zahy" or "diky" if lookup fails or DB not ready
-            if (u === 'zahy') emailToUse = 'dzakyzr3@gmail.com';
-            if (u === 'diky') emailToUse = 'dikydwi442@gmail.com';
-          }
-        }
-        
-        // Use real password if provided, or map '123' to 'zahy123hours' / 'diky123hours' for smooth transition
+        // Identify which user is attempting to log in
+        const isDiky = trimmed === 'diky' || trimmed === 'dikydwi442@gmail.com';
+        const isZahy = trimmed === 'zahy' || trimmed === 'dzaky' || trimmed === 'dzakyzr3@gmail.com';
+
+        if (isDiky) emailToUse = 'dikydwi442@gmail.com';
+        if (isZahy) emailToUse = 'dzakyzr3@gmail.com';
+
+        // Normalize password for dev/offline or transition
         let passwordToUse = p;
         if (p === '123') {
-           if (u === 'zahy' || emailToUse === 'dzakyzr3@gmail.com') passwordToUse = 'zahy123hours';
-           if (u === 'diky' || emailToUse === 'dikydwi442@gmail.com') passwordToUse = 'diky123hours';
+          if (isZahy) passwordToUse = 'zahy123hours';
+          if (isDiky) passwordToUse = 'diky123hours';
         }
+
+        const resolvedUsername = isDiky ? 'diky' : isZahy ? 'zahy' : (trimmed.includes('@') ? trimmed.split('@')[0] : trimmed);
+        const resolvedEmail = emailToUse;
 
         // Check if Supabase is actually configured with real URL
         const isSupabaseConfigured = Boolean(
@@ -110,11 +164,23 @@ export const useStore = create<AppState>()(
             if (!error && authData?.user) {
               const { data: profile } = await supabase
                 .from('profiles')
-                .select('username')
+                .select('username, email')
                 .eq('id', authData.user.id)
                 .single();
 
-              set({ isAuthenticated: true, username: profile?.username || u });
+              const finalUser = profile?.username || resolvedUsername;
+              const finalEmail = authData.user.email || profile?.email || resolvedEmail;
+              
+              set({ 
+                isAuthenticated: true, 
+                username: finalUser,
+                userEmail: finalEmail,
+                friends: DEFAULT_TEAM_MEMBERS[finalUser] || DEFAULT_TEAM_MEMBERS.diky
+              });
+              try {
+                localStorage.setItem('last_user', finalUser);
+                localStorage.setItem(`presence_${finalUser}`, Date.now().toString());
+              } catch (_) {}
               return true;
             }
           } catch (netErr) {
@@ -123,18 +189,76 @@ export const useStore = create<AppState>()(
         }
 
         // Offline / Dev fallback for zahy and diky
-        const isZahy = (u === 'zahy' || emailToUse === 'dzakyzr3@gmail.com') && (p === '123' || p === 'zahy123hours');
-        const isDiky = (u === 'diky' || emailToUse === 'dikydwi442@gmail.com') && (p === '123' || p === 'diky123hours');
+        const isValidZahy = isZahy && (p === '123' || p === 'zahy123hours');
+        const isValidDiky = isDiky && (p === '123' || p === 'diky123hours');
         
-        if (isZahy || isDiky) {
-          set({ isAuthenticated: true, username: u === 'diky' ? 'diky' : 'zahy' });
+        if (isValidZahy || isValidDiky) {
+          const finalUser = isValidDiky ? 'diky' : 'zahy';
+          const finalEmail = isValidDiky ? 'dikydwi442@gmail.com' : 'dzakyzr3@gmail.com';
+          
+          set({ 
+            isAuthenticated: true, 
+            username: finalUser,
+            userEmail: finalEmail,
+            friends: DEFAULT_TEAM_MEMBERS[finalUser] || DEFAULT_TEAM_MEMBERS.diky
+          });
+          try {
+            localStorage.setItem('last_user', finalUser);
+            localStorage.setItem(`presence_${finalUser}`, Date.now().toString());
+          } catch (_) {}
           return true;
         }
 
         return false;
       },
-      logout: () => set({ isAuthenticated: false, username: '', biometricVerified: false }),
+
+      logout: () => {
+        const curr = get().username;
+        try {
+          if (curr) {
+            localStorage.removeItem(`presence_${curr}`);
+          }
+        } catch (_) {}
+        set({ isAuthenticated: false, username: '', userEmail: '', biometricVerified: false });
+      },
+
       setBiometricVerified: (status) => set({ biometricVerified: status }),
+      
+      addFriend: (friend) => set(state => {
+        if (state.friends.some(f => f.username.toLowerCase() === friend.username.toLowerCase())) {
+          return state;
+        }
+        return { friends: [...state.friends, friend] };
+      }),
+
+      removeFriend: (id) => set(state => ({
+        friends: state.friends.filter(f => f.id !== id)
+      })),
+
+      updateFriendStatus: (username, isOnline, lastSeen) => set(state => ({
+        friends: state.friends.map(f => 
+          f.username.toLowerCase() === username.toLowerCase() 
+            ? { ...f, isOnline, lastSeen: lastSeen ?? f.lastSeen } 
+            : f
+        )
+      })),
+
+      checkFriendsOnlineStatus: () => {
+        const now = Date.now();
+        set(state => ({
+          friends: state.friends.map(f => {
+            try {
+              const lastSeenStr = localStorage.getItem(`presence_${f.username.toLowerCase()}`);
+              if (lastSeenStr) {
+                const lastSeen = parseInt(lastSeenStr, 10);
+                const isOnline = (now - lastSeen) < 12000;
+                return { ...f, isOnline, lastSeen };
+              }
+            } catch (_) {}
+            return f;
+          })
+        }));
+      },
       
       theme: 'dark',
       toggleTheme: () => set((state) => ({ theme: state.theme === 'dark' ? 'light' : 'dark' })),
@@ -273,6 +397,8 @@ export const useStore = create<AppState>()(
       partialize: (state) => ({
         isAuthenticated: state.isAuthenticated,
         username: state.username,
+        userEmail: state.userEmail,
+        friends: state.friends,
         theme: state.theme,
         clockEnabled: state.clockEnabled,
         projects: state.projects,
