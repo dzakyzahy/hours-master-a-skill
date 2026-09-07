@@ -56,6 +56,7 @@ interface AppState {
   setDailyGoal: (h: number) => void;
   activeTimer: boolean;
   toggleTimer: () => void;
+  setRemoteTimerState: (isActive: boolean) => void;
   syncToSupabase: () => Promise<void>;
   loadFromSupabase: () => Promise<void>;
 }
@@ -244,7 +245,27 @@ export const useStore = create<AppState>()(
         };
       }),
       activeTimer: false,
-      toggleTimer: () => set(state => ({ activeTimer: !state.activeTimer })),
+      toggleTimer: async () => {
+        const state = get();
+        const newState = !state.activeTimer;
+        set({ activeTimer: newState });
+        
+        // Push state to Supabase timer_state if configured
+        if (import.meta.env.VITE_SUPABASE_URL && state.activeProjectId) {
+          try {
+            const { data: authData } = await supabase.auth.getUser();
+            if (authData?.user) {
+              await supabase.from('timer_state').upsert({
+                project_id: state.activeProjectId,
+                user_id: authData.user.id,
+                is_active: newState,
+                updated_at: new Date().toISOString()
+              }, { onConflict: 'project_id, user_id' });
+            }
+          } catch(e) { console.error("Failed to sync timer state", e); }
+        }
+      },
+      setRemoteTimerState: (isActive) => set({ activeTimer: isActive }),
       
       syncToSupabase: async () => {
         const state = get();

@@ -7,7 +7,7 @@ import { MeetingRoom } from '../components/MeetingRoom';
 
 export function Chat() {
   const navigate = useNavigate();
-  const { username } = useStore();
+  const {} = useStore();
   const [activeTab, setActiveTab] = useState<'friends' | 'chat'>('friends');
   
   const [searchQuery, setSearchQuery] = useState('');

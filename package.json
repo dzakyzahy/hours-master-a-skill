@@ -1,7 +1,7 @@
 {
   "name": "skillo",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "main": "electron/main.cjs",
   "scripts": {
@@ -67,8 +67,8 @@
     "publish": [
       {
         "provider": "github",
-        "owner": "zahy",
-        "repo": "hours-master"
+        "owner": "dzakyzahy",
+        "repo": "hours-master-a-skill"
       }
     ],
     "nsis": {
