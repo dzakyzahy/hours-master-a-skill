@@ -16,7 +16,7 @@ interface LocalChatMessage {
 
 export function Chat() {
   const navigate = useNavigate();
-  const { username, userId, friends, friendRequests, sendFriendRequest, acceptFriendRequest, rejectFriendRequest, checkFriendsOnlineStatus, projects } = useStore();
+  const { username, userId, friends, friendRequests, sendFriendRequest, acceptFriendRequest, rejectFriendRequest, checkFriendsOnlineStatus, projects, fetchFriendRequests, fetchFriends } = useStore();
   const [activeTab, setActiveTab] = useState<'friends' | 'requests' | 'chat' | 'clash'>('friends');
   
   const [searchQuery, setSearchQuery] = useState('');
@@ -40,11 +40,13 @@ export function Chat() {
   // Sync friends status continuously
   useEffect(() => {
     checkFriendsOnlineStatus();
+    fetchFriendRequests();
     const timer = setInterval(() => {
       checkFriendsOnlineStatus();
+      fetchFriendRequests();
     }, 3000);
     return () => clearInterval(timer);
-  }, [checkFriendsOnlineStatus]);
+  }, [checkFriendsOnlineStatus, fetchFriendRequests]);
 
   // Scroll to bottom of messages
   useEffect(() => {
@@ -119,7 +121,24 @@ export function Chat() {
       if (data) {
         const friendIds = friends.map(f => f.id);
         const filtered = data.filter(u => !friendIds.includes(u.id));
-        setSearchResults(filtered);
+
+        if (filtered.length > 0) {
+          // Check for pending requests
+          const { data: pendingReqs } = await supabase
+            .from('friend_requests')
+            .select('receiver_id')
+            .eq('sender_id', userId)
+            .eq('status', 'pending');
+          
+          const pendingIds = new Set((pendingReqs || []).map(r => r.receiver_id));
+          
+          setSearchResults(filtered.map(u => ({
+            ...u,
+            isPending: pendingIds.has(u.id)
+          })));
+        } else {
+          setSearchResults([]);
+        }
       }
     } catch(err) {
       console.error(err);
@@ -132,7 +151,7 @@ export function Chat() {
     const success = await sendFriendRequest(receiverId);
     if (success) {
       toast.success(`Permintaan pertemanan terkirim ke @${receiverUsername}`);
-      setSearchResults(prev => prev.filter(u => u.id !== receiverId));
+      setSearchResults(prev => prev.map(item => item.id === receiverId ? { ...item, isPending: true } : item));
     } else {
       toast.error('Gagal mengirim permintaan pertemanan');
     }
@@ -235,8 +254,16 @@ export function Chat() {
                           <span className="text-sm font-medium">@{u.username}</span>
                         </div>
                       </div>
-                      <button className="btn-primary text-xs px-3 py-1 h-auto" onClick={() => handleSendRequest(u.id, u.username)}>
-                        + Add
+                      <button 
+                        className="btn-primary text-xs px-3 py-1 h-auto" 
+                        disabled={u.isPending}
+                        onClick={() => {
+                          if (!u.isPending) {
+                            handleSendRequest(u.id, u.username);
+                          }
+                        }}
+                      >
+                        {u.isPending ? 'Menunggu...' : '+ Add'}
                       </button>
                     </div>
                   ))}
