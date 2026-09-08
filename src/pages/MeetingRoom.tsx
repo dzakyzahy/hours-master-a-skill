@@ -22,6 +22,8 @@ import { MeetingControls } from '../components/meeting/MeetingControls';
 import { ThemeSwitcher } from '../components/ThemeSwitcher';
 import { useWebRTC } from '../hooks/useWebRTC';
 import { useCallSignaling } from '../hooks/useCallSignaling';
+import { useCallSessionStore } from '../utils/callSession';
+import { AUDIO_CONSTRAINTS, VIDEO_CONSTRAINTS } from '../utils/callQuality';
 import type { Participant } from '../types/meeting';
 
 export function MeetingRoom() {
@@ -30,6 +32,7 @@ export function MeetingRoom() {
   const { roomId } = useParams<{ roomId?: string }>();
   const { username, userId } = useStore();
   const { cancelOutgoingCall } = useCallSignaling();
+  const { startSession, endSession } = useCallSessionStore();
 
   // Parse query params (HashRouter support)
   const searchParams = new URLSearchParams(location.search);
@@ -62,6 +65,18 @@ export function MeetingRoom() {
     { enabled: hasJoined }
   );
 
+  // Sync active call session for Floating Call Bar
+  useEffect(() => {
+    if (hasJoined) {
+      startSession({
+        roomId: effectiveRoomId,
+        withUser: (targetFriend || 'Rekan').replace(/^@+/, ''),
+        callType,
+        startedAt: Date.now()
+      });
+    }
+  }, [hasJoined, effectiveRoomId, targetFriend, callType, startSession]);
+
   // Request camera & mic on mount
   useEffect(() => {
     let active = true;
@@ -73,8 +88,8 @@ export function MeetingRoom() {
         }
 
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: { width: { ideal: 1280 }, height: { ideal: 720 } },
-          audio: true,
+          video: VIDEO_CONSTRAINTS,
+          audio: AUDIO_CONSTRAINTS,
         });
 
         if (!active || !stream) {
@@ -175,6 +190,7 @@ export function MeetingRoom() {
 
   // Leave Room / Cancel Call
   const handleLeave = () => {
+    endSession();
     if (localStreamRef.current) {
       localStreamRef.current.getTracks().forEach(t => t.stop());
       localStreamRef.current = null;

@@ -14,6 +14,7 @@ import { LocalNotifications } from '@capacitor/local-notifications';
 import { usePresence } from './hooks/usePresence';
 import { useFriendRequests } from './hooks/useFriendRequests';
 import { IncomingCallModal } from './components/meeting/IncomingCallModal';
+import { ActiveCallBar } from './components/ActiveCallBar';
 import { requestCallNotificationPermissions, setupCallNotificationChannel } from './utils/callNotifications';
 import './index.css';
 
@@ -489,6 +490,7 @@ export default function App() {
           </Routes>
         </Suspense>
         <IncomingCallModal />
+        <ActiveCallBar />
         <GlobalFloatingTimer />
       </HashRouter>
     </div>

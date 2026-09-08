@@ -12,13 +12,20 @@ interface SignalPayload {
   data?: any;
 }
 
+import { enhanceOpusSdp, enhanceVideoSdp } from '../utils/callQuality';
+
 const ICE_SERVERS: RTCConfiguration = {
   iceServers: [
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' },
     { urls: 'stun:stun2.l.google.com:19302' },
     { urls: 'stun:stun3.l.google.com:19302' },
-    { urls: 'stun:stun4.l.google.com:19302' }
+    { urls: 'stun:stun4.l.google.com:19302' },
+    ...(import.meta.env.VITE_TURN_URL ? [{
+      urls: import.meta.env.VITE_TURN_URL,
+      username: import.meta.env.VITE_TURN_USERNAME || '',
+      credential: import.meta.env.VITE_TURN_CREDENTIAL || ''
+    }] : [])
   ]
 };
 
@@ -105,16 +112,45 @@ export function useWebRTC(
 
     // Connection state changes
     peer.oniceconnectionstatechange = () => {
-      if (peer.iceConnectionState === 'disconnected' || peer.iceConnectionState === 'failed' || peer.iceConnectionState === 'closed') {
+      if (peer.iceConnectionState === 'failed') {
+        console.warn('ICE connection failed, attempting ICE restart for peer:', peerId);
+        if (isInitiator) {
+          peer.createOffer({ iceRestart: true }).then(async offer => {
+            const enhancedSdp = enhanceVideoSdp(enhanceOpusSdp(offer.sdp || ''), 1500);
+            const desc = new RTCSessionDescription({ type: offer.type, sdp: enhancedSdp });
+            await peer.setLocalDescription(desc);
+            sendSignal('offer', peerId, desc);
+          }).catch(() => {});
+        }
+      } else if (peer.iceConnectionState === 'disconnected' || peer.iceConnectionState === 'closed') {
         setRemoteParticipants(prev => prev.filter(p => p.id !== peerId));
         peersRef.current.delete(peerId);
       }
     };
 
+    // Prioritize Opus codec for high-fidelity mobile audio
+    if (typeof window !== 'undefined' && 'RTCRtpSender' in window && 'getCapabilities' in (window as any).RTCRtpSender) {
+      const audioCodecs = (window as any).RTCRtpSender.getCapabilities('audio')?.codecs;
+      if (Array.isArray(audioCodecs)) {
+        const opusCodecs = audioCodecs.filter((c: any) => c.mimeType.toLowerCase() === 'audio/opus');
+        const otherCodecs = audioCodecs.filter((c: any) => c.mimeType.toLowerCase() !== 'audio/opus');
+        const prioritized = [...opusCodecs, ...otherCodecs];
+        try {
+          peer.getTransceivers().forEach(t => {
+            if (t.sender.track?.kind === 'audio' && typeof (t as any).setCodecPreferences === 'function') {
+              (t as any).setCodecPreferences(prioritized);
+            }
+          });
+        } catch {}
+      }
+    }
+
     if (isInitiator) {
-      peer.createOffer().then(offer => {
-        peer.setLocalDescription(offer);
-        sendSignal('offer', peerId, offer);
+      peer.createOffer().then(async offer => {
+        const enhancedSdp = enhanceVideoSdp(enhanceOpusSdp(offer.sdp || ''), 1500);
+        const desc = new RTCSessionDescription({ type: offer.type, sdp: enhancedSdp });
+        await peer.setLocalDescription(desc);
+        sendSignal('offer', peerId, desc);
       }).catch(e => console.error('Error creating offer', e));
     }
 
@@ -186,8 +222,10 @@ export function useWebRTC(
         pendingCandidatesRef.current.delete(peerId);
 
         const answer = await peer.createAnswer();
-        await peer.setLocalDescription(answer);
-        sendSignal('answer', peerId, answer);
+        const enhancedSdp = enhanceVideoSdp(enhanceOpusSdp(answer.sdp || ''), 1500);
+        const desc = new RTCSessionDescription({ type: answer.type, sdp: enhancedSdp });
+        await peer.setLocalDescription(desc);
+        sendSignal('answer', peerId, desc);
       } 
       
       else if (signal.type === 'answer') {
