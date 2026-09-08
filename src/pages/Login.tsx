@@ -372,10 +372,10 @@ export function Login() {
                 <div 
                   style={{
                     marginBottom: '18px',
-                    padding: '10px 12px',
-                    borderRadius: '4px',
+                    padding: '11px 14px',
+                    borderRadius: 'var(--radius-input, 8px)',
                     background: 'rgba(239, 68, 68, 0.08)',
-                    border: '1px solid rgba(239, 68, 68, 0.2)',
+                    border: '1px solid rgba(239, 68, 68, 0.25)',
                     color: 'var(--color-danger)',
                     fontSize: '12px',
                     lineHeight: 1.4,
@@ -473,10 +473,10 @@ export function Login() {
                 <div 
                   style={{
                     marginBottom: '18px',
-                    padding: '10px 12px',
-                    borderRadius: '4px',
+                    padding: '11px 14px',
+                    borderRadius: 'var(--radius-input, 8px)',
                     background: 'rgba(239, 68, 68, 0.08)',
-                    border: '1px solid rgba(239, 68, 68, 0.2)',
+                    border: '1px solid rgba(239, 68, 68, 0.25)',
                     color: 'var(--color-danger)',
                     fontSize: '12px',
                     lineHeight: 1.4,
@@ -533,7 +533,8 @@ export function Login() {
             position: 'fixed', 
             inset: 0, 
             background: 'rgba(5, 7, 10, 0.85)', 
-            backdropFilter: 'blur(10px)', 
+            backdropFilter: 'blur(12px)', 
+            WebkitBackdropFilter: 'blur(12px)',
             zIndex: 100, 
             display: 'flex', 
             alignItems: 'center', 
@@ -549,17 +550,17 @@ export function Login() {
               maxWidth: '430px', 
               padding: '32px 28px', 
               position: 'relative', 
-              borderRadius: '12px',
+              borderRadius: 'var(--radius-modal, 16px)',
               border: '1px solid var(--border-hairline-strong)',
               background: 'var(--surface-card)',
-              boxShadow: '0 24px 60px rgba(0, 0, 0, 0.85)'
+              boxShadow: '0 24px 60px rgba(0, 0, 0, 0.85), inset 0 1px 0 rgba(255, 255, 255, 0.08)'
             }}
             onClick={(e) => e.stopPropagation()}
           >
             <button 
               onClick={() => setIsResetModalOpen(false)} 
               className="btn" 
-              style={{ position: 'absolute', top: 16, right: 16, width: '32px', height: '32px', padding: 0 }}
+              style={{ position: 'absolute', top: 16, right: 16, width: '36px', height: '36px', padding: 0, borderRadius: 'var(--radius-btn, 8px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
               aria-label="Tutup"
             >
               <FontAwesomeIcon icon={faXmark} className="text-[14px]" />
@@ -568,15 +569,16 @@ export function Login() {
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
               <div 
                 style={{ 
-                  width: '38px', 
-                  height: '38px', 
-                  borderRadius: '8px', 
+                  width: '40px', 
+                  height: '40px', 
+                  borderRadius: 'var(--radius-input, 8px)', 
                   background: 'var(--surface-input)', 
                   border: '1px solid var(--border-hairline-strong)', 
                   display: 'flex', 
                   alignItems: 'center', 
                   justifyContent: 'center',
-                  color: 'var(--accent-primary)'
+                  color: 'var(--accent-primary)',
+                  boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.05)'
                 }}
               >
                 <FontAwesomeIcon icon={faKey} style={{ fontSize: '16px' }} />
@@ -601,13 +603,12 @@ export function Login() {
                   type="text" 
                   id="resetEmail"
                   name="resetEmail"
-                  className="input-field" 
+                  className="auth-input" 
                   placeholder="Email atau username terdaftar" 
                   value={resetInput}
                   onChange={(e) => setResetInput(e.target.value)}
                   autoFocus
                   required
-                  style={{ width: '100%', height: '40px' }}
                 />
               </div>
 
@@ -615,8 +616,8 @@ export function Login() {
                 <div 
                   style={{
                     marginBottom: '16px',
-                    padding: '10px 14px',
-                    borderRadius: '6px',
+                    padding: '11px 14px',
+                    borderRadius: 'var(--radius-input, 8px)',
                     fontSize: '12px',
                     lineHeight: 1.45,
                     background: resetFeedback.type === 'success' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
@@ -628,20 +629,20 @@ export function Login() {
                 </div>
               )}
 
-              <div className="flex gap-2 justify-end mt-4">
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '20px' }}>
                 <button 
                   type="button" 
-                  className="btn" 
+                  className="auth-btn-secondary" 
                   onClick={() => setIsResetModalOpen(false)}
-                  style={{ height: '36px', padding: '0 14px', fontSize: '12.5px' }}
+                  style={{ width: 'auto', height: '38px', padding: '0 16px', fontSize: '12.5px' }}
                 >
                   Batal
                 </button>
                 <button 
                   type="submit" 
-                  className="btn-primary" 
+                  className="auth-btn-primary" 
                   disabled={resetLoading}
-                  style={{ height: '36px', padding: '0 16px', fontSize: '12.5px' }}
+                  style={{ width: 'auto', height: '38px', padding: '0 18px', fontSize: '12.5px' }}
                 >
                   {resetLoading ? 'Memproses...' : 'Kirim Tautan Pemulihan'}
                 </button>
@@ -658,7 +659,8 @@ export function Login() {
             position: 'fixed', 
             inset: 0, 
             background: 'rgba(5, 7, 10, 0.85)', 
-            backdropFilter: 'blur(10px)', 
+            backdropFilter: 'blur(12px)', 
+            WebkitBackdropFilter: 'blur(12px)',
             zIndex: 100, 
             display: 'flex', 
             alignItems: 'center', 
@@ -675,16 +677,17 @@ export function Login() {
               textAlign: 'center', 
               padding: '36px 24px', 
               position: 'relative', 
-              boxShadow: '0 24px 60px rgba(0, 0, 0, 0.85)', 
+              boxShadow: '0 24px 60px rgba(0, 0, 0, 0.85), inset 0 1px 0 rgba(255, 255, 255, 0.08)', 
               border: '1px solid var(--border-hairline-strong)',
-              borderRadius: '12px'
+              borderRadius: 'var(--radius-modal, 16px)',
+              background: 'var(--surface-card)'
             }}
             onClick={(e) => e.stopPropagation()}
           >
             <button 
               onClick={() => setIsBiometricModalOpen(false)} 
               className="btn" 
-              style={{ position: 'absolute', top: 16, right: 16, width: '32px', height: '32px', padding: 0 }}
+              style={{ position: 'absolute', top: 16, right: 16, width: '36px', height: '36px', padding: 0, borderRadius: 'var(--radius-btn, 8px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
               aria-label="Tutup"
             >
               <FontAwesomeIcon icon={faXmark} className="text-[14px]" />
@@ -693,6 +696,7 @@ export function Login() {
             {/* High-Tech Biometric Scanner Graphic */}
             <div style={{ position: 'relative', width: '96px', height: '96px', margin: '0 auto 24px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <div 
+                className={biometricStatus === 'scanning' ? 'biometric-radar-ring' : ''}
                 style={{ 
                   position: 'absolute', 
                   inset: 0, 
@@ -702,8 +706,8 @@ export function Login() {
                     : biometricStatus === 'failed' 
                     ? '2px solid var(--color-danger)' 
                     : '2px solid var(--accent-primary)',
-                  opacity: 0.3,
-                  animation: biometricStatus === 'scanning' ? 'spin 3s linear infinite' : 'none'
+                  opacity: biometricStatus === 'scanning' ? 0.6 : 0.25,
+                  transition: 'border-color 0.3s ease, opacity 0.3s ease'
                 }} 
               />
               <div 
@@ -718,7 +722,8 @@ export function Login() {
                     : 'rgba(14, 165, 233, 0.08)',
                   display: 'flex', 
                   alignItems: 'center', 
-                  justifyContent: 'center' 
+                  justifyContent: 'center',
+                  boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.05)'
                 }} 
               >
                 {biometricStatus === 'success' ? (
@@ -743,28 +748,28 @@ export function Login() {
               {biometricMessage}
             </p>
 
-            <div className="flex gap-2 justify-center">
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
               {biometricStatus === 'failed' && (
                 <button 
                   type="button" 
-                  className="btn-primary" 
+                  className="auth-btn-primary" 
                   onClick={handleBiometricLogin}
-                  style={{ height: '38px', padding: '0 18px' }}
+                  style={{ width: 'auto', height: '40px', padding: '0 18px', fontSize: '13px' }}
                 >
                   Coba Lagi
                 </button>
               )}
               <button 
                 type="button" 
-                className="btn" 
+                className="auth-btn-secondary" 
                 onClick={() => setIsBiometricModalOpen(false)}
-                style={{ height: '38px', padding: '0 18px' }}
+                style={{ width: 'auto', height: '40px', padding: '0 18px', fontSize: '13px' }}
               >
                 Gunakan Password
               </button>
             </div>
 
-            <div style={{ marginTop: '20px', fontSize: '11px', color: 'var(--text-placeholder)', fontFamily: 'Geist Mono, monospace', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+            <div style={{ marginTop: '24px', fontSize: '11px', color: 'var(--text-placeholder)', fontFamily: 'Geist Mono, monospace', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
               <FontAwesomeIcon icon={faShieldHalved} style={{ color: 'var(--accent-primary)', fontSize: '13px' }} />
               WebAuthn / Biometric Secure Enclave
             </div>
