@@ -16,19 +16,28 @@ export const signInAndBackup = async () => {
     
     const accessToken = user.authentication.accessToken;
     
-    // Export chat data
+    // Export chat data & project data
     const chatData = await exportChatToJSON();
+    let projectData = "{}";
+    try {
+      projectData = localStorage.getItem('hours-master-storage') || "{}";
+    } catch (e) {}
+    
+    const combinedBackup = {
+      chats: JSON.parse(chatData),
+      projects: JSON.parse(projectData)
+    };
     
     // Create backup file in Google Drive
     const metadata = {
-      name: 'SkilloChatBackup.json',
+      name: 'SkilloBackup.json',
       mimeType: 'application/json',
       parents: ['appDataFolder'] // App Data folder is better but requires different scope, we'll use root for now
     };
 
     const form = new FormData();
     form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
-    form.append('file', new Blob([chatData], { type: 'application/json' }));
+    form.append('file', new Blob([JSON.stringify(combinedBackup)], { type: 'application/json' }));
 
     const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
       method: 'POST',
