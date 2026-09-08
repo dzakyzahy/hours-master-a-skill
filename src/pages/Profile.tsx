@@ -10,7 +10,8 @@ import {
   faKey, 
   faFingerprint,
   faVolumeHigh,
-  faVolumeXmark
+  faVolumeXmark,
+  faRightFromBracket
 } from '@fortawesome/free-solid-svg-icons';
 import { supabase, isSupabaseConfigured } from '../supabaseClient';
 import { useStore } from '../store';
@@ -28,7 +29,7 @@ declare global {
 }
 
 export function Profile() {
-  const { username, userEmail, geminiApiKey, loadGeminiApiKey, soundEnabled, toggleSound } = useStore();
+  const { username, userEmail, geminiApiKey, loadGeminiApiKey, soundEnabled, toggleSound, logout } = useStore();
   const navigate = useNavigate();
   const [newUsername, setNewUsername] = useState(username || 'diky');
   const [email, setEmail] = useState(userEmail || (username === 'diky' ? 'dikydwi442@gmail.com' : 'dzakyzr3@gmail.com'));
@@ -449,6 +450,36 @@ export function Profile() {
                 Active (Real-time)
               </span>
             </div>
+          </div>
+
+          {/* Dedicated Logout Action */}
+          <div style={{ marginTop: '26px', paddingTop: '20px', borderTop: '1px solid var(--border-hairline)' }}>
+            <button
+              type="button"
+              onClick={async () => {
+                await logout();
+                navigate('/login');
+              }}
+              style={{
+                width: '100%',
+                height: '42px',
+                borderRadius: '8px',
+                background: 'rgba(239, 68, 68, 0.08)',
+                border: '1px solid rgba(239, 68, 68, 0.25)',
+                color: 'var(--color-danger)',
+                fontWeight: 600,
+                fontSize: '13px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              <FontAwesomeIcon icon={faRightFromBracket} />
+              Keluar dari Akun (Logout)
+            </button>
           </div>
         </div>
       </div>

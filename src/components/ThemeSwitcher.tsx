@@ -4,11 +4,27 @@ import { useStore } from '../store';
 
 interface ThemeSwitcherProps {
   compact?: boolean;
+  iconOnly?: boolean;
   className?: string;
 }
 
-export function ThemeSwitcher({ compact = false, className = '' }: ThemeSwitcherProps) {
+export function ThemeSwitcher({ compact = false, iconOnly = false, className = '' }: ThemeSwitcherProps) {
   const { theme, setTheme } = useStore();
+
+  if (iconOnly) {
+    return (
+      <button
+        type="button"
+        className={`btn-icon ${className}`}
+        onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+        aria-label={theme === 'light' ? 'Ganti ke Mode Gelap' : 'Ganti ke Mode Terang'}
+        title={theme === 'light' ? 'Ganti ke Mode Gelap' : 'Ganti ke Mode Terang'}
+        style={{ width: '36px', height: '36px', borderRadius: '50%' }}
+      >
+        <FontAwesomeIcon icon={theme === 'light' ? faMoon : faSun} style={{ fontSize: '13px' }} />
+      </button>
+    );
+  }
 
   return (
     <div 

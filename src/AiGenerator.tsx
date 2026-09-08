@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { GoogleGenAI } from '@google/genai';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faRoute, faWandMagicSparkles, faCircleNotch, faKey, faLock } from '@fortawesome/free-solid-svg-icons';
+import { faRoute, faWandMagicSparkles, faCircleNotch, faKey, faLock, faChevronUp, faPlus } from '@fortawesome/free-solid-svg-icons';
 import { useStore, type SkillPhase } from './store';
 import { ApiKeyModal } from './components/ApiKeyModal';
 
@@ -10,6 +10,7 @@ export function AiGenerator() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [isKeyModalOpen, setIsKeyModalOpen] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
   const { addProject, geminiApiKey, loadGeminiApiKey } = useStore();
 
   useEffect(() => {
@@ -68,6 +69,7 @@ export function AiGenerator() {
       if (data && Array.isArray(data.phases) && data.phases.length > 0) {
         addProject(data.project_name || topic.trim(), data.phases as SkillPhase[]);
         setTopic('');
+        setIsExpanded(false); // Otomatis tutup setelah sukses dibuat
       } else {
         setError('Format respon AI tidak sesuai. Coba ulangi dengan topik yang lebih spesifik.');
       }
@@ -91,128 +93,158 @@ export function AiGenerator() {
   ];
 
   return (
-    <div className="glass-panel mt-6" style={{ padding: '24px', position: 'relative' }}>
-      {/* Header with Title & API Key Status Trigger (No Duplicate Button) */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', marginBottom: '8px', flexWrap: 'wrap' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <FontAwesomeIcon icon={faRoute} style={{ color: 'var(--accent-primary)', fontSize: '15px' }} />
-          <h2 style={{ margin: 0, fontSize: '14.5px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.015em' }}>
-            AI Mastery Plan Generator
-          </h2>
-        </div>
-
-        {/* Only show button in header if API key is already configured */}
-        {effectiveKey && (
-          <button 
-            type="button"
-            className="btn" 
-            onClick={() => setIsKeyModalOpen(true)}
-            style={{ height: '30px', padding: '0 10px', fontSize: '11px', fontFamily: 'Geist Mono, monospace', gap: '6px' }}
-            title="Kelola Kunci API Gemini Anda"
-          >
-            <FontAwesomeIcon icon={faKey} style={{ color: '#22c55e', fontSize: '12px' }} />
-            <span>API Key: Aktif</span>
-            <span 
-              style={{ 
-                width: '6px', 
-                height: '6px', 
-                borderRadius: '50%', 
-                backgroundColor: '#22c55e' 
-              }} 
-            />
-          </button>
-        )}
-      </div>
-
-      <p style={{ margin: '0 0 16px', fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-        Masukkan keahlian yang ingin Anda kuasai, AI akan membuatkan roadmap belajar terstruktur 5 fase secara otomatis.
-      </p>
-
-      {/* Unconfigured Key Notice Banner - Single Clear CTA without duplication */}
-      {!effectiveKey && (
-        <div 
-          style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'space-between', 
-            padding: '11px 14px', 
-            background: 'rgba(245, 158, 11, 0.06)', 
-            border: '1px solid rgba(245, 158, 11, 0.25)', 
-            borderRadius: '6px', 
-            marginBottom: '16px',
-            gap: '12px',
-            flexWrap: 'wrap'
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '12px', color: 'var(--text-secondary)' }}>
-            <FontAwesomeIcon icon={faLock} style={{ color: '#f59e0b', flexShrink: 0, fontSize: '14px' }} />
-            <span>Kunci API Gemini diperlukan untuk membuat roadmap otomatis. Kunci disimpan privat di akun Anda.</span>
+    <div className="glass-panel ai-generator-panel mt-4" style={{ position: 'relative' }}>
+      {/* Header Bar with Toggle */}
+      <div 
+        style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'space-between', 
+          gap: '8px', 
+          cursor: 'pointer',
+          userSelect: 'none'
+        }}
+        onClick={() => setIsExpanded(!isExpanded)}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: 'rgba(14, 165, 233, 0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent-primary)', flexShrink: 0 }}>
+            <FontAwesomeIcon icon={faRoute} style={{ fontSize: '13px' }} />
           </div>
-          <button 
-            type="button" 
-            className="btn-primary" 
-            style={{ height: '32px', padding: '0 14px', fontSize: '11.5px', gap: '6px' }}
-            onClick={() => setIsKeyModalOpen(true)}
-          >
-            <FontAwesomeIcon icon={faKey} style={{ fontSize: '11px' }} /> Masukkan Kunci API
-          </button>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <h2 style={{ margin: 0, fontSize: '13.5px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.015em' }}>
+                AI Mastery Roadmap
+              </h2>
+              <span style={{ fontSize: '9.5px', padding: '1px 6px', borderRadius: '4px', background: 'rgba(14, 165, 233, 0.1)', color: 'var(--accent-primary)', fontWeight: 600 }}>
+                Gemini
+              </span>
+            </div>
+            {!isExpanded && (
+              <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                Buat 5 fase roadmap belajar otomatis
+              </span>
+            )}
+          </div>
         </div>
-      )}
 
-      {/* Quick Suggestion Pills - Minimalist Template Fit */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', overflowX: 'auto', paddingBottom: '4px', scrollbarWidth: 'none' }}>
-        <span style={{ fontSize: '11px', color: 'var(--text-placeholder)', fontFamily: "'Geist', sans-serif", whiteSpace: 'nowrap', marginRight: '4px', fontWeight: 500 }}>
-          Ide Cepat:
-        </span>
-        {suggestions.map(s => (
-          <button
-            key={s}
-            type="button"
-            className="chip-suggestion"
-            style={{ fontSize: '11px', height: '26px', padding: '0 10px', borderRadius: '9999px' }}
-            onClick={() => setTopic(s)}
-          >
-            {s}
-          </button>
-        ))}
-      </div>
-
-      <div className="ai-plan-form">
-        <input 
-          type="text" 
-          className="ai-plan-input" 
-          placeholder="Ketik topik keahlian: e.g. Machine Learning, Mobile App, Piano..."
-          value={topic}
-          onChange={(e) => setTopic(e.target.value)}
-          disabled={loading}
-          onKeyDown={(e) => { if (e.key === 'Enter') handleGenerate(); }}
-        />
-        <button 
-          className="ai-plan-btn" 
-          onClick={handleGenerate}
-          disabled={loading || !topic.trim()}
-        >
-          {loading ? (
-            <FontAwesomeIcon icon={faCircleNotch} spin style={{ fontSize: '14px' }} />
-          ) : (
-            <FontAwesomeIcon icon={faWandMagicSparkles} style={{ fontSize: '13px' }} />
-          )}
-          <span>{loading ? 'Membuat Roadmap...' : 'Generate Plan'}</span>
-        </button>
-      </div>
-
-      {error && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '12px', fontSize: '12px', color: '#ef4444' }}>
-          <span>{error}</span>
-          {!effectiveKey && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }} onClick={e => e.stopPropagation()}>
+          {effectiveKey && (
             <button 
               type="button"
               className="btn" 
-              style={{ height: '26px', padding: '0 8px', fontSize: '11px', color: 'var(--text-primary)' }}
               onClick={() => setIsKeyModalOpen(true)}
+              style={{ height: '26px', padding: '0 8px', fontSize: '10px', fontFamily: 'Geist Mono, monospace', gap: '5px' }}
+              title="Kelola Kunci API Gemini Anda"
             >
-              Buka Pengaturan Kunci
+              <FontAwesomeIcon icon={faKey} style={{ color: '#22c55e', fontSize: '10px' }} />
+              <span>API Aktif</span>
             </button>
+          )}
+
+          <button
+            type="button"
+            className={isExpanded ? "btn" : "btn-primary"}
+            onClick={() => setIsExpanded(!isExpanded)}
+            style={{ height: '28px', padding: '0 10px', fontSize: '11px', gap: '5px', borderRadius: '6px' }}
+          >
+            {isExpanded ? (
+              <>
+                <span>Tutup</span>
+                <FontAwesomeIcon icon={faChevronUp} style={{ fontSize: '10px' }} />
+              </>
+            ) : (
+              <>
+                <FontAwesomeIcon icon={faPlus} style={{ fontSize: '10px' }} />
+                <span>Buat Plan</span>
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+
+      {/* Expanded Content Area */}
+      {isExpanded && (
+        <div style={{ marginTop: '14px', paddingTop: '12px', borderTop: '1px solid var(--border-hairline)' }}>
+          <p className="ai-plan-desc" style={{ margin: '0 0 12px', fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.45 }}>
+            Ketik keahlian yang ingin dikuasai. AI akan menyusun roadmap 5 fase terukur (total ~1.000 jam).
+          </p>
+
+          {/* Unconfigured Key Notice Banner */}
+          {!effectiveKey && (
+            <div className="ai-key-banner">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11.5px', color: 'var(--text-secondary)', flex: '1 1 200px' }}>
+                <FontAwesomeIcon icon={faLock} style={{ color: '#f59e0b', flexShrink: 0, fontSize: '13px' }} />
+                <span>Kunci API Gemini diperlukan untuk menyusun roadmap otomatis.</span>
+              </div>
+              <button 
+                type="button" 
+                className="btn-primary" 
+                style={{ height: '30px', padding: '0 12px', fontSize: '11px', gap: '6px', whiteSpace: 'nowrap' }}
+                onClick={() => setIsKeyModalOpen(true)}
+              >
+                <FontAwesomeIcon icon={faKey} style={{ fontSize: '10px' }} /> Atur API Key
+              </button>
+            </div>
+          )}
+
+          {/* Quick Suggestion Pills - Minimalist Template Fit */}
+          <div className="ai-suggestion-scroll" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', overflowX: 'auto', width: '100%', maxWidth: '100%', paddingBottom: '4px', scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}>
+            <span style={{ fontSize: '11px', color: 'var(--text-placeholder)', fontFamily: "'Geist', sans-serif", whiteSpace: 'nowrap', marginRight: '4px', fontWeight: 500, flexShrink: 0 }}>
+              Ide Cepat:
+            </span>
+            {suggestions.map(s => (
+              <button
+                key={s}
+                type="button"
+                className="chip-suggestion"
+                style={{ fontSize: '11px', height: '26px', padding: '0 10px', borderRadius: '9999px', flexShrink: 0, whiteSpace: 'nowrap' }}
+                onClick={() => setTopic(s)}
+              >
+                {s}
+              </button>
+            ))}
+          </div>
+
+          <div className="ai-plan-form">
+            <input 
+              type="text" 
+              id="aiPlanTopic"
+              name="aiPlanTopic"
+              className="ai-plan-input" 
+              placeholder="Ketik topik keahlian: e.g. Machine Learning, Mobile App, Piano..."
+              value={topic}
+              onChange={(e) => setTopic(e.target.value)}
+              disabled={loading}
+              onKeyDown={(e) => { if (e.key === 'Enter') handleGenerate(); }}
+            />
+            <button 
+              className="ai-plan-btn" 
+              onClick={handleGenerate}
+              disabled={loading || !topic.trim()}
+            >
+              {loading ? (
+                <FontAwesomeIcon icon={faCircleNotch} spin style={{ fontSize: '14px' }} />
+              ) : (
+                <FontAwesomeIcon icon={faWandMagicSparkles} style={{ fontSize: '13px' }} />
+              )}
+              <span>{loading ? 'Membuat Roadmap...' : 'Generate Plan'}</span>
+            </button>
+          </div>
+
+          {error && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '12px', fontSize: '12px', color: '#ef4444' }}>
+              <span>{error}</span>
+              {!effectiveKey && (
+                <button 
+                  type="button" 
+                  className="btn" 
+                  style={{ height: '26px', padding: '0 8px', fontSize: '11px', color: 'var(--text-primary)' }}
+                  onClick={() => setIsKeyModalOpen(true)}
+                >
+                  Buka Pengaturan Kunci
+                </button>
+              )}
+            </div>
           )}
         </div>
       )}

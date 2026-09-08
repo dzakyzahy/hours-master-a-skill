@@ -92,6 +92,7 @@ export function Chat() {
   const [newMessage, setNewMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const chatFeedRef = useRef<HTMLDivElement>(null);
   const supabaseChannelRef = useRef<any>(null);
 
   // Sync friends status continuously with reasonable 8s interval (prevents Supabase rate spikes)
@@ -108,12 +109,12 @@ export function Chat() {
     return () => clearInterval(timer);
   }, [fetchFriends, checkFriendsOnlineStatus, fetchFriendRequests, fetchSentFriendRequests]);
 
-  // Scroll to bottom of messages
+  // Scroll to bottom of messages inside feed only (never shifts parent viewport)
   useEffect(() => {
-    if (activeTab === 'chat') {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (activeTab === 'chat' && effectiveSelectedFriend && chatFeedRef.current) {
+      chatFeedRef.current.scrollTop = chatFeedRef.current.scrollHeight;
     }
-  }, [localMessages, activeTab]);
+  }, [localMessages, activeTab, effectiveSelectedFriend]);
 
   // Real-Time Sync: Supabase Realtime WebSocket (across internet to Dzaky) + BroadcastChannel + Window Storage
   useEffect(() => {
@@ -214,7 +215,7 @@ export function Chat() {
 
     setIsSending(true);
     const myUser = currentUsername;
-    const targetUser = effectiveSelectedFriend.username.toLowerCase();
+    const targetUser = (effectiveSelectedFriend.username || effectiveSelectedFriend.name || '').trim().toLowerCase().replace(/^@/, '');
 
     const newMsgObj: LocalChatMessage = {
       id: `msg_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`,
@@ -416,45 +417,36 @@ export function Chat() {
   });
 
   return (
-    <div className="no-drag mobile-content-container" style={{ padding: '28px 16px 80px', flex: 1, display: 'flex', flexDirection: 'column', height: '100vh', maxWidth: '960px', margin: '0 auto', width: '100%' }}>
-      {/* Header - Symmetrical & Clean */}
-      <header className="header-topbar mb-6" style={{ borderBottom: '1px solid var(--border-hairline)', paddingBottom: '16px' }}>
-        <div className="flex items-center gap-4">
+    <div className="no-drag chat-page-container">
+      {/* Header - Unified Single-Row Mobile & Desktop */}
+      <header className="chat-header-bar">
+        <div className="flex items-center gap-2.5" style={{ minWidth: 0, flex: 1 }}>
           <button 
-            className="btn" 
+            className="chat-back-btn" 
             onClick={() => navigate('/')} 
-            style={{ 
-              padding: '0 12px', 
-              height: '34px', 
-              fontSize: '12px', 
-              fontWeight: 500, 
-              gap: '6px', 
-              borderRadius: '6px',
-              border: '1px solid var(--border-hairline-strong)',
-              background: 'var(--surface-input)',
-              color: 'var(--text-secondary)'
-            }} 
             title="Kembali ke Beranda"
+            aria-label="Kembali ke Beranda"
           >
             <FontAwesomeIcon icon={faArrowLeft} style={{ fontSize: '11px' }} />
-            <span>Kembali</span>
+            <span className="chat-back-label">Kembali</span>
           </button>
-          <div>
-            <h1 style={{ margin: 0, fontSize: '18px', fontWeight: 600, letterSpacing: '-0.02em', color: 'var(--text-primary)', fontFamily: "'Geist', sans-serif" }}>
+          <div className="chat-title-group">
+            <h1 className="chat-title">
               Collaboration Hub
             </h1>
-            <p style={{ margin: '2px 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>
-              Teman, status kehadiran online & chat tim
+            <p className="chat-subtitle">
+              Teman, status kehadiran & chat tim
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2">
           {username && (
             <button
               type="button"
               onClick={() => navigate('/profile')}
               title={`Profil Saya (${username}) • Online`}
+              aria-label={`Profil Saya (${username})`}
               style={{
                 position: 'relative',
                 display: 'inline-flex',
@@ -462,7 +454,7 @@ export function Chat() {
                 justifyContent: 'center',
                 width: '34px',
                 height: '34px',
-                borderRadius: '6px',
+                borderRadius: '7px',
                 background: 'var(--surface-input)',
                 border: '1px solid var(--border-hairline)',
                 color: 'var(--text-primary)',
@@ -470,11 +462,8 @@ export function Chat() {
                 fontSize: '12px',
                 fontFamily: 'Geist Mono, monospace',
                 cursor: 'pointer',
-                transition: 'all 0.15s ease',
                 flexShrink: 0
               }}
-              onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--border-hairline-strong)'}
-              onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border-hairline)'}
             >
               {username.substring(0, 2).toUpperCase()}
               <span 
@@ -497,36 +486,43 @@ export function Chat() {
         </div>
       </header>
 
-      {/* Sleek Minimalist Segmented Tabs */}
+      {/* Proportional Segmented Tab Bar */}
       <div className="hub-tab-bar">
         <button 
           className={`hub-tab-btn ${activeTab === 'friends' ? 'active' : ''}`}
           onClick={() => setActiveTab('friends')}
         >
-          <FontAwesomeIcon icon={faUsers} style={{ fontSize: '12px' }} /> Daftar Teman ({friends.length})
+          <FontAwesomeIcon icon={faUsers} style={{ fontSize: '11.5px' }} />
+          <span>Teman</span>
+          <span className="hub-tab-badge">{friends.length}</span>
         </button>
         <button 
           className={`hub-tab-btn ${activeTab === 'requests' ? 'active' : ''}`}
           onClick={() => setActiveTab('requests')}
         >
-          Permintaan ({friendRequests.length})
+          <span>Permintaan</span>
+          {friendRequests.length > 0 && (
+            <span className="hub-tab-badge badge-alert">{friendRequests.length}</span>
+          )}
         </button>
         <button 
           className={`hub-tab-btn ${activeTab === 'chat' ? 'active' : ''}`}
           onClick={() => setActiveTab('chat')}
         >
-          <FontAwesomeIcon icon={faCommentDots} style={{ fontSize: '12px' }} /> Ruang Chat
+          <FontAwesomeIcon icon={faCommentDots} style={{ fontSize: '11.5px' }} />
+          <span>Chat</span>
         </button>
         <button 
           className={`hub-tab-btn ${activeTab === 'clash' ? 'active' : ''}`}
           onClick={() => setActiveTab('clash')}
         >
-          <FontAwesomeIcon icon={faHandFist} style={{ fontSize: '12px' }} /> Clash
+          <FontAwesomeIcon icon={faHandFist} style={{ fontSize: '11.5px' }} />
+          <span>Clash</span>
         </button>
       </div>
 
-      {/* Main Glass Panel */}
-      <div className="glass-panel flex-1" style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', padding: '20px' }}>
+      {/* Main Responsive Panel */}
+      <div className={`chat-main-panel ${activeTab === 'chat' ? 'is-chat-tab' : ''}`}>
         
         {/* TAB 1: FRIENDS LIST & ONLINE STATUS */}
         {activeTab === 'friends' && (
@@ -562,6 +558,8 @@ export function Chat() {
               <form onSubmit={handleSearchUsers} style={{ display: 'flex', gap: '8px', marginBottom: '18px' }}>
                 <input 
                   type="text" 
+                  id="searchUser"
+                  name="searchUser"
                   className="input-field" 
                   placeholder="Ketik username teman (contoh: diky, zahy)..." 
                   value={searchQuery} 
@@ -717,46 +715,18 @@ export function Chat() {
                     Belum ada rekan tim. Tambahkan teman melalui form di atas.
                   </p>
                 )}
-
                 {friends.map(f => {
-                  const initials = f.name.substring(0, 2).toUpperCase();
+                  const initials = (f.name || f.username || 'U').substring(0, 2).toUpperCase();
+                  const displayName = f.name || f.username || 'User';
+                  const showHandle = f.username && f.name && f.name.toLowerCase() !== f.username.toLowerCase();
+
                   return (
-                    <div 
-                      key={f.id} 
-                      style={{ 
-                        padding: '12px 14px', 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        justifyContent: 'space-between',
-                        gap: '12px',
-                        flexWrap: 'wrap',
-                        background: 'var(--surface-input)',
-                        border: '1px solid var(--border-hairline)',
-                        borderRadius: '6px'
-                      }}
-                    >
-                      {/* Left: Avatar with Minimalist Dot Indicator + Name */}
-                      <div className="flex items-center gap-3" style={{ minWidth: '200px' }}>
+                    <div key={f.id} className="friend-card">
+                      <div className="friend-card-left">
                         <div style={{ position: 'relative', flexShrink: 0 }}>
-                          <div 
-                            style={{ 
-                              width: '38px', 
-                              height: '38px', 
-                              borderRadius: '6px', 
-                              background: 'var(--surface-card)',
-                              border: '1px solid var(--border-hairline-strong)', 
-                              display: 'flex', 
-                              alignItems: 'center', 
-                              justifyContent: 'center',
-                              fontWeight: 700,
-                              fontFamily: 'Geist Mono, monospace',
-                              fontSize: '13px',
-                              color: 'var(--text-primary)'
-                            }}
-                          >
+                          <div className="friend-avatar">
                             {initials}
                           </div>
-                          {/* Minimalist Presence Dot: Green glow when online, subtle slate when offline */}
                           <span 
                             style={{
                               position: 'absolute',
@@ -765,39 +735,44 @@ export function Chat() {
                               width: '9px',
                               height: '9px',
                               borderRadius: '50%',
-                              backgroundColor: f.isOnline ? 'var(--color-success)' : '#64748b',
+                              backgroundColor: f.isOnline ? 'var(--color-success)' : '#94a3b8',
                               border: '1.5px solid var(--surface-card)'
-                            }}
+                            }} 
                           />
                         </div>
 
-                        <div style={{ paddingLeft: '10px' }}>
-                          <div className="flex items-center gap-2">
-                            <span style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--text-primary)' }}>{f.name}</span>
-                            <span style={{ fontSize: '11px', fontFamily: 'Geist Mono, monospace', color: 'var(--text-secondary)' }}>{f.username}</span>
+                        <div className="friend-card-info">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="friend-name">{displayName}</span>
+                            {showHandle && (
+                              <span className="friend-handle">@{f.username}</span>
+                            )}
                           </div>
-                          <div style={{ fontSize: '11px', color: 'var(--text-secondary)', fontFamily: 'Geist Mono, monospace', marginTop: '1px' }}>
-                            {f.role}
+                          <div className="friend-meta">
+                            <span style={{ color: f.isOnline ? 'var(--color-success)' : 'var(--text-placeholder)' }}>
+                              {f.isOnline ? '● Online' : '○ Offline'}
+                            </span>
+                            {f.role && <span> • {f.role}</span>}
                           </div>
                         </div>
                       </div>
 
-                      {/* Right: Actions */}
-                      <div className="flex items-center gap-2">
+                      <div className="friend-card-actions">
                         <button 
-                          className="btn-primary" 
-                          style={{ padding: '0 12px', height: '32px', fontSize: '12px', gap: '5px' }} 
+                          className="btn-primary friend-action-btn" 
                           onClick={() => handleStartChat(f)}
+                          title={`Kirim pesan ke ${displayName}`}
                         >
-                          <FontAwesomeIcon icon={faCommentDots} style={{ fontSize: '12px' }} /> Chat
+                          <FontAwesomeIcon icon={faCommentDots} style={{ fontSize: '12px' }} /> 
+                          <span>Chat</span>
                         </button>
                         <button 
-                          className="btn" 
-                          style={{ padding: '0 12px', height: '32px', fontSize: '12px', gap: '5px' }} 
+                          className="btn friend-action-btn" 
                           onClick={() => navigate('/meeting')}
                           title="Ajak ke Focus Room"
                         >
-                          <FontAwesomeIcon icon={faVideo} style={{ fontSize: '12px' }} /> Focus Room
+                          <FontAwesomeIcon icon={faVideo} style={{ fontSize: '12px', color: 'var(--accent-primary)' }} /> 
+                          <span>Focus Room</span>
                         </button>
                       </div>
                     </div>
@@ -807,59 +782,21 @@ export function Chat() {
                 {sentFriendRequests.map(req => {
                   const initials = (req.receiver_username || '?').substring(0, 2).toUpperCase();
                   return (
-                    <div 
-                      key={`sent-${req.id}`} 
-                      style={{ 
-                        padding: '12px 14px', 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        justifyContent: 'space-between',
-                        gap: '12px',
-                        flexWrap: 'wrap',
-                        background: 'var(--surface-input)',
-                        border: '1px solid var(--border-hairline)',
-                        borderRadius: '4px',
-                        opacity: 0.7
-                      }}
-                    >
-                      <div className="flex items-center gap-3" style={{ minWidth: '200px' }}>
-                        <div style={{ position: 'relative' }}>
-                          <div 
-                            style={{ 
-                              width: '38px', 
-                              height: '38px', 
-                              borderRadius: '4px', 
-                              background: 'var(--surface-card)',
-                              border: '1px solid var(--border-hairline-strong)',
-                              display: 'flex', 
-                              alignItems: 'center', 
-                              justifyContent: 'center',
-                              fontWeight: 600,
-                              fontFamily: 'Geist Mono, monospace',
-                              fontSize: '13px',
-                              color: 'var(--text-secondary)'
-                            }}
-                          >
-                            {initials}
-                          </div>
+                    <div key={`sent-${req.id}`} className="friend-card" style={{ opacity: 0.75 }}>
+                      <div className="friend-card-left">
+                        <div className="friend-avatar" style={{ color: 'var(--text-secondary)' }}>
+                          {initials}
                         </div>
-
-                        <div style={{ paddingLeft: '10px' }}>
-                          <div className="flex items-center gap-2">
-                            <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-secondary)' }}>{req.receiver_username}</span>
-                          </div>
-                          <div className="flex items-center gap-2 mt-0.5">
-                            <span style={{ fontSize: '11px', color: 'var(--accent-primary)', fontFamily: 'Geist Mono, monospace' }}>
-                              Menunggu Persetujuan...
-                            </span>
-                          </div>
+                        <div className="friend-card-info">
+                          <span className="friend-name">@{req.receiver_username}</span>
+                          <span className="friend-meta" style={{ color: 'var(--accent-primary)' }}>
+                            <FontAwesomeIcon icon={faClock} style={{ fontSize: '10px' }} /> Menunggu persetujuan...
+                          </span>
                         </div>
                       </div>
                     </div>
                   );
                 })}
-
-
               </div>
             </div>
           </div>
@@ -941,6 +878,8 @@ export function Chat() {
                 </div>
                 <input 
                   type="text"
+                  id="lobbySearch"
+                  name="lobbySearch"
                   className="chat-lobby-search-input"
                   placeholder="Cari kontak obrolan..."
                   value={lobbySearch}
@@ -1006,53 +945,55 @@ export function Chat() {
               {currentFriendInChat ? (
                 <>
                   <div className="chat-room-header">
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2.5" style={{ minWidth: 0, flex: 1 }}>
                       {/* Mobile Back Button */}
                       <button 
-                        className="btn"
-                        style={{ height: '30px', padding: '0 8px', fontSize: '11px', gap: '4px' }}
+                        className="btn chat-room-back-btn"
                         onClick={() => setSelectedFriend(null)}
-                        title="Kembali ke Lobby"
+                        title="Kembali ke Daftar Obrolan"
+                        aria-label="Kembali ke Daftar Obrolan"
                       >
-                        <FontAwesomeIcon icon={faArrowLeft} style={{ fontSize: '10px' }} />
-                        <span>Lobby</span>
+                        <FontAwesomeIcon icon={faArrowLeft} style={{ fontSize: '11px' }} />
                       </button>
 
                       <div style={{ position: 'relative', flexShrink: 0 }}>
-                        <div className="chat-lobby-avatar" style={{ width: '34px', height: '34px', fontSize: '12px' }}>
-                          {(currentFriendInChat.name || 'U').substring(0, 2).toUpperCase()}
+                        <div className="chat-lobby-avatar" style={{ width: '36px', height: '36px', fontSize: '12px' }}>
+                          {(currentFriendInChat.name || currentFriendInChat.username || 'U').substring(0, 2).toUpperCase()}
                         </div>
                         <span className={`chat-lobby-dot ${currentFriendInChat.isOnline ? 'online' : 'offline'}`} />
                       </div>
 
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--text-primary)' }}>
-                            {currentFriendInChat.name}
+                      <div style={{ minWidth: 0, flex: 1 }}>
+                        <div className="flex items-center gap-1.5" style={{ minWidth: 0 }}>
+                          <span style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {currentFriendInChat.name || currentFriendInChat.username}
                           </span>
-                          <span style={{ fontSize: '11px', fontFamily: 'Geist Mono, monospace', color: 'var(--text-secondary)' }}>
-                            @{currentFriendInChat.username}
-                          </span>
+                          {currentFriendInChat.name && currentFriendInChat.username && currentFriendInChat.name.toLowerCase() !== currentFriendInChat.username.toLowerCase() && (
+                            <span style={{ fontSize: '11px', fontFamily: 'Geist Mono, monospace', color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              @{currentFriendInChat.username}
+                            </span>
+                          )}
                         </div>
-                        <span style={{ fontSize: '10.5px', color: currentFriendInChat.isOnline ? 'var(--color-success)' : 'var(--text-placeholder)', fontFamily: 'Geist Mono, monospace' }}>
-                          {currentFriendInChat.isOnline ? '● Online' : '○ Offline'}
+                        <span style={{ fontSize: '10.5px', color: currentFriendInChat.isOnline ? 'var(--color-success)' : 'var(--text-placeholder)', fontFamily: 'Geist Mono, monospace', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: currentFriendInChat.isOnline ? 'var(--color-success)' : '#94a3b8', display: 'inline-block' }} />
+                          <span>{currentFriendInChat.isOnline ? 'Online' : 'Offline'}</span>
                         </span>
                       </div>
                     </div>
 
                     <button 
-                      className="btn" 
-                      style={{ padding: '0 12px', height: '32px', fontSize: '12px', gap: '6px', borderRadius: '6px' }} 
+                      className="btn chat-action-btn" 
                       onClick={() => navigate('/meeting')}
                       title="Mulai Video Call"
+                      aria-label="Mulai Video Call"
                     >
                       <FontAwesomeIcon icon={faVideo} style={{ fontSize: '12px', color: 'var(--accent-primary)' }} />
-                      <span>Video Call</span>
+                      <span className="chat-action-label">Video Call</span>
                     </button>
                   </div>
 
                   {/* Message Feed */}
-                  <div className="chat-room-feed">
+                  <div className="chat-room-feed" ref={chatFeedRef}>
                     {activeConversationMessages.length === 0 ? (
                       <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--text-placeholder)', fontSize: '12px', fontFamily: 'Geist Mono, monospace' }}>
                         Belum ada pesan dengan @{currentFriendUsername}. Mulai percakapan di bawah.
@@ -1074,15 +1015,15 @@ export function Chat() {
                             <div 
                               style={{ 
                                 width: 'fit-content',
-                                maxWidth: '75%', 
-                                padding: '9px 14px', 
-                                borderRadius: isMe ? '14px 14px 2px 14px' : '14px 14px 14px 2px',
+                                maxWidth: '82%', 
+                                padding: '9px 13px', 
+                                borderRadius: isMe ? '15px 15px 3px 15px' : '15px 15px 15px 3px',
                                 backgroundColor: isMe ? 'var(--cta-primary-bg)' : 'var(--surface-input)',
                                 color: isMe ? 'var(--cta-primary-text)' : 'var(--text-primary)',
                                 border: isMe ? 'none' : '1px solid var(--border-hairline)',
                                 fontWeight: 450,
-                                fontSize: '13px',
-                                lineHeight: 1.5,
+                                fontSize: '13.5px',
+                                lineHeight: 1.45,
                                 wordBreak: 'break-word',
                                 boxShadow: isMe ? '0 1px 4px rgba(0,0,0,0.12)' : 'none'
                               }}
@@ -1093,7 +1034,7 @@ export function Chat() {
                               fontSize: '10px', 
                               fontFamily: 'Geist Mono, monospace', 
                               color: 'var(--text-placeholder)', 
-                              marginTop: '3px', 
+                              marginTop: '2px', 
                               padding: '0 4px',
                               alignSelf: isMe ? 'flex-end' : 'flex-start'
                             }}>
@@ -1110,18 +1051,20 @@ export function Chat() {
                   <form onSubmit={handleSendMessage} className="chat-room-form">
                     <input 
                       type="text" 
-                      className="input-field flex-1" 
+                      id="chatMessage"
+                      name="chatMessage"
+                      className="chat-room-input" 
                       placeholder={`Kirim pesan ke @${currentFriendInChat?.username || 'rekan'}...`}
                       value={newMessage} 
                       onChange={e => setNewMessage(e.target.value)} 
-                      style={{ height: '40px', fontSize: '13px', borderRadius: '6px' }}
+                      autoComplete="off"
                     />
                     <button 
                       type="submit" 
-                      className="btn-primary" 
+                      className="chat-send-btn" 
                       disabled={!newMessage.trim() || isSending}
-                      style={{ width: '40px', height: '40px', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, borderRadius: '6px' }}
                       title="Kirim pesan (Enter)"
+                      aria-label="Kirim pesan"
                     >
                       <FontAwesomeIcon icon={faPaperPlane} style={{ fontSize: '13px' }} />
                     </button>

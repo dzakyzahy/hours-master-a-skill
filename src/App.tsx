@@ -381,7 +381,7 @@ export default function App() {
   }, [theme]);
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', width: '100%', position: 'relative', overflow: 'hidden' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', width: '100%', position: 'relative', overflow: 'hidden' }}>
       <OfflineBanner />
       <PasswordRecoveryModal />
       <HashRouter>

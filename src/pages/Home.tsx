@@ -183,30 +183,66 @@ export function Home() {
           <ThemeSwitcher />
         </div>
 
-        {/* Mobile-Only Header Quick Toggles */}
+        {/* Mobile-Only Clean Header Actions */}
         <div className="mobile-only-header flex items-center gap-2">
-          <button className="btn-icon" onClick={() => setIsApiKeyModalOpen(true)} title="API Key">
-            <FontAwesomeIcon icon={faKey} style={{ color: geminiApiKey ? '#22c55e' : 'var(--text-secondary)', fontSize: '13px' }} />
+          <ThemeSwitcher iconOnly={true} />
+
+          <button 
+            type="button"
+            className="btn-icon" 
+            onClick={() => navigate('/profile')} 
+            title={`Profil Saya (${username || 'user'})`}
+            style={{ 
+              position: 'relative', 
+              fontWeight: 700, 
+              fontSize: '11px', 
+              fontFamily: 'Geist Mono, monospace',
+              color: 'var(--text-primary)',
+              width: '36px',
+              height: '36px',
+              borderRadius: '50%'
+            }}
+          >
+            {(username || 'DK').substring(0, 2).toUpperCase()}
+            <span 
+              style={{ 
+                position: 'absolute', 
+                bottom: '3px', 
+                right: '3px', 
+                width: '7px', 
+                height: '7px', 
+                borderRadius: '50%', 
+                backgroundColor: 'var(--color-success)',
+                border: '1.5px solid var(--surface-card)'
+              }} 
+            />
           </button>
-          <ThemeSwitcher compact={true} />
-          <button className="btn-icon" onClick={() => setShowRecycleBin(!showRecycleBin)} title="Recycle Bin">
-            <FontAwesomeIcon icon={faTrashCan} style={{ fontSize: '13px' }} />
+
+          <button 
+            type="button"
+            className="btn-icon" 
+            onClick={async () => {
+              await logout();
+              navigate('/login');
+            }} 
+            title="Keluar dari Akun"
+            style={{ 
+              width: '36px', 
+              height: '36px', 
+              borderRadius: '50%',
+              color: 'var(--color-danger)',
+              background: 'rgba(239, 68, 68, 0.08)',
+              border: '1px solid rgba(239, 68, 68, 0.2)'
+            }}
+          >
+            <FontAwesomeIcon icon={faRightFromBracket} style={{ fontSize: '13px' }} />
           </button>
         </div>
       </header>
 
       {/* Live Friends Online Bar */}
       <div 
-        className="glass-panel mb-6" 
-        style={{ 
-          padding: '14px 20px', 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'space-between',
-          gap: '16px',
-          flexWrap: 'wrap',
-          borderRadius: '12px'
-        }}
+        className="glass-panel team-strip-panel mb-6" 
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <FontAwesomeIcon icon={faUsers} style={{ color: 'var(--accent-primary)', fontSize: '13px' }} />
@@ -303,10 +339,8 @@ export function Home() {
         </div>
       ) : activeProjects.length === 0 ? (
         <div 
-          className="glass-panel" 
+          className="glass-panel empty-projects-panel" 
           style={{ 
-            marginTop: '32px', 
-            padding: '48px 24px', 
             textAlign: 'center', 
             display: 'flex', 
             flexDirection: 'column', 
@@ -413,9 +447,8 @@ export function Home() {
           <FontAwesomeIcon icon={faVideo} style={{ fontSize: '17px' }} />
           <span>Focus</span>
         </button>
-        <button className="nav-item" onClick={() => setIsModalOpen(true)} title="New Project">
-          <FontAwesomeIcon icon={faPlus} style={{ fontSize: '19px', color: 'var(--accent-primary)' }} />
-          <span>Add</span>
+        <button className="nav-item-fab" onClick={() => setIsModalOpen(true)} title="Tambah Proyek Baru" aria-label="Tambah Proyek Baru">
+          <FontAwesomeIcon icon={faPlus} style={{ fontSize: '18px' }} />
         </button>
         <button className="nav-item" onClick={() => navigate('/chat')} title="Collaboration & Chat" style={{ position: 'relative' }}>
           <FontAwesomeIcon icon={faCommentDots} className="text-purple" style={{ fontSize: '18px' }} />

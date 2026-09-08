@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useStore } from '../store';
+import { setScreenKeepAwake, triggerHaptic } from '../utils/native';
 
 export function formatTimerSeconds(totalSecs: number): string {
   const h = Math.floor(totalSecs / 3600);
@@ -19,6 +20,18 @@ export function useGlobalTimer() {
   } = useStore();
 
   const [currentTime, setCurrentTime] = useState(() => Date.now());
+
+  useEffect(() => {
+    if (activeTimer) {
+      setScreenKeepAwake(true);
+      triggerHaptic();
+    } else {
+      setScreenKeepAwake(false);
+    }
+    return () => {
+      setScreenKeepAwake(false);
+    };
+  }, [activeTimer]);
 
   useEffect(() => {
     if (!activeTimer || !timerStartedAt) {

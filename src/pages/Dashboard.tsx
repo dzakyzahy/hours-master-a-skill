@@ -139,6 +139,8 @@ export function Dashboard() {
                 <div className="flex gap-2 items-center">
                   <input 
                     type="number" 
+                    id="editTotalInput"
+                    name="editTotalInput"
                     step="0.1" 
                     className="input-field" 
                     value={editTotalInput} 
@@ -238,6 +240,8 @@ export function Dashboard() {
             <div className="flex gap-2" style={{ width: '100%', alignItems: 'center' }}>
               <input 
                 type="number" 
+                id="manualHoursInput"
+                name="manualHoursInput"
                 step="0.1" 
                 min="0.1"
                 className="input-field" 

@@ -5,6 +5,10 @@ import { defineConfig } from 'vite';
 export default defineConfig({
   base: process.env.GITHUB_ACTIONS ? '/hours-master-a-skill/' : './',
   plugins: [react()],
+  server: {
+    host: '0.0.0.0',
+    port: 5173
+  },
   build: {
     chunkSizeWarningLimit: 600,
     rollupOptions: {

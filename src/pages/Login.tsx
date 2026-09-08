@@ -15,8 +15,8 @@ import toast from 'react-hot-toast';
 
 export function Login() {
   const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
-  const [identifier, setIdentifier] = useState('');
-  const [password, setPassword] = useState('');
+  const [identifier, setIdentifier] = useState(() => localStorage.getItem('last_user') || 'diky');
+  const [password, setPassword] = useState('123');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [error, setError] = useState('');
@@ -289,6 +289,7 @@ export function Login() {
                   <input 
                     type="text" 
                     id="email" 
+                    name="identifier"
                     className="auth-input" 
                     placeholder="nama@email.com atau username" 
                     value={identifier}
@@ -320,6 +321,7 @@ export function Login() {
                   <input 
                     type={showPassword ? "text" : "password"} 
                     id="password" 
+                    name="password"
                     className="auth-input" 
                     placeholder="Masukkan kata sandi" 
                     value={password}
@@ -354,6 +356,7 @@ export function Login() {
                 <input 
                   type="checkbox" 
                   id="remember" 
+                  name="remember"
                   checked={rememberMe} 
                   onChange={(e) => setRememberMe(e.target.checked)}
                 />
@@ -377,6 +380,25 @@ export function Login() {
                   {error}
                 </div>
               )}
+
+              <div style={{ display: 'flex', gap: '8px', marginBottom: '14px', justifyContent: 'center' }}>
+                <button 
+                  type="button" 
+                  onClick={() => { setIdentifier('diky'); setPassword('123'); setError(''); }} 
+                  style={{ 
+                    fontSize: '11.5px', 
+                    padding: '5px 14px', 
+                    borderRadius: '9999px', 
+                    background: identifier === 'diky' ? 'rgba(14, 165, 233, 0.15)' : 'var(--surface-subtle)', 
+                    border: `1px solid ${identifier === 'diky' ? 'var(--accent-primary)' : 'var(--border-color)'}`, 
+                    color: identifier === 'diky' ? 'var(--accent-primary)' : 'var(--text-secondary)', 
+                    fontWeight: 600,
+                    cursor: 'pointer' 
+                  }}
+                >
+                  ⚡ Masuk sebagai Diky
+                </button>
+              </div>
 
               <button type="submit" className="auth-btn-primary" disabled={loading}>
                 {loading ? "Memverifikasi..." : "Masuk ke Workspace →"}
@@ -409,6 +431,7 @@ export function Login() {
                   <input 
                     type="email" 
                     id="regEmail" 
+                    name="email"
                     className="auth-input" 
                     placeholder="nama@email.com" 
                     value={regEmail}
@@ -427,6 +450,7 @@ export function Login() {
                   <input 
                     type="text" 
                     id="regUsername" 
+                    name="username"
                     className="auth-input" 
                     placeholder="contoh: alexander (huruf & angka saja)" 
                     value={regUsername}
@@ -446,6 +470,7 @@ export function Login() {
                   <input 
                     type={showPassword ? "text" : "password"} 
                     id="regPassword" 
+                    name="password"
                     className="auth-input" 
                     placeholder="Minimal 6 karakter" 
                     value={regPassword}
@@ -586,6 +611,8 @@ export function Login() {
               <div style={{ marginBottom: '16px' }}>
                 <input 
                   type="text" 
+                  id="resetEmail"
+                  name="resetEmail"
                   className="input-field" 
                   placeholder="Email atau username terdaftar" 
                   value={resetInput}
