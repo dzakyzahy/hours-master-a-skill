@@ -32,9 +32,25 @@ export const buyTokens = async (packageId: string) => {
     
     const { customerInfo } = await Purchases.purchasePackage({ aPackage: pkg });
     
-    // Check if entitlement 'tokens' is active
+    // =======================================================================
+    // 🔒 KEAMANAN PEMBAYARAN (SECURITY ENFORCEMENT)
+    // =======================================================================
+    // PENTING: Jangan pernah menambahkan saldo atau membuka fitur premium
+    // secara langsung melalui request dari client (frontend) ke database!
+    // Client-side bisa di-hack/dimanipulasi (misal: modifikasi respon API).
+    // 
+    // CARA AMAN (REVENUECAT WEBHOOKS):
+    // 1. RevenueCat memverifikasi resi pembayaran ke Apple/Google secara aman.
+    // 2. RevenueCat mengirimkan WEBHOOK ke backend kita (Supabase Edge Function).
+    // 3. Backend (Edge Function) yang mengupdate database tabel `profiles`
+    //    secara tertutup (tanpa campur tangan client).
+    // 
+    // Cek di bawah ini hanya digunakan untuk memperbarui status UI saja.
+    // =======================================================================
+    
     if (typeof customerInfo.entitlements.active['tokens'] !== "undefined") {
-      // Logic to update Supabase tokens would go here or be handled via RevenueCat webhooks
+      // Pembelian berhasil diverifikasi oleh server RevenueCat.
+      // Tunggu webhook backend mengupdate Supabase, lalu refresh UI.
       return true;
     }
     return false;
