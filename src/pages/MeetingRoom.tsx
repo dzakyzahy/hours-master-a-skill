@@ -190,12 +190,32 @@ export function MeetingRoom() {
     }
   };
 
+  // Resolves production base URL (never returns localhost inside Capacitor mobile)
+  const getProductionBaseUrl = (): string => {
+    if (typeof window !== 'undefined' && window.location.origin) {
+      const origin = window.location.origin;
+      if (
+        !origin.includes('localhost') && 
+        !origin.includes('127.0.0.1') && 
+        !origin.startsWith('file:') && 
+        !origin.startsWith('capacitor:')
+      ) {
+        const pathname = window.location.pathname.replace(/\/$/, '');
+        return `${origin}${pathname}`;
+      }
+    }
+    const envUrl = import.meta.env.VITE_APP_URL as string | undefined;
+    if (envUrl && envUrl.trim()) {
+      return envUrl.trim().replace(/\/$/, '');
+    }
+    return 'https://skillo.app';
+  };
+
   // Copy shareable link helper with robust fallback
   const handleCopyLink = () => {
-    const origin = window.location.origin;
-    const pathname = window.location.pathname.replace(/\/$/, '');
+    const baseUrl = getProductionBaseUrl();
     const query = callType === 'direct' && targetFriend ? `?type=direct&with=${encodeURIComponent(targetFriend)}` : '';
-    const fullUrl = `${origin}${pathname}/#/meeting/${effectiveRoomId}${query}`;
+    const fullUrl = `${baseUrl}/#/meeting/${effectiveRoomId}${query}`;
 
     const fallbackCopy = () => {
       try {
@@ -220,14 +240,26 @@ export function MeetingRoom() {
     }
   };
 
-  // Direct share to WhatsApp / Native Share Sheet
+  // Direct share to WhatsApp / Native Share Sheet with polished professional wording
   const handleShareWhatsApp = async () => {
-    const origin = window.location.origin;
-    const pathname = window.location.pathname.replace(/\/$/, '');
+    const baseUrl = getProductionBaseUrl();
     const query = callType === 'direct' && targetFriend ? `?type=direct&with=${encodeURIComponent(targetFriend)}` : '';
-    const fullUrl = `${origin}${pathname}/#/meeting/${effectiveRoomId}${query}`;
+    const fullUrl = `${baseUrl}/#/meeting/${effectiveRoomId}${query}`;
     const deepLink = `skillo://meeting/${effectiveRoomId}${query}`;
-    const textMsg = `Halo! Yuk gabung ke ruang meet Skillo bersama saya:\n${fullUrl}\n(Buka langsung di aplikasi: ${deepLink})`;
+    const roomTitle = effectiveRoomId.replace(/^focus-|^dm_/, '');
+
+    const textMsg = `🎓 *Undangan Sesi Belajar Skillo*
+
+Halo! Saya mengundang Anda untuk bergabung ke ruang kolaborasi di *Skillo*:
+👉 *Ruang:* ${roomTitle}
+
+*Buka langsung di Aplikasi Skillo:*
+${deepLink}
+
+*Atau buka via Web Browser:*
+${fullUrl}
+
+_Ketuk tautan di atas untuk langsung masuk ke sesi._`;
 
     if (navigator.share) {
       try {
