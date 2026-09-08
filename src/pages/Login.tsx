@@ -15,8 +15,8 @@ import toast from 'react-hot-toast';
 
 export function Login() {
   const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
-  const [identifier, setIdentifier] = useState(() => localStorage.getItem('last_user') || 'diky');
-  const [password, setPassword] = useState('123');
+  const [identifier, setIdentifier] = useState(() => localStorage.getItem('last_user') || '');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [error, setError] = useState('');
@@ -233,9 +233,9 @@ export function Login() {
             style={{ 
               display: 'flex', 
               background: 'var(--surface-input)', 
-              borderRadius: '8px', 
+              borderRadius: '10px', 
               padding: '3px', 
-              margin: '18px 0 24px', 
+              margin: '16px 0 22px', 
               border: '1px solid var(--border-hairline)' 
             }}
           >
@@ -244,10 +244,10 @@ export function Login() {
               onClick={() => { setAuthMode('signin'); setError(''); }}
               style={{
                 flex: 1,
-                padding: '7px 0',
-                fontSize: '12.5px',
+                padding: '9px 0',
+                fontSize: '13px',
                 fontWeight: 600,
-                borderRadius: '6px',
+                borderRadius: '8px',
                 border: 'none',
                 cursor: 'pointer',
                 transition: 'all 0.15s ease',
@@ -263,10 +263,10 @@ export function Login() {
               onClick={() => { setAuthMode('signup'); setError(''); }}
               style={{
                 flex: 1,
-                padding: '7px 0',
-                fontSize: '12.5px',
+                padding: '9px 0',
+                fontSize: '13px',
                 fontWeight: 600,
-                borderRadius: '6px',
+                borderRadius: '8px',
                 border: 'none',
                 cursor: 'pointer',
                 transition: 'all 0.15s ease',
@@ -386,24 +386,7 @@ export function Login() {
                 </div>
               )}
 
-              <div style={{ display: 'flex', gap: '8px', marginBottom: '14px', justifyContent: 'center' }}>
-                <button 
-                  type="button" 
-                  onClick={() => { setIdentifier('diky'); setPassword('123'); setError(''); }} 
-                  style={{ 
-                    fontSize: '11.5px', 
-                    padding: '5px 14px', 
-                    borderRadius: '9999px', 
-                    background: identifier === 'diky' ? 'rgba(14, 165, 233, 0.15)' : 'var(--surface-subtle)', 
-                    border: `1px solid ${identifier === 'diky' ? 'var(--accent-primary)' : 'var(--border-color)'}`, 
-                    color: identifier === 'diky' ? 'var(--accent-primary)' : 'var(--text-secondary)', 
-                    fontWeight: 600,
-                    cursor: 'pointer' 
-                  }}
-                >
-                  ⚡ Masuk sebagai Diky
-                </button>
-              </div>
+
 
               <button type="submit" className="auth-btn-primary" disabled={loading}>
                 {loading ? "Memverifikasi..." : "Masuk ke Workspace →"}
