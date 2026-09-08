@@ -226,67 +226,35 @@ export function MeetingRoom() {
     const userInitials = (username || 'U').substring(0, 2).toUpperCase();
 
     return (
-      <div 
-        className="no-drag"
-        style={{
-          minHeight: '100vh',
-          width: '100vw',
-          backgroundColor: 'var(--bg-canvas)',
-          color: 'var(--text-primary)',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '24px 16px',
-          boxSizing: 'border-box'
-        }}
-      >
+      <div className="meeting-lobby-container no-drag">
         {/* Top Header Navigation */}
-        <header
+        <div
           style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            padding: '12px 20px',
+            width: '100%',
+            maxWidth: '480px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            zIndex: 10,
-            background: 'var(--surface-card)',
-            borderBottom: '1px solid var(--border-hairline)'
+            marginBottom: '16px',
+            flexShrink: 0,
           }}
         >
           <button
             type="button"
             className="btn"
             onClick={() => navigate('/')}
-            style={{ fontSize: '12.5px', padding: '6px 14px', gap: '6px', borderRadius: '8px' }}
+            style={{ fontSize: '12px', padding: '6px 14px', gap: '6px', borderRadius: '8px' }}
           >
-            <FontAwesomeIcon icon={faArrowLeft} style={{ fontSize: '12px' }} />
+            <FontAwesomeIcon icon={faArrowLeft} style={{ fontSize: '11px' }} />
             <span>Kembali ke Beranda</span>
           </button>
           <ThemeSwitcher compact={true} />
-        </header>
+        </div>
 
         {/* Center Lobby Card */}
-        <div
-          style={{
-            width: '100%',
-            maxWidth: '520px',
-            backgroundColor: 'var(--surface-card)',
-            borderRadius: '20px',
-            border: '1px solid var(--border-hairline-strong)',
-            padding: '28px 24px',
-            boxShadow: 'var(--shadow-lg)',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            marginTop: '56px'
-          }}
-        >
+        <div className="meeting-lobby-card">
           {/* Room Header Info */}
-          <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+          <div style={{ textAlign: 'center', marginBottom: '18px' }}>
             <span
               style={{
                 display: 'inline-flex',
@@ -298,15 +266,16 @@ export function MeetingRoom() {
                 letterSpacing: '0.08em',
                 color: 'var(--accent-primary)',
                 background: 'var(--surface-input)',
-                padding: '3px 10px',
+                padding: '4px 12px',
                 borderRadius: '9999px',
-                marginBottom: '8px'
+                marginBottom: '10px',
+                border: '1px solid var(--border-hairline-strong)',
               }}
             >
               <FontAwesomeIcon icon={faUsers} style={{ fontSize: '10px' }} />
               Mastery Focus Room
             </span>
-            <h2 style={{ margin: '0 0 6px 0', fontSize: '20px', fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--text-primary)' }}>
+            <h2 style={{ margin: '0 0 6px 0', fontSize: '19px', fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--text-primary)' }}>
               {roomId ? `Ruang: ${roomId}` : 'Ruang Kolaborasi Belajar'}
             </h2>
             <p style={{ margin: 0, fontSize: '12.5px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
@@ -327,7 +296,7 @@ export function MeetingRoom() {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              marginBottom: '20px'
+              marginBottom: '14px',
             }}
           >
             {localStream && !isVideoOff ? (
@@ -340,89 +309,94 @@ export function MeetingRoom() {
                   width: '100%',
                   height: '100%',
                   objectFit: 'cover',
-                  transform: 'scaleX(-1)'
+                  transform: 'scaleX(-1)',
                 }}
               />
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
                 <div
                   style={{
-                    width: '64px',
-                    height: '64px',
+                    width: '56px',
+                    height: '56px',
                     borderRadius: '50%',
                     backgroundColor: 'var(--surface-card)',
                     border: '1.5px solid var(--border-hairline-strong)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    fontSize: '20px',
+                    fontSize: '18px',
                     fontWeight: 700,
                     fontFamily: 'Geist Mono, monospace',
-                    color: 'var(--text-primary)'
+                    color: 'var(--text-primary)',
                   }}
                 >
                   {userInitials}
                 </div>
-                <span style={{ fontSize: '11.5px', color: 'var(--text-placeholder)', fontFamily: 'Geist, sans-serif' }}>
+                <span style={{ fontSize: '11px', color: 'var(--text-placeholder)', fontWeight: 500 }}>
                   Kamera Dinonaktifkan
                 </span>
               </div>
             )}
+          </div>
 
-            {/* Quick In-Preview Media Toggles */}
-            <div
+          {/* Dedicated Non-Colliding Media Toggles */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '10px',
+              width: '100%',
+              marginBottom: '20px',
+            }}
+          >
+            <button
+              type="button"
+              className="btn"
+              onClick={handleToggleMic}
               style={{
-                position: 'absolute',
-                bottom: '12px',
-                display: 'flex',
+                flex: 1,
+                height: '42px',
+                borderRadius: '10px',
+                fontSize: '12px',
+                fontWeight: 500,
+                gap: '8px',
+                backgroundColor: isMuted ? 'rgba(239, 68, 68, 0.12)' : 'var(--surface-input)',
+                borderColor: isMuted ? 'var(--color-danger)' : 'var(--border-hairline-strong)',
+                color: isMuted ? 'var(--color-danger)' : 'var(--text-primary)',
+                display: 'inline-flex',
                 alignItems: 'center',
-                gap: '10px',
-                backgroundColor: 'rgba(0, 0, 0, 0.65)',
-                backdropFilter: 'blur(8px)',
-                padding: '6px 12px',
-                borderRadius: '9999px'
+                justifyContent: 'center',
               }}
+              title={isMuted ? 'Aktifkan Mikrofon' : 'Bisukan Mikrofon'}
             >
-              <button
-                type="button"
-                onClick={handleToggleMic}
-                style={{
-                  width: '36px',
-                  height: '36px',
-                  borderRadius: '50%',
-                  backgroundColor: isMuted ? '#ef4444' : 'rgba(255, 255, 255, 0.2)',
-                  color: '#ffffff',
-                  border: 'none',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer'
-                }}
-                title={isMuted ? "Aktifkan Mikrofon" : "Bisukan Mikrofon"}
-              >
-                <FontAwesomeIcon icon={isMuted ? faMicrophoneSlash : faMicrophone} style={{ fontSize: '13px' }} />
-              </button>
+              <FontAwesomeIcon icon={isMuted ? faMicrophoneSlash : faMicrophone} style={{ fontSize: '13px' }} />
+              <span>{isMuted ? 'Mikrofon Bisu' : 'Mikrofon Nyala'}</span>
+            </button>
 
-              <button
-                type="button"
-                onClick={handleToggleVideo}
-                style={{
-                  width: '36px',
-                  height: '36px',
-                  borderRadius: '50%',
-                  backgroundColor: isVideoOff ? '#ef4444' : 'rgba(255, 255, 255, 0.2)',
-                  color: '#ffffff',
-                  border: 'none',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer'
-                }}
-                title={isVideoOff ? "Nyalakan Kamera" : "Matikan Kamera"}
-              >
-                <FontAwesomeIcon icon={isVideoOff ? faVideoSlash : faVideo} style={{ fontSize: '13px' }} />
-              </button>
-            </div>
+            <button
+              type="button"
+              className="btn"
+              onClick={handleToggleVideo}
+              style={{
+                flex: 1,
+                height: '42px',
+                borderRadius: '10px',
+                fontSize: '12px',
+                fontWeight: 500,
+                gap: '8px',
+                backgroundColor: isVideoOff ? 'rgba(239, 68, 68, 0.12)' : 'var(--surface-input)',
+                borderColor: isVideoOff ? 'var(--color-danger)' : 'var(--border-hairline-strong)',
+                color: isVideoOff ? 'var(--color-danger)' : 'var(--text-primary)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+              title={isVideoOff ? 'Nyalakan Kamera' : 'Matikan Kamera'}
+            >
+              <FontAwesomeIcon icon={isVideoOff ? faVideoSlash : faVideo} style={{ fontSize: '13px' }} />
+              <span>{isVideoOff ? 'Kamera Mati' : 'Kamera Nyala'}</span>
+            </button>
           </div>
 
           {/* Action Buttons */}
@@ -440,7 +414,7 @@ export function MeetingRoom() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: '8px'
+                gap: '8px',
               }}
             >
               <FontAwesomeIcon icon={faVideo} style={{ fontSize: '14px' }} />
@@ -453,17 +427,17 @@ export function MeetingRoom() {
               onClick={handleCopyLink}
               style={{
                 height: '40px',
-                fontSize: '12.5px',
+                fontSize: '12px',
                 borderRadius: '10px',
                 width: '100%',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '8px',
-                color: 'var(--text-secondary)'
+                color: 'var(--text-secondary)',
               }}
             >
-              <FontAwesomeIcon icon={faCopy} style={{ fontSize: '12px' }} />
+              <FontAwesomeIcon icon={faCopy} style={{ fontSize: '11px' }} />
               <span>Salin Link Undangan Ruang</span>
             </button>
           </div>
@@ -482,7 +456,7 @@ export function MeetingRoom() {
       <div 
         className="no-drag"
         style={{
-          height: '100vh',
+          height: '100dvh',
           width: '100vw',
           backgroundColor: 'var(--bg-canvas)',
           color: 'var(--text-primary)',
@@ -490,8 +464,8 @@ export function MeetingRoom() {
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: '40px 20px',
-          boxSizing: 'border-box'
+          padding: 'max(24px, env(safe-area-inset-top, 0px)) 20px max(24px, env(safe-area-inset-bottom, 0px)) 20px',
+          boxSizing: 'border-box',
         }}
       >
         {/* Top bar info */}
@@ -517,7 +491,7 @@ export function MeetingRoom() {
                 fontWeight: 700,
                 fontFamily: 'Geist Mono, monospace',
                 color: 'var(--text-primary)',
-                boxShadow: '0 0 32px rgba(14, 165, 233, 0.35)'
+                boxShadow: '0 0 32px rgba(14, 165, 233, 0.35)',
               }}
             >
               {friendInitials}
@@ -532,7 +506,7 @@ export function MeetingRoom() {
                 borderRadius: '50%',
                 border: '2px solid var(--accent-primary)',
                 animation: 'ping 2s cubic-bezier(0, 0, 0.2, 1) infinite',
-                opacity: 0.75
+                opacity: 0.75,
               }}
             />
           </div>
@@ -554,7 +528,7 @@ export function MeetingRoom() {
               fontSize: '11.5px',
               padding: '6px 14px',
               borderRadius: '8px',
-              gap: '6px'
+              gap: '6px',
             }}
           >
             <FontAwesomeIcon icon={faCopy} style={{ fontSize: '11px' }} />
@@ -578,7 +552,7 @@ export function MeetingRoom() {
               alignItems: 'center',
               justifyContent: 'center',
               cursor: 'pointer',
-              boxShadow: '0 8px 24px rgba(239, 68, 68, 0.45)'
+              boxShadow: '0 8px 24px rgba(239, 68, 68, 0.45)',
             }}
             title="Batalkan Panggilan"
           >
@@ -601,7 +575,7 @@ export function MeetingRoom() {
         position: 'relative',
         display: 'flex',
         flexDirection: 'column',
-        height: '100vh',
+        height: '100dvh',
         width: '100vw',
         backgroundColor: 'var(--bg-canvas)',
         color: 'var(--text-primary)',
@@ -610,80 +584,80 @@ export function MeetingRoom() {
       className="no-drag"
     >
       {/* Top Header Bar */}
-      <header
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          padding: '12px 20px',
-          borderBottom: '1px solid var(--border-hairline)',
-          backgroundColor: 'var(--surface-card)',
-          backdropFilter: 'blur(16px)',
-          zIndex: 20,
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
+      <header className="meeting-header">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0, flex: 1 }}>
           <button 
             type="button"
             className="btn" 
             onClick={handleLeave} 
-            title={callType === 'direct' ? "Tinggalkan Panggilan" : "Keluar Ruangan"} 
+            title={callType === 'direct' ? 'Tinggalkan Panggilan' : 'Keluar Ruangan'} 
             style={{ 
-              padding: '6px 12px', 
+              padding: '6px 10px', 
+              minWidth: '40px',
+              height: '36px',
               borderRadius: '8px', 
               background: 'var(--surface-input)', 
               border: '1px solid var(--border-hairline-strong)', 
               color: 'var(--text-primary)', 
               fontSize: '12px',
               fontWeight: 500,
-              gap: '6px' 
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
+              flexShrink: 0,
             }}
           >
-            <FontAwesomeIcon icon={faArrowLeft} style={{ fontSize: '11px' }} /> Keluar
+            <FontAwesomeIcon icon={faArrowLeft} style={{ fontSize: '11px' }} />
+            <span className="meeting-btn-text">Keluar</span>
           </button>
 
-          <div style={{ minWidth: 0 }}>
-            <h2 style={{ margin: 0, fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.01em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {callType === 'direct' ? `Panggilan Privat • @${targetFriend || 'Rekan'}` : 'Mastery Focus Room'}
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <h2 style={{ margin: 0, fontSize: '13.5px', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.01em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {callType === 'direct' ? `@${targetFriend || 'Rekan'}` : 'Mastery Focus Room'}
             </h2>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.6875rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: 'var(--color-success)', fontWeight: 500 }}>
-                <FontAwesomeIcon icon={faWifi} style={{ fontSize: '10px' }} /> P2P Live
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.6875rem', color: 'var(--text-secondary)', marginTop: '2px', flexWrap: 'nowrap', overflow: 'hidden' }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: 'var(--color-success)', fontWeight: 500, whiteSpace: 'nowrap' }}>
+                <FontAwesomeIcon icon={faWifi} style={{ fontSize: '9px' }} /> Live
               </span>
               <span>•</span>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: 'var(--accent-primary)', fontWeight: 500 }}>
-                <FontAwesomeIcon icon={faShieldHalved} style={{ fontSize: '10px' }} /> E2E Encrypted
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: 'var(--accent-primary)', fontWeight: 500, whiteSpace: 'nowrap' }}>
+                <FontAwesomeIcon icon={faShieldHalved} style={{ fontSize: '9px' }} /> E2E
               </span>
               {callType === 'direct' && remoteParticipants.length > 0 && (
                 <>
                   <span>•</span>
-                  <span style={{ color: 'var(--color-success)', fontWeight: 500 }}>Terhubung</span>
+                  <span style={{ color: 'var(--color-success)', fontWeight: 500, whiteSpace: 'nowrap' }}>Terhubung</span>
                 </>
               )}
             </div>
           </div>
         </div>
 
-        {/* Status Indicator, Share Link & Theme Switcher */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        {/* Share Link & Theme Switcher */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
           <button 
             type="button"
             className="btn" 
             style={{ 
-              padding: '6px 12px', 
+              height: '36px',
+              padding: '6px 10px', 
               fontSize: '11.5px', 
               fontWeight: 500, 
               gap: '6px', 
               borderRadius: '8px', 
               background: 'var(--surface-input)', 
               border: '1px solid var(--border-hairline-strong)', 
-              color: 'var(--text-primary)' 
+              color: 'var(--text-primary)',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
             }}
             onClick={handleCopyLink}
             title="Bagikan Tautan Ruang"
           >
             <FontAwesomeIcon icon={faCopy} style={{ fontSize: '11px' }} />
-            <span style={{ display: 'inline-block' }}>Bagikan Link</span>
+            <span className="meeting-btn-text">Bagikan Link</span>
           </button>
           <ThemeSwitcher compact={true} />
         </div>
@@ -693,13 +667,14 @@ export function MeetingRoom() {
       <main
         style={{
           flex: 1,
-          padding: '16px',
+          padding: '12px',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
           overflow: 'hidden',
           position: 'relative',
+          minHeight: 0,
         }}
       >
         {sharingParticipant ? (
@@ -710,7 +685,7 @@ export function MeetingRoom() {
               height: '100%',
               display: 'grid',
               gridTemplateColumns: window.innerWidth > 768 ? 'minmax(0, 1fr) 260px' : '1fr',
-              gap: '16px',
+              gap: '12px',
             }}
           >
             <div style={{ height: '100%', minHeight: 0 }}>
@@ -729,7 +704,7 @@ export function MeetingRoom() {
               {displayParticipants
                 .filter(p => p.id !== sharingParticipant.id)
                 .map(p => (
-                  <div key={p.id} style={{ height: '160px', flexShrink: 0 }}>
+                  <div key={p.id} style={{ height: '140px', flexShrink: 0 }}>
                     <VideoTile participant={p} />
                   </div>
                 ))}
@@ -738,26 +713,13 @@ export function MeetingRoom() {
         ) : (
           /* Adaptive Participants Grid */
           <div
-            style={{
-              width: '100%',
-              height: '100%',
-              display: 'grid',
-              gap: '16px',
-              gridTemplateColumns:
-                participantCount === 1
-                  ? '1fr'
-                  : participantCount === 2
-                  ? (window.innerWidth > 640 ? 'repeat(2, 1fr)' : '1fr')
-                  : 'repeat(2, 1fr)',
-              gridTemplateRows:
-                participantCount === 1
-                  ? '1fr'
-                  : participantCount === 2
-                  ? (window.innerWidth > 640 ? '1fr' : 'repeat(2, 1fr)')
-                  : 'repeat(2, 1fr)',
-              maxWidth: participantCount === 1 ? '1060px' : '1400px',
-              maxHeight: 'calc(100vh - 160px)',
-            }}
+            className={`meeting-adaptive-grid ${
+              participantCount === 1
+                ? 'meeting-grid-1'
+                : participantCount === 2
+                ? 'meeting-grid-2'
+                : 'meeting-grid-multi'
+            }`}
           >
             {displayParticipants.map(p => (
               <VideoTile key={p.id} participant={p} />
@@ -772,8 +734,9 @@ export function MeetingRoom() {
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
-          padding: '12px 16px 20px 16px',
+          padding: '8px 12px max(14px, env(safe-area-inset-bottom, 0px)) 12px',
           zIndex: 30,
+          flexShrink: 0,
         }}
       >
         <MeetingControls

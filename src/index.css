@@ -2099,6 +2099,128 @@ button, a {
   }
 }
 
+/* ==========================================================================
+   Mastery Focus Room & Meeting UI (Responsive, Safe Area, Collision-Free)
+   ========================================================================== */
 
+.meeting-lobby-container {
+  min-height: 100dvh;
+  height: 100%;
+  width: 100vw;
+  background-color: var(--bg-canvas);
+  color: var(--text-primary);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: max(16px, env(safe-area-inset-top, 0px)) 16px max(32px, env(safe-area-inset-bottom, 0px)) 16px;
+  box-sizing: border-box;
+}
 
+.meeting-lobby-card {
+  width: 100%;
+  max-width: 480px;
+  margin: auto 0;
+  background-color: var(--surface-card);
+  border-radius: 20px;
+  border: 1px solid var(--border-hairline-strong);
+  padding: 28px 24px;
+  box-shadow: 0 20px 48px -12px rgba(0, 0, 0, 0.45);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-sizing: border-box;
+}
 
+.meeting-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: max(10px, env(safe-area-inset-top, 0px)) 16px 10px 16px;
+  border-bottom: 1px solid var(--border-hairline);
+  background-color: var(--surface-card);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  z-index: 20;
+  gap: 8px;
+  min-height: 52px;
+  box-sizing: border-box;
+}
+
+.meeting-btn-text {
+  display: inline;
+}
+
+@media (max-width: 540px) {
+  .meeting-btn-text {
+    display: none !important;
+  }
+}
+
+.meeting-adaptive-grid {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  gap: 12px;
+  max-width: 1400px;
+  max-height: calc(100vh - 140px);
+  align-content: center;
+  box-sizing: border-box;
+}
+
+.meeting-grid-1 {
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr;
+  max-width: 1000px;
+}
+
+.meeting-grid-2 {
+  grid-template-columns: 1fr;
+  grid-template-rows: repeat(2, 1fr);
+}
+
+@media (min-width: 641px) {
+  .meeting-grid-2 {
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: 1fr;
+  }
+}
+
+.meeting-grid-multi {
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+}
+
+.meeting-controls-dock {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 8px 16px;
+  background-color: var(--surface-card);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border-hairline-strong);
+  border-radius: 9999px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.35);
+  z-index: 50;
+  max-width: calc(100vw - 24px);
+  box-sizing: border-box;
+}
+
+@media (max-width: 640px) {
+  .meeting-controls-dock {
+    gap: 8px;
+    padding: 6px 10px;
+  }
+  .meeting-control-desktop-only {
+    display: none !important;
+  }
+  .meeting-dock-chip {
+    padding: 0 8px !important;
+    margin-right: 0 !important;
+    font-size: 0.75rem !important;
+  }
+}

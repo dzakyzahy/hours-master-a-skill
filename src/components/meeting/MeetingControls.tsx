@@ -36,40 +36,26 @@ export function MeetingControls({
   onToggleDevTools,
 }: MeetingControlsProps) {
   return (
-    <div
-      style={{
-        position: 'relative',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: '12px',
-        padding: '10px 20px',
-        backgroundColor: 'var(--surface-card)',
-        backdropFilter: 'blur(20px)',
-        border: '1px solid var(--border-hairline-strong)',
-        borderRadius: '9999px',
-        boxShadow: '0 12px 36px rgba(0, 0, 0, 0.2)',
-        zIndex: 50,
-      }}
-    >
+    <div className="meeting-controls-dock">
       {/* Participant Counter Chip */}
       <div 
+        className="meeting-dock-chip"
         style={{
           display: 'flex',
           alignItems: 'center',
-          gap: '8px',
+          gap: '6px',
           padding: '0 12px',
-          height: '36px',
+          height: '42px',
           borderRadius: '9999px',
           backgroundColor: 'var(--surface-input)',
           border: '1px solid var(--border-hairline-strong)',
           fontSize: '0.8125rem',
           fontWeight: 600,
           color: 'var(--text-primary)',
-          marginRight: '6px',
+          flexShrink: 0,
         }}
       >
-        <FontAwesomeIcon icon={faUsers} style={{ color: 'var(--accent-primary)', fontSize: '13px' }} />
+        <FontAwesomeIcon icon={faUsers} style={{ color: 'var(--accent-primary)', fontSize: '12px' }} />
         <span className="tabular-nums">{participantCount}/4</span>
       </div>
 
@@ -80,8 +66,9 @@ export function MeetingControls({
         onClick={onToggleMic}
         title={isMuted ? 'Unmute microphone' : 'Mute microphone'}
         style={{
-          width: '46px',
-          height: '46px',
+          width: '44px',
+          height: '44px',
+          minWidth: '44px',
           padding: 0,
           borderRadius: '50%',
           backgroundColor: isMuted ? 'rgba(239, 68, 68, 0.15)' : 'var(--surface-input)',
@@ -91,6 +78,7 @@ export function MeetingControls({
           alignItems: 'center',
           justifyContent: 'center',
           transition: 'all 0.2s ease',
+          flexShrink: 0,
         }}
       >
         <FontAwesomeIcon icon={isMuted ? faMicrophoneSlash : faMicrophone} style={{ fontSize: '15px' }} />
@@ -103,8 +91,9 @@ export function MeetingControls({
         onClick={onToggleVideo}
         title={isVideoOff ? 'Turn on camera' : 'Turn off camera'}
         style={{
-          width: '46px',
-          height: '46px',
+          width: '44px',
+          height: '44px',
+          minWidth: '44px',
           padding: 0,
           borderRadius: '50%',
           backgroundColor: isVideoOff ? 'rgba(239, 68, 68, 0.15)' : 'var(--surface-input)',
@@ -114,20 +103,22 @@ export function MeetingControls({
           alignItems: 'center',
           justifyContent: 'center',
           transition: 'all 0.2s ease',
+          flexShrink: 0,
         }}
       >
         <FontAwesomeIcon icon={isVideoOff ? faVideoSlash : faVideo} style={{ fontSize: '15px' }} />
       </button>
 
-      {/* Screen Share Toggle */}
+      {/* Screen Share Toggle (Desktop only) */}
       <button
         type="button"
-        className="btn"
+        className="btn meeting-control-desktop-only"
         onClick={onToggleScreenShare}
         title={isScreenSharing ? 'Stop sharing screen' : 'Share screen'}
         style={{
-          width: '46px',
-          height: '46px',
+          width: '44px',
+          height: '44px',
+          minWidth: '44px',
           padding: 0,
           borderRadius: '50%',
           backgroundColor: isScreenSharing ? 'rgba(14, 165, 233, 0.18)' : 'var(--surface-input)',
@@ -137,6 +128,7 @@ export function MeetingControls({
           alignItems: 'center',
           justifyContent: 'center',
           transition: 'all 0.2s ease',
+          flexShrink: 0,
         }}
       >
         <FontAwesomeIcon icon={faDesktop} style={{ fontSize: '15px' }} />
@@ -145,12 +137,13 @@ export function MeetingControls({
       {onToggleDevTools && (
         <button
           type="button"
-          className="btn"
+          className="btn meeting-control-desktop-only"
           onClick={onToggleDevTools}
           title="Toggle Mock Simulation Tools"
           style={{
-            width: '46px',
-            height: '46px',
+            width: '44px',
+            height: '44px',
+            minWidth: '44px',
             padding: 0,
             borderRadius: '50%',
             backgroundColor: showDevTools ? 'rgba(168, 85, 247, 0.2)' : 'var(--surface-input)',
@@ -160,9 +153,10 @@ export function MeetingControls({
             alignItems: 'center',
             justifyContent: 'center',
             transition: 'all 0.2s ease',
+            flexShrink: 0,
           }}
         >
-          <FontAwesomeIcon icon={faGear} style={{ fontSize: '16px' }} />
+          <FontAwesomeIcon icon={faGear} style={{ fontSize: '15px' }} />
         </button>
       )}
 
@@ -173,22 +167,24 @@ export function MeetingControls({
         onClick={onLeave}
         title="Leave room"
         style={{
-          padding: '0 20px',
-          height: '46px',
+          padding: '0 16px',
+          height: '44px',
           borderRadius: '9999px',
           backgroundColor: '#dc2626',
           border: '1px solid #ef4444',
           color: '#ffffff',
           fontWeight: 600,
-          gap: '8px',
-          marginLeft: '4px',
+          gap: '6px',
           display: 'inline-flex',
           alignItems: 'center',
+          justifyContent: 'center',
           boxShadow: '0 4px 14px rgba(220, 38, 38, 0.4)',
           transition: 'all 0.2s ease',
+          flexShrink: 0,
         }}
       >
-        <FontAwesomeIcon icon={faPhoneSlash} style={{ fontSize: '14px' }} /> Leave
+        <FontAwesomeIcon icon={faPhoneSlash} style={{ fontSize: '13px' }} />
+        <span className="meeting-btn-text">Leave</span>
       </button>
     </div>
   );

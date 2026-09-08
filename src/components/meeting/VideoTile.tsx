@@ -31,7 +31,7 @@ export function VideoTile({ participant, isDominant = false }: VideoTileProps) {
         position: 'relative',
         width: '100%',
         height: '100%',
-        minHeight: isDominant ? '360px' : '200px',
+        minHeight: isDominant ? '240px' : 0,
         backgroundColor: 'var(--surface-card)',
         borderRadius: '16px',
         overflow: 'hidden',
