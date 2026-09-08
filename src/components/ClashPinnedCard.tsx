@@ -114,9 +114,9 @@ export function ClashPinnedCard() {
             type="button"
             className="btn-icon" 
             onClick={toggleClashPinned}
-            title="Lepas sematan dari Dashboard"
-            aria-label="Lepas sematan dari Dashboard"
-            style={{ width: '30px', height: '30px', color: 'var(--accent-primary)' }}
+            title="Lepas sematan dari Beranda & Dashboard"
+            aria-label="Lepas sematan dari Beranda & Dashboard"
+            style={{ width: '34px', height: '34px', color: 'var(--accent-primary)', borderRadius: 'var(--radius-btn, 8px)' }}
           >
             <FontAwesomeIcon icon={faThumbtack} style={{ fontSize: '12px', transform: 'rotate(45deg)' }} />
           </button>

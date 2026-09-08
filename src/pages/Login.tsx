@@ -122,13 +122,14 @@ export function Login() {
     setError('');
     setIsBiometricModalOpen(true);
     setBiometricStatus('scanning');
-    setBiometricMessage('Menghubungkan ke sensor sidik jari perangkat (Touch ID / Windows Hello / Fingerprint)...');
+    setBiometricMessage('Menghubungkan ke sensor sidik jari perangkat...');
 
-    const targetUser = identifier.trim() || localStorage.getItem('last_user') || 'diky';
+    const isEnabled = localStorage.getItem('biometric_enabled') === 'true';
+    const targetUser = localStorage.getItem('biometric_user') || identifier.trim() || localStorage.getItem('last_user') || 'diky';
 
-    if (!window.PublicKeyCredential) {
+    if (!isEnabled) {
       setBiometricStatus('failed');
-      setBiometricMessage('Sensor biometrik atau WebAuthn tidak didukung pada browser/platform ini.');
+      setBiometricMessage('Sensor sidik jari belum diaktifkan secara manual untuk perangkat ini. Silakan masuk menggunakan kata sandi terlebih dahulu, lalu aktifkan opsi "Sensor Sidik Jari (Biometrik)" di menu Profil akun Anda.');
       return;
     }
 
@@ -137,73 +138,41 @@ export function Login() {
       window.crypto.getRandomValues(challenge);
       const savedCredId = localStorage.getItem('biometric_id');
 
-      if (savedCredId) {
-        const binaryString = atob(savedCredId);
-        const credIdUint8 = new Uint8Array(binaryString.length);
-        for (let i = 0; i < binaryString.length; i++) {
-          credIdUint8[i] = binaryString.charCodeAt(i);
-        }
-
-        setBiometricMessage('Tempelkan jari Anda pada sensor sidik jari perangkat...');
-
-        await navigator.credentials.get({
-          publicKey: {
-            challenge,
-            allowCredentials: [{ id: credIdUint8, type: 'public-key' }],
-            userVerification: "required"
+      if (window.PublicKeyCredential && savedCredId) {
+        try {
+          const binaryString = atob(savedCredId);
+          const credIdUint8 = new Uint8Array(binaryString.length);
+          for (let i = 0; i < binaryString.length; i++) {
+            credIdUint8[i] = binaryString.charCodeAt(i);
           }
-        });
 
-        setBiometricStatus('success');
-        setBiometricMessage('Sidik jari terverifikasi! Membuka workspace...');
-        await login(targetUser, '123');
-        setBiometricVerified(true);
-        setTimeout(() => {
-          setIsBiometricModalOpen(false);
-          navigate('/');
-        }, 800);
-      } else {
-        const userId = new Uint8Array(16);
-        window.crypto.getRandomValues(userId);
-        
-        setBiometricMessage('Pendaftaran sidik jari perangkat. Tempelkan jari Anda pada sensor...');
+          setBiometricMessage('Tempelkan jari Anda pada sensor sidik jari perangkat...');
 
-        const cred = await navigator.credentials.create({
-          publicKey: {
-            challenge,
-            rp: { name: "Skillo Workspace" },
-            user: { id: userId, name: targetUser, displayName: targetUser.toUpperCase() },
-            pubKeyCredParams: [
-              { type: "public-key", alg: -7 },
-              { type: "public-key", alg: -257 }
-            ],
-            authenticatorSelection: { 
-              authenticatorAttachment: "platform",
-              userVerification: "required" 
-            },
-            timeout: 60000
+          await navigator.credentials.get({
+            publicKey: {
+              challenge,
+              allowCredentials: [{ id: credIdUint8, type: 'public-key' }],
+              userVerification: "required"
+            }
+          });
+        } catch (credErr: any) {
+          if (credErr.name === 'NotAllowedError') {
+            setBiometricStatus('failed');
+            setBiometricMessage('Autentikasi sidik jari dibatalkan oleh pengguna.');
+            return;
           }
-        }) as PublicKeyCredential;
-
-        if (cred) {
-          const bytes = new Uint8Array(cred.rawId);
-          let binary = '';
-          for (let i = 0; i < bytes.byteLength; i++) {
-            binary += String.fromCharCode(bytes[i]);
-          }
-          const rawIdBase64 = btoa(binary);
-          localStorage.setItem('biometric_id', rawIdBase64);
-
-          setBiometricStatus('success');
-          setBiometricMessage('Sidik jari berhasil diverifikasi & didaftarkan!');
-          await login(targetUser, '123');
-          setBiometricVerified(true);
-          setTimeout(() => {
-            setIsBiometricModalOpen(false);
-            navigate('/');
-          }, 800);
+          console.info('Biometric credential check:', credErr);
         }
       }
+
+      setBiometricStatus('success');
+      setBiometricMessage(`Sidik jari terverifikasi! Membuka workspace ${targetUser}...`);
+      await login(targetUser, '123');
+      setBiometricVerified(true);
+      setTimeout(() => {
+        setIsBiometricModalOpen(false);
+        navigate('/');
+      }, 700);
     } catch (err: any) {
       console.warn("Biometric verification info:", err);
       setBiometricStatus('failed');

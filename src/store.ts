@@ -140,6 +140,8 @@ interface AppState {
   clashPinned: boolean;
   toggleClashPinned: () => void;
   setClashPinned: (pinned: boolean) => void;
+  biometricEnabled: boolean;
+  setBiometricEnabled: (enabled: boolean) => void;
   avatar: string;
   title: string;
   bio: string;
@@ -864,6 +866,8 @@ export const useStore = create<AppState>()(
       clashPinned: false,
       toggleClashPinned: () => set((state) => ({ clashPinned: !state.clashPinned })),
       setClashPinned: (pinned: boolean) => set({ clashPinned: pinned }),
+      biometricEnabled: false,
+      setBiometricEnabled: (enabled: boolean) => set({ biometricEnabled: enabled }),
 
       avatar: 'cyber-neon',
       title: 'UI/UX & Mobile Design Lead',
@@ -1195,6 +1199,7 @@ export const useStore = create<AppState>()(
         theme: state.theme,
         soundEnabled: state.soundEnabled,
         clashPinned: state.clashPinned,
+        biometricEnabled: state.biometricEnabled,
         avatar: state.avatar,
         title: state.title,
         bio: state.bio,

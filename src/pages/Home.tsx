@@ -19,6 +19,7 @@ import { ManualProjectModal } from '../components/ManualProjectModal';
 import { ApiKeyModal } from '../components/ApiKeyModal';
 import { SkilloLogo } from '../components/SkilloLogo';
 import { ThemeSwitcher } from '../components/ThemeSwitcher';
+import { ClashPinnedCard } from '../components/ClashPinnedCard';
 import { getAvatarDisplay } from '../utils/profilePresets';
 
 export function Home() {
@@ -242,8 +243,10 @@ export function Home() {
             type="button"
             className="btn-icon" 
             onClick={async () => {
-              await logout();
-              navigate('/login');
+              if (window.confirm("Keluar dari akun Anda?")) {
+                await logout();
+                navigate('/login');
+              }
             }} 
             title="Keluar dari Akun"
             style={{ 
@@ -334,6 +337,9 @@ export function Home() {
         </div>
       </div>
 
+      {/* Pinned Clash Arena Leaderboard Card (Live Sync with Collaboration Hub) */}
+      <ClashPinnedCard />
+
       {!showRecycleBin && <AiGenerator />}
 
       {showRecycleBin ? (
@@ -414,9 +420,14 @@ export function Home() {
             >
               <button 
                 className="btn-icon" 
-                style={{ position: 'absolute', top: 14, right: 14, width: '30px', height: '30px', color: 'var(--text-placeholder)', borderColor: 'transparent' }}
-                onClick={(e) => { e.stopPropagation(); deleteProject(p.id); }}
-                title="Pindahkan ke Recycle Bin"
+                style={{ position: 'absolute', top: 14, right: 14, width: '32px', height: '32px', color: 'var(--text-placeholder)', borderColor: 'transparent', zIndex: 2 }}
+                onClick={(e) => { 
+                  e.stopPropagation(); 
+                  if (window.confirm(`Pindahkan proyek "${p.name}" ke Tempat Sampah?`)) {
+                    deleteProject(p.id); 
+                  }
+                }}
+                title="Pindahkan ke Tempat Sampah"
               >
                 <FontAwesomeIcon icon={faTrashCan} style={{ fontSize: '13px' }} />
               </button>

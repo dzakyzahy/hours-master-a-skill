@@ -28,9 +28,9 @@ export function ClashArena({ friends, myUsername, myTotalHours }: ClashArenaProp
   const handleTogglePin = () => {
     toggleClashPinned();
     if (!clashPinned) {
-      toast.success('Disematkan ke Dashboard!', { id: 'clash-pin' });
+      toast.success('Disematkan ke Beranda & Dashboard!', { id: 'clash-pin' });
     } else {
-      toast('Sematan dilepas dari Dashboard', { id: 'clash-pin', icon: '📌' });
+      toast('Sematan dilepas dari Beranda', { id: 'clash-pin', icon: '📌' });
     }
   };
 
@@ -65,8 +65,8 @@ export function ClashArena({ friends, myUsername, myTotalHours }: ClashArenaProp
     <div className="flex flex-col h-full overflow-hidden">
       {/* Clash Header Controls */}
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-bold flex items-center gap-2" style={{ fontFamily: 'Instrument Serif, serif', color: 'var(--accent-primary)' }}>
-          <FontAwesomeIcon icon={faHandFist} style={{ fontSize: '20px' }} /> Clash Arena
+        <h2 className="text-xl font-bold flex items-center gap-2" style={{ fontFamily: 'Geist, sans-serif', fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--text-primary)' }}>
+          <FontAwesomeIcon icon={faHandFist} style={{ fontSize: '18px', color: 'var(--accent-primary)' }} /> Clash Arena
         </h2>
         
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
@@ -75,16 +75,16 @@ export function ClashArena({ friends, myUsername, myTotalHours }: ClashArenaProp
             className={clashPinned ? 'btn-primary' : 'btn'}
             onClick={handleTogglePin}
             style={{ 
-              height: '28px', 
-              fontSize: '11px', 
-              padding: '0 10px', 
+              height: '30px', 
+              fontSize: '11.5px', 
+              padding: '0 12px', 
               gap: '6px', 
-              borderRadius: '6px'
+              borderRadius: 'var(--radius-btn, 8px)'
             }}
-            title={clashPinned ? 'Lepas sematan dari Dashboard' : 'Sematkan ke Dashboard'}
-            aria-label={clashPinned ? 'Lepas sematan dari Dashboard' : 'Sematkan ke Dashboard'}
+            title={clashPinned ? 'Lepas sematan dari Beranda & Dashboard' : 'Sematkan ke Beranda & Dashboard'}
+            aria-label={clashPinned ? 'Lepas sematan dari Beranda & Dashboard' : 'Sematkan ke Beranda & Dashboard'}
           >
-            <FontAwesomeIcon icon={faThumbtack} style={{ fontSize: '10.5px', transform: clashPinned ? 'rotate(45deg)' : 'none' }} />
+            <FontAwesomeIcon icon={faThumbtack} style={{ fontSize: '11px', transform: clashPinned ? 'rotate(45deg)' : 'none' }} />
             <span>{clashPinned ? 'Disematkan' : 'Sematkan'}</span>
           </button>
 
@@ -129,17 +129,18 @@ export function ClashArena({ friends, myUsername, myTotalHours }: ClashArenaProp
                   style={{
                     display: 'flex',
                     alignItems: 'center',
-                    padding: '18px 20px',
+                    padding: '16px 20px',
                     background: p.isMe ? 'rgba(34, 197, 94, 0.08)' : 'var(--surface-input)',
-                    border: `1px solid ${p.isMe ? 'rgba(34, 197, 94, 0.35)' : 'var(--border-color)'}`,
-                    borderRadius: '10px',
+                    border: `1px solid ${p.isMe ? 'rgba(34, 197, 94, 0.35)' : 'var(--border-hairline)'}`,
+                    borderRadius: 'var(--radius-card, 14px)',
+                    boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.04)',
                     position: 'relative',
                     overflow: 'hidden',
                     minHeight: '76px'
                   }}
                 >
                   {/* Rank Number */}
-                  <div style={{ width: '42px', fontSize: '1.25rem', fontWeight: 800, color: iconDef ? iconColor : 'var(--text-secondary)', opacity: isTop3 ? 1 : 0.5 }}>
+                  <div style={{ width: '44px', fontSize: '1.2rem', fontWeight: 800, fontFamily: 'Geist Mono, monospace', color: iconDef ? iconColor : 'var(--text-secondary)', opacity: isTop3 ? 1 : 0.6 }}>
                     #{index + 1}
                   </div>
                   
