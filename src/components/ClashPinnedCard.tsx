@@ -59,7 +59,9 @@ export function ClashPinnedCard() {
       style={{ 
         padding: '20px 22px', 
         position: 'relative',
+        borderRadius: 'var(--radius-card, 14px)',
         border: '1px solid var(--border-hairline-strong)',
+        boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.07), 0 8px 24px -4px rgba(0, 0, 0, 0.35)',
         background: 'linear-gradient(135deg, rgba(14, 165, 233, 0.04) 0%, rgba(124, 58, 237, 0.04) 100%), var(--surface-card)'
       }}
     >
@@ -70,7 +72,7 @@ export function ClashPinnedCard() {
             style={{ 
               width: '32px', 
               height: '32px', 
-              borderRadius: '8px', 
+              borderRadius: 'var(--radius-input, 8px)', 
               background: 'rgba(14, 165, 233, 0.12)', 
               color: 'var(--accent-primary)',
               display: 'flex', 
@@ -90,8 +92,8 @@ export function ClashPinnedCard() {
                 style={{ 
                   fontSize: '10px', 
                   fontFamily: 'Geist Mono, monospace', 
-                  padding: '2px 7px', 
-                  borderRadius: '4px',
+                  padding: '2px 8px', 
+                  borderRadius: 'var(--radius-pill, 9999px)',
                   background: isMeLeader ? 'rgba(34, 197, 94, 0.12)' : 'var(--surface-input)',
                   color: isMeLeader ? '#22c55e' : 'var(--text-secondary)',
                   border: isMeLeader ? '1px solid rgba(34, 197, 94, 0.3)' : '1px solid var(--border-hairline)',
@@ -129,7 +131,7 @@ export function ClashPinnedCard() {
           gap: '12px',
           background: 'var(--surface-input)', 
           border: '1px solid var(--border-hairline)', 
-          borderRadius: '10px', 
+          borderRadius: 'var(--radius-input, 8px)', 
           padding: '14px 16px',
           marginBottom: '16px'
         }}
@@ -163,7 +165,7 @@ export function ClashPinnedCard() {
               fontSize: '11.5px', 
               padding: '0 12px', 
               gap: '6px',
-              borderRadius: '6px',
+              borderRadius: 'var(--radius-btn, 8px)',
               fontWeight: 600
             }}
           >
@@ -196,7 +198,7 @@ export function ClashPinnedCard() {
                       gap: '6px', 
                       background: isMe ? 'rgba(14, 165, 233, 0.12)' : 'var(--surface-card)', 
                       border: isMe ? '1px solid var(--accent-primary)' : '1px solid var(--border-hairline)', 
-                      borderRadius: '20px', 
+                      borderRadius: 'var(--radius-pill, 9999px)', 
                       padding: '3px 9px 3px 4px',
                       flexShrink: 0
                     }}

@@ -89,15 +89,15 @@ export const AchievementCard: React.FC<AchievementCardProps> = ({ achievement, i
       style={{
         padding: '16px',
         position: 'relative',
-        borderRadius: '12px',
+        borderRadius: 'var(--radius-card, 14px)',
         display: 'flex',
         flexDirection: 'column',
         gap: '12px',
-        opacity: isUnlocked ? 1 : 0.62,
+        opacity: isUnlocked ? 1 : 0.65,
         border: isUnlocked ? `1px solid ${tier.borderColor}` : '1px solid var(--border-hairline)',
-        boxShadow: isUnlocked ? tier.glow : 'none',
+        boxShadow: isUnlocked ? `${tier.glow}, inset 0 1px 0 rgba(255, 255, 255, 0.08)` : 'inset 0 1px 0 rgba(255, 255, 255, 0.03)',
         background: isUnlocked ? 'var(--surface-card)' : 'rgba(255, 255, 255, 0.02)',
-        transition: 'all 0.2s ease',
+        transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
       }}
     >
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px' }}>
@@ -130,8 +130,8 @@ export const AchievementCard: React.FC<AchievementCardProps> = ({ achievement, i
               fontWeight: 600,
               textTransform: 'uppercase',
               letterSpacing: '0.04em',
-              padding: '2px 7px',
-              borderRadius: '4px',
+              padding: '2px 8px',
+              borderRadius: 'var(--radius-pill, 9999px)',
               background: isUnlocked ? `${tier.borderColor}` : 'var(--surface-input)',
               color: isUnlocked ? tier.textColor : 'var(--text-secondary)',
               border: `1px solid ${isUnlocked ? tier.borderColor : 'var(--border-hairline)'}`,

@@ -235,7 +235,7 @@ export function Dashboard() {
             </div>
             {activeTimer && (
               <div className="flex items-center justify-center gap-2 mb-1">
-                <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#22c55e' }} />
+                <span className="timer-live-dot" />
                 <span style={{ fontSize: '10px', fontFamily: 'Geist Mono, monospace', textTransform: 'uppercase', letterSpacing: '0.04em', color: '#22c55e', fontWeight: 600 }}>Fokus Aktif</span>
               </div>
             )}
@@ -295,22 +295,42 @@ export function Dashboard() {
           return (
             <div 
               key={i} 
-              className="flex flex-col gap-1.5 p-3.5 rounded" 
+              className="flex flex-col gap-2 p-3.5" 
               style={{ 
-                background: isActive ? 'var(--surface-input)' : 'transparent', 
-                border: isActive ? '1px solid var(--border-hairline-strong)' : '1px solid var(--border-hairline)',
-                borderRadius: '6px'
+                background: isActive 
+                  ? 'rgba(14, 165, 233, 0.06)' 
+                  : isDone ? 'rgba(34, 197, 94, 0.03)' : 'transparent', 
+                border: isActive 
+                  ? '1px solid rgba(14, 165, 233, 0.35)' 
+                  : isDone ? '1px solid rgba(34, 197, 94, 0.2)' : '1px solid var(--border-hairline)',
+                borderLeft: isActive 
+                  ? '3px solid var(--accent-primary)' 
+                  : isDone ? '3px solid #22c55e' : '1px solid var(--border-hairline)',
+                borderRadius: 'var(--radius-input, 8px)',
+                transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)'
               }}
             >
-              <div className="flex justify-between items-center">
-                <h4 style={{ margin: 0, fontSize: '13.5px', fontWeight: 600, color: isActive ? 'var(--text-primary)' : (isDone ? '#22c55e' : 'var(--text-secondary)') }}>
-                  Fase {i + 1}: {p.title}
-                </h4>
-                <span style={{ fontSize: '11px', fontFamily: 'Geist Mono, monospace', color: 'var(--text-secondary)' }}>
+              <div className="flex justify-between items-center gap-2">
+                <div className="flex items-center gap-2">
+                  <h4 style={{ margin: 0, fontSize: '13.5px', fontWeight: 600, color: isActive ? 'var(--accent-primary)' : (isDone ? '#22c55e' : 'var(--text-secondary)') }}>
+                    Fase {i + 1}: {p.title}
+                  </h4>
+                  {isActive && (
+                    <span style={{ fontSize: '10px', fontFamily: 'Geist Mono, monospace', color: 'var(--accent-primary)', background: 'rgba(14, 165, 233, 0.12)', border: '1px solid rgba(14, 165, 233, 0.3)', padding: '1px 7px', borderRadius: 'var(--radius-pill, 9999px)', fontWeight: 600 }}>
+                      Aktif
+                    </span>
+                  )}
+                  {isDone && (
+                    <span style={{ fontSize: '10px', fontFamily: 'Geist Mono, monospace', color: '#22c55e', background: 'rgba(34, 197, 94, 0.1)', border: '1px solid rgba(34, 197, 94, 0.25)', padding: '1px 7px', borderRadius: 'var(--radius-pill, 9999px)', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                      <FontAwesomeIcon icon={faCheck} style={{ fontSize: '8.5px' }} /> Selesai
+                    </span>
+                  )}
+                </div>
+                <span style={{ fontSize: '11px', fontFamily: 'Geist Mono, monospace', color: 'var(--text-secondary)', flexShrink: 0 }}>
                   {p.hoursStart} - {p.hoursEnd} hrs
                 </span>
               </div>
-              <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.4 }}>{p.desc}</p>
+              <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.45 }}>{p.desc}</p>
             </div>
           );
         })}

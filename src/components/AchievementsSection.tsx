@@ -79,7 +79,7 @@ export const AchievementsSection: React.FC = () => {
           <div
             style={{
               padding: '4px 10px',
-              borderRadius: '6px',
+              borderRadius: 'var(--radius-pill, 9999px)',
               background: 'var(--surface-input)',
               border: '1px solid var(--border-hairline)',
               fontFamily: 'Geist Mono, monospace',
@@ -126,7 +126,7 @@ export const AchievementsSection: React.FC = () => {
           onClick={() => setFilter('all')}
           style={{
             padding: '5px 12px',
-            borderRadius: '6px',
+            borderRadius: 'var(--radius-btn, 8px)',
             fontSize: '11.5px',
             fontWeight: 500,
             cursor: 'pointer',
@@ -136,7 +136,7 @@ export const AchievementsSection: React.FC = () => {
             display: 'inline-flex',
             alignItems: 'center',
             gap: '6px',
-            transition: 'all 0.15s ease'
+            transition: 'all 0.15s cubic-bezier(0.16, 1, 0.3, 1)'
           }}
         >
           <FontAwesomeIcon icon={faMedal} style={{ fontSize: '10px' }} />
@@ -148,7 +148,7 @@ export const AchievementsSection: React.FC = () => {
           onClick={() => setFilter('unlocked')}
           style={{
             padding: '5px 12px',
-            borderRadius: '6px',
+            borderRadius: 'var(--radius-btn, 8px)',
             fontSize: '11.5px',
             fontWeight: 500,
             cursor: 'pointer',
@@ -158,7 +158,7 @@ export const AchievementsSection: React.FC = () => {
             display: 'inline-flex',
             alignItems: 'center',
             gap: '6px',
-            transition: 'all 0.15s ease'
+            transition: 'all 0.15s cubic-bezier(0.16, 1, 0.3, 1)'
           }}
         >
           <FontAwesomeIcon icon={faCheckCircle} style={{ fontSize: '10px' }} />
@@ -170,7 +170,7 @@ export const AchievementsSection: React.FC = () => {
           onClick={() => setFilter('locked')}
           style={{
             padding: '5px 12px',
-            borderRadius: '6px',
+            borderRadius: 'var(--radius-btn, 8px)',
             fontSize: '11.5px',
             fontWeight: 500,
             cursor: 'pointer',
@@ -180,7 +180,7 @@ export const AchievementsSection: React.FC = () => {
             display: 'inline-flex',
             alignItems: 'center',
             gap: '6px',
-            transition: 'all 0.15s ease'
+            transition: 'all 0.15s cubic-bezier(0.16, 1, 0.3, 1)'
           }}
         >
           <FontAwesomeIcon icon={faLock} style={{ fontSize: '10px' }} />

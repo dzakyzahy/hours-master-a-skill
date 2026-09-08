@@ -171,12 +171,12 @@ export function Profile() {
       {(() => {
         const avatarDisplay = getAvatarDisplay(selectedAvatar, userInitials);
         return (
-          <div className="glass-panel mb-6" style={{ padding: '20px', display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <div className="glass-panel mb-6" style={{ padding: '20px', display: 'flex', alignItems: 'center', gap: '16px', borderRadius: 'var(--radius-card, 14px)' }}>
             <div 
               style={{ 
                 width: '56px', 
                 height: '56px', 
-                borderRadius: '12px', 
+                borderRadius: 'var(--radius-card, 14px)', 
                 background: avatarDisplay.gradient, 
                 border: '1px solid var(--border-hairline-strong)', 
                 display: 'flex', 
@@ -191,7 +191,7 @@ export function Profile() {
               }}
             >
               {avatarDisplay.isCustomImage ? (
-                <img src={avatarDisplay.imageUrl} alt={newUsername} style={{ width: '100%', height: '100%', borderRadius: '12px', objectFit: 'cover' }} />
+                <img src={avatarDisplay.imageUrl} alt={newUsername} style={{ width: '100%', height: '100%', borderRadius: 'var(--radius-card, 14px)', objectFit: 'cover' }} />
               ) : (
                 avatarDisplay.initials
               )}
@@ -199,13 +199,13 @@ export function Profile() {
             <div style={{ flex: 1, minWidth: 0 }}>
               <div className="flex items-center gap-2 mb-1" style={{ flexWrap: 'wrap' }}>
                 <h2 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 600, letterSpacing: '-0.015em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} className="capitalize">{newUsername}</h2>
-                <span style={{ fontFamily: 'Geist Mono, monospace', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.04em', padding: '2px 8px', borderRadius: '4px', border: '1px solid rgba(34,197,94,0.3)', background: 'rgba(34,197,94,0.08)', color: '#22c55e' }} className="inline-flex items-center gap-1.5">
+                <span style={{ fontFamily: 'Geist Mono, monospace', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.04em', padding: '2px 8px', borderRadius: 'var(--radius-pill, 9999px)', border: '1px solid rgba(34,197,94,0.3)', background: 'rgba(34,197,94,0.08)', color: '#22c55e' }} className="inline-flex items-center gap-1.5">
                   <span style={{ width: '5px', height: '5px', borderRadius: '50%', backgroundColor: '#22c55e' }} /> Online
                 </span>
               </div>
               <p style={{ margin: '0 0 6px', fontSize: '12px', color: 'var(--text-secondary)', fontFamily: 'Geist Mono, monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{email}</p>
               <div className="flex items-center gap-2" style={{ flexWrap: 'wrap' }}>
-                <span style={{ fontSize: '11px', fontFamily: 'Geist Mono, monospace', color: 'var(--accent-primary)', background: 'var(--surface-input)', padding: '3px 8px', borderRadius: '4px', border: '1px solid var(--border-hairline)' }} className="inline-block">
+                <span style={{ fontSize: '11px', fontFamily: 'Geist Mono, monospace', color: 'var(--accent-primary)', background: 'var(--surface-input)', padding: '3px 8px', borderRadius: 'var(--radius-pill, 9999px)', border: '1px solid var(--border-hairline)' }} className="inline-block">
                   {customTitle || defaultRoleTitle}
                 </span>
               </div>
@@ -222,7 +222,7 @@ export function Profile() {
       {/* Settings Grid - Generous relaxed vertical layout */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
         {/* Personalization & Account Form */}
-        <div className="glass-panel" style={{ padding: '24px 20px' }}>
+        <div className="glass-panel" style={{ padding: '24px 20px', borderRadius: 'var(--radius-card, 14px)' }}>
           <div className="flex items-center gap-2" style={{ marginBottom: '20px' }}>
             <FontAwesomeIcon icon={faPaintbrush} style={{ color: 'var(--accent-primary)', fontSize: '14px' }} />
             <h2 style={{ margin: 0, fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.015em' }}>
@@ -249,12 +249,12 @@ export function Profile() {
                         alignItems: 'center',
                         gap: '10px',
                         padding: '8px 10px',
-                        borderRadius: '8px',
+                        borderRadius: 'var(--radius-btn, 8px)',
                         border: isSelected ? '1.5px solid var(--accent-primary)' : '1px solid var(--border-hairline)',
                         background: isSelected ? 'rgba(14, 165, 233, 0.08)' : 'var(--surface-input)',
                         cursor: 'pointer',
                         textAlign: 'left',
-                        transition: 'all 0.15s ease'
+                        transition: 'all 0.15s cubic-bezier(0.16, 1, 0.3, 1)'
                       }}
                     >
                       <div
@@ -378,7 +378,7 @@ export function Profile() {
         <AchievementsSection />
 
         {/* System & Update Info Card */}
-        <div className="glass-panel" style={{ width: '100%', padding: '24px 20px' }}>
+        <div className="glass-panel" style={{ width: '100%', padding: '24px 20px', borderRadius: 'var(--radius-card, 14px)' }}>
           <div className="flex items-center justify-between" style={{ marginBottom: '24px' }}>
             <div className="flex items-center gap-2">
               <FontAwesomeIcon icon={faShieldHalved} style={{ color: 'var(--text-secondary)', fontSize: '14px' }} />
@@ -386,7 +386,7 @@ export function Profile() {
                 Informasi Sistem
               </h2>
             </div>
-            <span style={{ fontSize: '10.5px', fontFamily: 'Geist Mono, monospace', color: 'var(--text-secondary)', background: 'var(--surface-input)', padding: '3px 9px', borderRadius: '4px', border: '1px solid var(--border-hairline)' }}>
+            <span style={{ fontSize: '10.5px', fontFamily: 'Geist Mono, monospace', color: 'var(--text-secondary)', background: 'var(--surface-input)', padding: '3px 9px', borderRadius: 'var(--radius-pill, 9999px)', border: '1px solid var(--border-hairline)' }}>
               v1.1.0
             </span>
           </div>
@@ -399,7 +399,7 @@ export function Profile() {
                   style={{ 
                     width: '34px', 
                     height: '34px', 
-                    borderRadius: '6px', 
+                    borderRadius: 'var(--radius-input, 8px)', 
                     background: 'var(--surface-input)', 
                     border: '1px solid var(--border-hairline)', 
                     display: 'flex', 
@@ -424,7 +424,7 @@ export function Profile() {
               <button 
                 type="button" 
                 className="btn" 
-                style={{ height: '30px', padding: '0 12px', fontSize: '11px', flexShrink: 0 }}
+                style={{ height: '30px', padding: '0 12px', fontSize: '11px', flexShrink: 0, borderRadius: 'var(--radius-btn, 8px)' }}
                 onClick={() => setIsApiKeyModalOpen(true)}
               >
                 {geminiApiKey ? 'Ubah' : 'Konfigurasi'}
@@ -432,7 +432,7 @@ export function Profile() {
             </div>
 
             {/* Status Bar */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '9px 12px', background: 'var(--surface-input)', border: '1px solid var(--border-hairline)', borderRadius: '6px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '9px 12px', background: 'var(--surface-input)', border: '1px solid var(--border-hairline)', borderRadius: 'var(--radius-input, 8px)' }}>
               <span style={{ fontSize: '11.5px', color: 'var(--text-secondary)' }}>Status Kunci</span>
               <span style={{ fontSize: geminiApiKey ? '11px' : '10px', fontFamily: geminiApiKey ? 'Geist Mono, monospace' : "'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif", color: geminiApiKey ? '#22c55e' : '#f59e0b', letterSpacing: geminiApiKey ? 'normal' : '0.01em', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
                 <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: geminiApiKey ? '#22c55e' : '#f59e0b' }} />
@@ -449,7 +449,7 @@ export function Profile() {
                   style={{ 
                     width: '34px', 
                     height: '34px', 
-                    borderRadius: '6px', 
+                    borderRadius: 'var(--radius-input, 8px)', 
                     background: 'var(--surface-input)', 
                     border: '1px solid var(--border-hairline)', 
                     display: 'flex', 
@@ -470,7 +470,7 @@ export function Profile() {
                   </span>
                 </div>
               </div>
-              <span style={{ fontSize: '11px', color: '#22c55e', background: 'rgba(34, 197, 94, 0.08)', border: '1px solid rgba(34, 197, 94, 0.25)', padding: '4px 10px', borderRadius: '4px', fontWeight: 500, display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+              <span style={{ fontSize: '11px', color: '#22c55e', background: 'rgba(34, 197, 94, 0.08)', border: '1px solid rgba(34, 197, 94, 0.25)', padding: '4px 10px', borderRadius: 'var(--radius-pill, 9999px)', fontWeight: 500, display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
                 <span style={{ width: '5px', height: '5px', borderRadius: '50%', backgroundColor: '#22c55e' }} />
                 Siap
               </span>
@@ -485,7 +485,7 @@ export function Profile() {
                   style={{ 
                     width: '34px', 
                     height: '34px', 
-                    borderRadius: '6px', 
+                    borderRadius: 'var(--radius-input, 8px)', 
                     background: 'var(--surface-input)', 
                     border: '1px solid var(--border-hairline)', 
                     display: 'flex', 
@@ -512,14 +512,14 @@ export function Profile() {
                   onClick={toggleSound}
                   style={{
                     padding: '4px 12px',
-                    borderRadius: '6px',
+                    borderRadius: 'var(--radius-btn, 8px)',
                     fontSize: '11.5px',
                     fontWeight: 600,
                     cursor: 'pointer',
                     border: soundEnabled ? '1px solid rgba(14, 165, 233, 0.3)' : '1px solid var(--border-hairline)',
                     background: soundEnabled ? 'rgba(14, 165, 233, 0.1)' : 'var(--surface-input)',
                     color: soundEnabled ? 'var(--accent-primary)' : 'var(--text-secondary)',
-                    transition: 'all 0.15s ease'
+                    transition: 'all 0.15s cubic-bezier(0.16, 1, 0.3, 1)'
                   }}
                 >
                   {soundEnabled ? 'Aktif' : 'Mati'}

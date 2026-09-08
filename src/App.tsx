@@ -61,7 +61,7 @@ function OfflineBanner() {
       }}
     >
       <FontAwesomeIcon icon={faWifi} style={{ fontSize: '11px' }} />
-      <span>Mode Offline — Data tersimpan lokal dan disinkronkan otomatis saat tersambung kembali.</span>
+      <span>Mode Offline - Data tersimpan lokal dan disinkronkan otomatis saat tersambung kembali.</span>
     </div>
   );
 }

@@ -1066,7 +1066,7 @@ export function Chat() {
                                 width: 'fit-content',
                                 maxWidth: '82%', 
                                 padding: '9px 13px', 
-                                borderRadius: isMe ? '15px 15px 3px 15px' : '15px 15px 15px 3px',
+                                borderRadius: isMe ? '14px 14px 4px 14px' : '14px 14px 14px 4px',
                                 backgroundColor: isMe ? 'var(--cta-primary-bg)' : 'var(--surface-input)',
                                 color: isMe ? 'var(--cta-primary-text)' : 'var(--text-primary)',
                                 border: isMe ? 'none' : '1px solid var(--border-hairline)',
@@ -1074,7 +1074,9 @@ export function Chat() {
                                 fontSize: '13.5px',
                                 lineHeight: 1.45,
                                 wordBreak: 'break-word',
-                                boxShadow: isMe ? '0 1px 4px rgba(0,0,0,0.12)' : 'none'
+                                boxShadow: isMe 
+                                  ? '0 2px 8px -2px rgba(14, 165, 233, 0.35)' 
+                                  : 'inset 0 1px 0 rgba(255, 255, 255, 0.05)'
                               }}
                             >
                               {m.text}

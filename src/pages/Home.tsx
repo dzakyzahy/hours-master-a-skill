@@ -57,6 +57,8 @@ export function Home() {
   }, [fetchFriendRequests]);
 
   const onlineFriendsCount = friends.filter(f => f.isOnline).length;
+  const userInitials = (username || 'DK').substring(0, 2).toUpperCase();
+  const avatarDisplay = getAvatarDisplay(userAvatar, userInitials);
 
   return (
     <div style={{ flex: 1, zIndex: 10, position: 'relative', maxWidth: '1120px', margin: '0 auto', width: '100%' }} className="no-drag mobile-content-container">
@@ -147,45 +149,40 @@ export function Home() {
             )}
           </button>
 
-          {(() => {
-            const avatarDisplay = getAvatarDisplay(userAvatar, (username || 'DK').substring(0, 2).toUpperCase());
-            return (
-              <button 
-                className="btn-icon" 
-                onClick={() => navigate('/profile')} 
-                title={`Profil Saya (${username || 'user'})`}
-                style={{ 
-                  position: 'relative', 
-                  fontWeight: 700, 
-                  fontSize: '11px', 
-                  fontFamily: 'Geist Mono, monospace',
-                  color: avatarDisplay.textColor,
-                  background: avatarDisplay.isCustomImage ? 'none' : avatarDisplay.gradient,
-                  border: '1px solid var(--border-hairline-strong)',
-                  overflow: 'hidden',
-                  padding: 0
-                }}
-              >
-                {avatarDisplay.isCustomImage ? (
-                  <img src={avatarDisplay.imageUrl} alt={username} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                ) : (
-                  avatarDisplay.initials
-                )}
-                <span 
-                  style={{ 
-                    position: 'absolute', 
-                    bottom: '2px', 
-                    right: '2px', 
-                    width: '6px', 
-                    height: '6px', 
-                    borderRadius: '50%', 
-                    backgroundColor: 'var(--color-success)',
-                    border: '1.5px solid var(--surface-card)'
-                  }} 
-                />
-              </button>
-            );
-          })()}
+          <button 
+            className="btn-icon" 
+            onClick={() => navigate('/profile')} 
+            title={`Profil Saya (${username || 'user'})`}
+            style={{ 
+              position: 'relative', 
+              fontWeight: 700, 
+              fontSize: '11px', 
+              fontFamily: 'Geist Mono, monospace',
+              color: avatarDisplay.textColor,
+              background: avatarDisplay.isCustomImage ? 'none' : avatarDisplay.gradient,
+              border: '1px solid var(--border-hairline-strong)',
+              overflow: 'hidden',
+              padding: 0
+            }}
+          >
+            {avatarDisplay.isCustomImage ? (
+              <img src={avatarDisplay.imageUrl} alt={username} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            ) : (
+              avatarDisplay.initials
+            )}
+            <span 
+              style={{ 
+                position: 'absolute', 
+                bottom: '2px', 
+                right: '2px', 
+                width: '6px', 
+                height: '6px', 
+                borderRadius: '50%', 
+                backgroundColor: 'var(--color-success)',
+                border: '1.5px solid var(--surface-card)'
+              }} 
+            />
+          </button>
 
           <button className="btn-icon" onClick={logout} title="Keluar dari Akun">
             <FontAwesomeIcon icon={faRightFromBracket} style={{ fontSize: '13px' }} />
@@ -212,18 +209,26 @@ export function Home() {
               fontWeight: 700, 
               fontSize: '11px', 
               fontFamily: 'Geist Mono, monospace',
-              color: 'var(--text-primary)',
-              width: '36px',
-              height: '36px',
-              borderRadius: '50%'
+              color: avatarDisplay.textColor,
+              background: avatarDisplay.isCustomImage ? 'none' : avatarDisplay.gradient,
+              border: '1px solid var(--border-hairline-strong)',
+              width: '36px', 
+              height: '36px', 
+              borderRadius: '50%',
+              overflow: 'hidden',
+              padding: 0
             }}
           >
-            {(username || 'DK').substring(0, 2).toUpperCase()}
+            {avatarDisplay.isCustomImage ? (
+              <img src={avatarDisplay.imageUrl} alt={username} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            ) : (
+              avatarDisplay.initials
+            )}
             <span 
               style={{ 
                 position: 'absolute', 
-                bottom: '3px', 
-                right: '3px', 
+                bottom: '2px', 
+                right: '2px', 
                 width: '7px', 
                 height: '7px', 
                 borderRadius: '50%', 
@@ -398,7 +403,13 @@ export function Home() {
             <div 
               key={p.id} 
               className="project-card-interactive" 
-              style={{ cursor: 'pointer', position: 'relative', padding: '24px', borderRadius: '12px' }} 
+              style={{ 
+                cursor: 'pointer', 
+                position: 'relative', 
+                padding: '24px', 
+                borderRadius: 'var(--radius-card, 14px)',
+                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06), 0 8px 24px -4px rgba(0, 0, 0, 0.35)'
+              }} 
               onClick={() => handleOpenProject(p.id)}
             >
               <button 
