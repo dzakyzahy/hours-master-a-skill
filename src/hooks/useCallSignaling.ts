@@ -3,15 +3,99 @@ import { supabase, isSupabaseConfigured } from '../supabaseClient';
 import { useStore } from '../store';
 import type { CallSignal } from '../types/meeting';
 import { playIncomingRingtone, playCallEnd } from '../utils/audio';
+import { shouldProcessCallSignal } from '../utils/callSignalingCore';
+import { showIncomingCallNotification, clearIncomingCallNotification } from '../utils/callNotifications';
 
 // Shared in-memory event emitter for callers across components
 type CallListener = (call: CallSignal | null) => void;
 const listeners = new Set<CallListener>();
 let currentIncomingCall: CallSignal | null = null;
 
+// Module-level singleton channels to survive tab/page navigation
+let activeChannel: any = null;
+let activeBc: BroadcastChannel | null = null;
+let activeUser = { id: '', username: '' };
+
 function setGlobalIncomingCall(call: CallSignal | null) {
   currentIncomingCall = call;
+  if (!call) {
+    clearIncomingCallNotification();
+  }
   listeners.forEach(fn => fn(call));
+}
+
+function handleIncomingSignal(payload: CallSignal) {
+  if (!shouldProcessCallSignal(payload, activeUser.id, activeUser.username)) {
+    return;
+  }
+
+  if (payload.type === 'CALL_INVITE') {
+    // Prevent ringing if already in the same room or already receiving call
+    if (!currentIncomingCall || currentIncomingCall.roomId !== payload.roomId) {
+      setGlobalIncomingCall(payload);
+      showIncomingCallNotification(payload.callerUsername, payload.roomId);
+    }
+  } else if (payload.type === 'CALL_CANCELLED' || payload.type === 'CALL_REJECTED') {
+    if (currentIncomingCall?.roomId === payload.roomId) {
+      playCallEnd();
+      setGlobalIncomingCall(null);
+    }
+  }
+}
+
+function ensureGlobalSignaling(userId?: string | null, username?: string | null) {
+  const currentId = userId || '';
+  const currentName = (username || '').toLowerCase();
+
+  if (!currentId && !currentName) {
+    if (activeChannel) {
+      supabase.removeChannel(activeChannel);
+      activeChannel = null;
+    }
+    if (activeBc) {
+      activeBc.close();
+      activeBc = null;
+    }
+    activeUser = { id: '', username: '' };
+    return;
+  }
+
+  const userChanged = activeUser.id !== currentId || activeUser.username !== currentName;
+  activeUser = { id: currentId, username: currentName };
+
+  if (typeof BroadcastChannel !== 'undefined' && !activeBc) {
+    try {
+      activeBc = new BroadcastChannel('skillo_call_channel');
+      activeBc.onmessage = (event) => {
+        handleIncomingSignal(event.data);
+      };
+    } catch {}
+  }
+
+  if (isSupabaseConfigured && (!activeChannel || userChanged)) {
+    if (activeChannel) {
+      supabase.removeChannel(activeChannel);
+      activeChannel = null;
+    }
+
+    try {
+      activeChannel = supabase.channel('skillo_call_signals', {
+        config: { broadcast: { self: false } }
+      });
+
+      activeChannel
+        .on('broadcast', { event: 'CALL_SIGNAL' }, ({ payload }: { payload: CallSignal }) => {
+          handleIncomingSignal(payload);
+        })
+        .subscribe((status: string) => {
+          if (status === 'TIMED_OUT' || status === 'CLOSED') {
+            console.warn('[callSignaling] Channel disconnected, will re-subscribe if user active');
+          }
+        });
+    } catch (err) {
+      console.warn('[callSignaling] Channel subscription error:', err);
+    }
+  }
 }
 
 export function useCallSignaling() {
@@ -27,6 +111,11 @@ export function useCallSignaling() {
       listeners.delete(handler);
     };
   }, []);
+
+  // Ensure singleton signaling channel stays alive across all page navigations
+  useEffect(() => {
+    ensureGlobalSignaling(userId, username);
+  }, [userId, username]);
 
   // Ringtone loop when incomingCall is active
   useEffect(() => {
@@ -53,72 +142,35 @@ export function useCallSignaling() {
     }
   }, [incomingCall]);
 
-  // Supabase Realtime & BroadcastChannel listener
-  useEffect(() => {
-    if (!userId && !username) return;
-
-    const myId = userId || '';
-    const myName = (username || '').toLowerCase();
-
-    let channel: any = null;
-    let bc: BroadcastChannel | null = null;
-
-    if (typeof BroadcastChannel !== 'undefined') {
-      try {
-        bc = new BroadcastChannel('skillo_call_channel');
-        bc.onmessage = (event) => {
-          handleIncomingSignal(event.data);
-        };
-      } catch {}
-    }
-
-    if (isSupabaseConfigured) {
-      try {
-        channel = supabase.channel('skillo_call_signals', {
-          config: { broadcast: { self: false } }
+  // Broadcast helper
+  const sendSignal = useCallback((payload: CallSignal) => {
+    try {
+      if (activeChannel) {
+        activeChannel.send({
+          type: 'broadcast',
+          event: 'CALL_SIGNAL',
+          payload
         });
-
-        channel
-          .on('broadcast', { event: 'CALL_SIGNAL' }, ({ payload }: { payload: CallSignal }) => {
-            handleIncomingSignal(payload);
-          })
-          .subscribe();
-      } catch (err) {
-        console.warn('Call signaling channel error:', err);
+      } else if (isSupabaseConfigured) {
+        const tempChannel = supabase.channel('skillo_call_signals');
+        tempChannel.send({
+          type: 'broadcast',
+          event: 'CALL_SIGNAL',
+          payload
+        });
       }
-    }
 
-    function handleIncomingSignal(payload: CallSignal) {
-      if (!payload || !payload.type) return;
-
-      const targetId = payload.receiverId;
-      const targetUser = (payload.receiverUsername || '').toLowerCase();
-      const isForMe = (myId && targetId === myId) || (myName && targetUser === myName);
-
-      if (!isForMe) return;
-
-      if (payload.type === 'CALL_INVITE') {
-        // Prevent ringing if already in the same room or already has call
-        if (!currentIncomingCall || currentIncomingCall.roomId !== payload.roomId) {
-          setGlobalIncomingCall(payload);
-        }
-      } else if (payload.type === 'CALL_CANCELLED' || payload.type === 'CALL_REJECTED') {
-        if (currentIncomingCall?.roomId === payload.roomId) {
-          playCallEnd();
-          setGlobalIncomingCall(null);
-        }
-      }
-    }
-
-    return () => {
-      if (channel) {
-        supabase.removeChannel(channel);
-      }
-      if (bc) {
+      if (activeBc) {
+        activeBc.postMessage(payload);
+      } else if (typeof BroadcastChannel !== 'undefined') {
+        const bc = new BroadcastChannel('skillo_call_channel');
+        bc.postMessage(payload);
         bc.close();
       }
-    };
-  }, [userId, username]);
+    } catch (err) {
+      console.warn('[callSignaling] Failed to broadcast signal:', err);
+    }
+  }, []);
 
   // Initiate call to a friend
   const initiateCall = useCallback((targetFriend: { id: string; username: string; name?: string }) => {
@@ -140,27 +192,9 @@ export function useCallSignaling() {
       timestamp: Date.now()
     };
 
-    // Broadcast across Supabase & BroadcastChannel
-    try {
-      if (isSupabaseConfigured) {
-        const channel = supabase.channel('skillo_call_signals');
-        channel.send({
-          type: 'broadcast',
-          event: 'CALL_SIGNAL',
-          payload: signalPayload
-        });
-      }
-      if (typeof BroadcastChannel !== 'undefined') {
-        const bc = new BroadcastChannel('skillo_call_channel');
-        bc.postMessage(signalPayload);
-        bc.close();
-      }
-    } catch (err) {
-      console.warn('Failed to broadcast call signal:', err);
-    }
-
+    sendSignal(signalPayload);
     return roomId;
-  }, [userId, username]);
+  }, [userId, username, sendSignal]);
 
   // Accept incoming call
   const acceptIncomingCall = useCallback(() => {
@@ -173,25 +207,10 @@ export function useCallSignaling() {
       timestamp: Date.now()
     };
 
-    try {
-      if (isSupabaseConfigured) {
-        const channel = supabase.channel('skillo_call_signals');
-        channel.send({
-          type: 'broadcast',
-          event: 'CALL_SIGNAL',
-          payload: acceptPayload
-        });
-      }
-      if (typeof BroadcastChannel !== 'undefined') {
-        const bc = new BroadcastChannel('skillo_call_channel');
-        bc.postMessage(acceptPayload);
-        bc.close();
-      }
-    } catch {}
-
+    sendSignal(acceptPayload);
     setGlobalIncomingCall(null);
     return call;
-  }, [incomingCall]);
+  }, [incomingCall, sendSignal]);
 
   // Reject incoming call
   const rejectIncomingCall = useCallback(() => {
@@ -204,25 +223,10 @@ export function useCallSignaling() {
       timestamp: Date.now()
     };
 
-    try {
-      if (isSupabaseConfigured) {
-        const channel = supabase.channel('skillo_call_signals');
-        channel.send({
-          type: 'broadcast',
-          event: 'CALL_SIGNAL',
-          payload: rejectPayload
-        });
-      }
-      if (typeof BroadcastChannel !== 'undefined') {
-        const bc = new BroadcastChannel('skillo_call_channel');
-        bc.postMessage(rejectPayload);
-        bc.close();
-      }
-    } catch {}
-
+    sendSignal(rejectPayload);
     playCallEnd();
     setGlobalIncomingCall(null);
-  }, [incomingCall]);
+  }, [incomingCall, sendSignal]);
 
   // Cancel outgoing call
   const cancelOutgoingCall = useCallback((roomId: string, targetFriendId?: string) => {
@@ -237,24 +241,10 @@ export function useCallSignaling() {
       timestamp: Date.now()
     };
 
-    try {
-      if (isSupabaseConfigured) {
-        const channel = supabase.channel('skillo_call_signals');
-        channel.send({
-          type: 'broadcast',
-          event: 'CALL_SIGNAL',
-          payload: cancelPayload
-        });
-      }
-      if (typeof BroadcastChannel !== 'undefined') {
-        const bc = new BroadcastChannel('skillo_call_channel');
-        bc.postMessage(cancelPayload);
-        bc.close();
-      }
-    } catch {}
-
+    sendSignal(cancelPayload);
     playCallEnd();
-  }, [userId, username]);
+    clearIncomingCallNotification();
+  }, [userId, username, sendSignal]);
 
   return {
     incomingCall,

@@ -17,7 +17,6 @@ import { supabase, isSupabaseConfigured } from '../supabaseClient';
 import { useStore } from '../store';
 import { ApiKeyModal } from '../components/ApiKeyModal';
 import { ThemeSwitcher } from '../components/ThemeSwitcher';
-import { playMessageReceived } from '../utils/audio';
 
 declare global {
   interface Window {
@@ -366,17 +365,6 @@ export function Profile() {
                 </div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                {soundEnabled && (
-                  <button
-                    type="button"
-                    onClick={() => playMessageReceived()}
-                    className="btn"
-                    style={{ height: '28px', padding: '0 10px', fontSize: '11px', gap: '4px' }}
-                    title="Dengarkan contoh suara notifikasi"
-                  >
-                    Uji Suara
-                  </button>
-                )}
                 <button
                   type="button"
                   onClick={toggleSound}

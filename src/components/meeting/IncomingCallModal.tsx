@@ -131,7 +131,7 @@ export function IncomingCallModal() {
             letterSpacing: '-0.02em'
           }}
         >
-          @{incomingCall.callerUsername}
+          {incomingCall.callerUsername.replace(/^@+/, '')}
         </h3>
         <p 
           style={{

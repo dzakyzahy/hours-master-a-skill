@@ -8,7 +8,7 @@ const config: CapacitorConfig = {
   webDir: 'dist',
   ...(isLiveReload ? {
     server: {
-      url: 'http://10.21.105.19:5173',
+      url: process.env.LIVE_RELOAD_URL || 'http://10.21.105.107:5173',
       cleartext: true
     }
   } : {})

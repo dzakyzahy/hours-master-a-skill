@@ -269,7 +269,7 @@ export function Chat() {
       id: `msg_call_${Date.now()}`,
       sender: currentUsername,
       recipient: (targetFriendUser.username || targetFriendUser.name || '').toLowerCase(),
-      text: `📞 Memulai panggilan video dengan @${targetFriendUser.username}...`,
+      text: `📞 Memulai panggilan video dengan ${targetFriendUser.username.replace(/^@+/, '')}...`,
       timestamp: Date.now(),
     };
 
@@ -583,7 +583,7 @@ export function Chat() {
                       }
                     }}
                   >
-                    @{suggestedName}
+                    {suggestedName}
                   </button>
                 ))}
               </div>
@@ -630,7 +630,7 @@ export function Chat() {
                             {(u.username || 'U').substring(0, 2).toUpperCase()}
                           </div>
                           <div className="community-info">
-                            <span className="community-name">@{u.username}</span>
+                            <span className="community-name">{u.username.replace(/^@+/, '')}</span>
                             {u.email && <span className="community-meta">{u.email}</span>}
                           </div>
                         </div>
@@ -672,10 +672,10 @@ export function Chat() {
                   color: 'var(--text-secondary)',
                   lineHeight: 1.5
                 }}>
-                  Tidak ditemukan pengguna dengan nama "@{searchQuery.replace(/^@/, '')}". 
+                  Tidak ditemukan pengguna dengan nama "{searchQuery.replace(/^@/, '')}". 
                   Pengguna lain yang terdaftar di database saat ini: 
                   <strong style={{ color: 'var(--accent-primary)', marginLeft: '4px' }}>
-                    {['diky', 'zahy', 'gg442'].filter(u => u !== currentUsername).map(u => `@${u}`).join(', ')}
+                    {['diky', 'zahy', 'gg442'].filter(u => u !== currentUsername).join(', ')}
                   </strong>
                 </div>
               )}
@@ -700,7 +700,7 @@ export function Chat() {
                             {(u.username || 'U').substring(0, 2).toUpperCase()}
                           </div>
                           <div className="community-info">
-                            <span className="community-name">@{u.username}</span>
+                            <span className="community-name">{u.username.replace(/^@+/, '')}</span>
                             {u.email && <span className="community-meta">{u.email}</span>}
                           </div>
                         </div>
@@ -778,7 +778,7 @@ export function Chat() {
                           <div className="flex items-center gap-1.5 flex-wrap">
                             <span className="friend-name">{displayName}</span>
                             {showHandle && (
-                              <span className="friend-handle">@{f.username}</span>
+                              <span className="friend-handle">{f.username.replace(/^@+/, '')}</span>
                             )}
                           </div>
                           <div className="friend-meta">
@@ -821,7 +821,7 @@ export function Chat() {
                           {initials}
                         </div>
                         <div className="friend-card-info">
-                          <span className="friend-name">@{req.receiver_username}</span>
+                          <span className="friend-name">{(req.receiver_username || '').replace(/^@+/, '')}</span>
                           <span className="friend-meta" style={{ color: 'var(--accent-primary)' }}>
                             <FontAwesomeIcon icon={faClock} style={{ fontSize: '10px' }} /> Menunggu persetujuan...
                           </span>
@@ -863,7 +863,7 @@ export function Chat() {
                         {initials}
                       </div>
                       <div className="community-info">
-                        <span className="community-name">@{req.sender_username}</span>
+                        <span className="community-name">{(req.sender_username || '').replace(/^@+/, '')}</span>
                         <span className="community-meta">Mengirim permintaan pertemanan</span>
                       </div>
                     </div>
@@ -884,7 +884,7 @@ export function Chat() {
                         onClick={async () => {
                           const ok = await acceptFriendRequest(req.id, req.sender_id);
                           if (ok) {
-                            toast.success(`Sekarang berteman dengan @${req.sender_username}`);
+                            toast.success(`Sekarang berteman dengan ${(req.sender_username || '').replace(/^@+/, '')}`);
                           } else {
                             toast.error('Gagal menerima permintaan');
                           }
@@ -963,7 +963,7 @@ export function Chat() {
                           <span className="chat-lobby-preview">
                             {lastMsg 
                               ? (lastMsg.sender.toLowerCase() === currentUsername ? `Anda: ${lastMsg.text}` : lastMsg.text)
-                              : `@${f.username} - Ketuk untuk chat`}
+                              : `${f.username.replace(/^@+/, '')} - Ketuk untuk chat`}
                           </span>
                         </div>
                       </button>
@@ -1003,7 +1003,7 @@ export function Chat() {
                           </span>
                           {currentFriendInChat.name && currentFriendInChat.username && currentFriendInChat.name.toLowerCase() !== currentFriendInChat.username.toLowerCase() && (
                             <span style={{ fontSize: '11px', fontFamily: 'Geist Mono, monospace', color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                              @{currentFriendInChat.username}
+                              {currentFriendInChat.username.replace(/^@+/, '')}
                             </span>
                           )}
                         </div>
@@ -1029,7 +1029,7 @@ export function Chat() {
                   <div className="chat-room-feed" ref={chatFeedRef}>
                     {activeConversationMessages.length === 0 ? (
                       <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--text-placeholder)', fontSize: '12px', fontFamily: 'Geist Mono, monospace' }}>
-                        Belum ada pesan dengan @{currentFriendUsername}. Mulai percakapan di bawah.
+                        Belum ada pesan dengan {currentFriendUsername.replace(/^@+/, '')}. Mulai percakapan di bawah.
                       </div>
                     ) : (
                       activeConversationMessages.map(m => {
@@ -1087,7 +1087,7 @@ export function Chat() {
                       id="chatMessage"
                       name="chatMessage"
                       className="chat-room-input" 
-                      placeholder={`Kirim pesan ke @${currentFriendInChat?.username || 'rekan'}...`}
+                      placeholder={`Kirim pesan ke ${(currentFriendInChat?.username || 'rekan').replace(/^@+/, '')}...`}
                       value={newMessage} 
                       onChange={e => setNewMessage(e.target.value)} 
                       autoComplete="off"

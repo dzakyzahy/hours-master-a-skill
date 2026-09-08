@@ -614,7 +614,7 @@ _Ketuk tautan di atas untuk langsung masuk ke sesi._`;
           </div>
 
           <h2 style={{ margin: '0 0 6px 0', fontSize: '22px', fontWeight: 700, color: 'var(--text-primary)' }}>
-            @{targetFriend || 'Rekan'}
+            {(targetFriend || 'Rekan').replace(/^@+/, '')}
           </h2>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--accent-primary)', fontSize: '13px', fontWeight: 500 }}>
             <FontAwesomeIcon icon={faCircleDot} style={{ fontSize: '10px' }} />
@@ -721,7 +721,7 @@ _Ketuk tautan di atas untuk langsung masuk ke sesi._`;
 
           <div style={{ minWidth: 0, flex: 1 }}>
             <h2 style={{ margin: 0, fontSize: '13.5px', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.01em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {callType === 'direct' ? `@${targetFriend || 'Rekan'}` : 'Mastery Focus Room'}
+              {callType === 'direct' ? (targetFriend || 'Rekan').replace(/^@+/, '') : 'Mastery Focus Room'}
             </h2>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.6875rem', color: 'var(--text-secondary)', marginTop: '2px', flexWrap: 'nowrap', overflow: 'hidden' }}>
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: 'var(--color-success)', fontWeight: 500, whiteSpace: 'nowrap' }}>

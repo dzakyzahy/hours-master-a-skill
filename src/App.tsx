@@ -10,9 +10,11 @@ import { Home } from './pages/Home';
 import { App as CapApp } from '@capacitor/app';
 import { StatusBar, Style } from '@capacitor/status-bar';
 import { Capacitor } from '@capacitor/core';
+import { LocalNotifications } from '@capacitor/local-notifications';
 import { usePresence } from './hooks/usePresence';
 import { useFriendRequests } from './hooks/useFriendRequests';
 import { IncomingCallModal } from './components/meeting/IncomingCallModal';
+import { requestCallNotificationPermissions, setupCallNotificationChannel } from './utils/callNotifications';
 import './index.css';
 
 const Dashboard = lazy(() => import('./pages/Dashboard').then(m => ({ default: m.Dashboard })));
@@ -413,9 +415,25 @@ export default function App() {
         }
       });
 
+      // Request notification permissions & setup high-priority call channel (heads-up)
+      requestCallNotificationPermissions().catch(() => {});
+      setupCallNotificationChannel().catch(() => {});
+
+      const notifActionListener = LocalNotifications.addListener(
+        'localNotificationActionPerformed',
+        (action) => {
+          const extra = action.notification?.extra;
+          if (extra?.roomId) {
+            const caller = extra.callerUsername || 'Rekan';
+            window.location.hash = `#/meeting/${extra.roomId}?type=direct&with=${encodeURIComponent(caller)}&isCaller=false`;
+          }
+        }
+      );
+
       return () => {
         backListener.then((l: any) => l.remove()).catch(() => {});
         urlListener.then((l: any) => l.remove()).catch(() => {});
+        notifActionListener.then((l: any) => l.remove()).catch(() => {});
       };
     }
   }, [theme]);
