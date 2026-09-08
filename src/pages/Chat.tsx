@@ -17,6 +17,7 @@ import { supabase, isSupabaseConfigured } from '../supabaseClient';
 import toast from 'react-hot-toast';
 import { ThemeSwitcher } from '../components/ThemeSwitcher';
 import { playMessageSent, playMessageReceived } from '../utils/audio';
+import { useCallSignaling } from '../hooks/useCallSignaling';
 
 interface LocalChatMessage {
   id: string;
@@ -94,6 +95,7 @@ export function Chat() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatFeedRef = useRef<HTMLDivElement>(null);
   const supabaseChannelRef = useRef<any>(null);
+  const { initiateCall } = useCallSignaling();
 
   // Sync friends status continuously with reasonable 8s interval (prevents Supabase rate spikes)
   useEffect(() => {
@@ -258,6 +260,37 @@ export function Chat() {
   const handleStartChat = (friend: FriendUser) => {
     setSelectedFriend(friend);
     setActiveTab('chat');
+  };
+
+  const handleDirectCall = (targetFriendUser: FriendUser) => {
+    const rId = initiateCall(targetFriendUser);
+
+    const callNotice: LocalChatMessage = {
+      id: `msg_call_${Date.now()}`,
+      sender: currentUsername,
+      recipient: (targetFriendUser.username || targetFriendUser.name || '').toLowerCase(),
+      text: `📞 Memulai panggilan video dengan @${targetFriendUser.username}...`,
+      timestamp: Date.now(),
+    };
+
+    setLocalMessages(prev => {
+      const next = [...prev, callNotice];
+      saveMessagesToStorage(next);
+      return next;
+    });
+
+    if (isSupabaseConfigured) {
+      try {
+        const channel = supabaseChannelRef.current || supabase.channel('skillo_team_chat');
+        channel.send({
+          type: 'broadcast',
+          event: 'NEW_CHAT_MSG',
+          payload: callNotice,
+        });
+      } catch {}
+    }
+
+    navigate(`/meeting/${rId}?type=direct&with=${encodeURIComponent(targetFriendUser.username || targetFriendUser.name)}&isCaller=true`);
   };
 
   const loadCommunityUsers = useCallback(async () => {
@@ -768,11 +801,11 @@ export function Chat() {
                         </button>
                         <button 
                           className="btn friend-action-btn" 
-                          onClick={() => navigate('/meeting')}
-                          title="Ajak ke Focus Room"
+                          onClick={() => handleDirectCall(f)}
+                          title={`Panggilan Video Privat dengan ${displayName}`}
                         >
                           <FontAwesomeIcon icon={faVideo} style={{ fontSize: '12px', color: 'var(--accent-primary)' }} /> 
-                          <span>Focus Room</span>
+                          <span>Video Call</span>
                         </button>
                       </div>
                     </div>
@@ -983,9 +1016,9 @@ export function Chat() {
 
                     <button 
                       className="btn chat-action-btn" 
-                      onClick={() => navigate('/meeting')}
-                      title="Mulai Video Call"
-                      aria-label="Mulai Video Call"
+                      onClick={() => currentFriendInChat && handleDirectCall(currentFriendInChat)}
+                      title="Mulai Video Call Privat"
+                      aria-label="Mulai Video Call Privat"
                     >
                       <FontAwesomeIcon icon={faVideo} style={{ fontSize: '12px', color: 'var(--accent-primary)' }} />
                       <span className="chat-action-label">Video Call</span>

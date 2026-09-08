@@ -1,3 +1,16 @@
+export type CallType = 'direct' | 'focus';
+
+export interface CallSignal {
+  type: 'CALL_INVITE' | 'CALL_ACCEPTED' | 'CALL_REJECTED' | 'CALL_BUSY' | 'CALL_CANCELLED';
+  callerId: string;
+  callerUsername: string;
+  callerName: string;
+  receiverId: string;
+  receiverUsername: string;
+  roomId: string;
+  timestamp: number;
+}
+
 export interface Participant {
   id: string;
   name: string;
@@ -15,3 +28,4 @@ export interface MeetingRoomConfig {
   roomTitle: string;
   maxParticipants?: number;
 }
+

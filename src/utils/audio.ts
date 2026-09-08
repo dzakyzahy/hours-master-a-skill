@@ -250,3 +250,77 @@ export function playDuelStart() {
     osc.stop(now + 0.19);
   } catch {}
 }
+
+/**
+ * Incoming Call Ringtone: Musical modern telephone ring pulse
+ */
+export function playIncomingRingtone() {
+  if (!isAudioEnabled()) return;
+  const ctx = getAudioContext();
+  if (!ctx) return;
+
+  try {
+    const now = ctx.currentTime;
+    const ringNotes = [
+      { freq: 659.25, time: 0 },     // E5
+      { freq: 880.00, time: 0.12 },  // A5
+      { freq: 659.25, time: 0.35 },  // E5
+      { freq: 880.00, time: 0.47 }   // A5
+    ];
+
+    ringNotes.forEach(n => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      const start = now + n.time;
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(n.freq, start);
+
+      gain.gain.setValueAtTime(0.18, start);
+      gain.gain.exponentialRampToValueAtTime(0.001, start + 0.18);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start(start);
+      osc.stop(start + 0.19);
+    });
+  } catch {}
+}
+
+/**
+ * Call Ended / Rejected: Gentle descending chime
+ */
+export function playCallEnd() {
+  if (!isAudioEnabled()) return;
+  const ctx = getAudioContext();
+  if (!ctx) return;
+
+  try {
+    const now = ctx.currentTime;
+    const endNotes = [
+      { freq: 587.33, time: 0 },    // D5
+      { freq: 440.00, time: 0.12 }, // A4
+      { freq: 329.63, time: 0.24 }  // E4
+    ];
+
+    endNotes.forEach(n => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      const start = now + n.time;
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(n.freq, start);
+
+      gain.gain.setValueAtTime(0.14, start);
+      gain.gain.exponentialRampToValueAtTime(0.001, start + 0.22);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start(start);
+      osc.stop(start + 0.23);
+    });
+  } catch {}
+}
+

@@ -25,8 +25,10 @@ export function useWebRTC(
   localUserId: string, 
   localUserName: string, 
   localStream: MediaStream | null,
-  localStatus: { isAudioMuted: boolean; isVideoOff: boolean; isScreenSharing: boolean }
+  localStatus: { isAudioMuted: boolean; isVideoOff: boolean; isScreenSharing: boolean },
+  options?: { enabled?: boolean }
 ) {
+  const isEnabled = options?.enabled ?? true;
   const [remoteParticipants, setRemoteParticipants] = useState<Participant[]>([]);
   const peersRef = useRef<Map<string, RTCPeerConnection>>(new Map());
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
@@ -132,7 +134,7 @@ export function useWebRTC(
 
 
   useEffect(() => {
-    if (!roomId || !localUserId) return;
+    if (!isEnabled || !roomId || !localUserId) return;
 
     // Reset state if room changes
     setRemoteParticipants([]);

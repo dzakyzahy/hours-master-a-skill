@@ -76,7 +76,7 @@ export function Home() {
         {/* Desktop Header Actions: Workspace Group, Utility Icons, and Separated Theme Switcher */}
         <div className="desktop-header-actions header-actions-cluster">
           {/* Workspace Primary Controls */}
-          <button className="btn" onClick={() => navigate('/meeting')} title="Masuk Focus Room" style={{ gap: '6px' }}>
+          <button className="btn" onClick={() => navigate('/meeting/focus-community?type=focus')} title="Masuk Focus Room" style={{ gap: '6px' }}>
             <FontAwesomeIcon icon={faVideo} style={{ fontSize: '13px' }} /> Focus Room
           </button>
           <button className="btn" onClick={() => setShowRecycleBin(!showRecycleBin)} title="Lihat item yang dihapus" style={{ gap: '6px' }}>
@@ -443,7 +443,7 @@ export function Home() {
           <FontAwesomeIcon icon={faLayerGroup} style={{ fontSize: '18px', color: 'var(--accent-primary)' }} />
           <span>Projects</span>
         </button>
-        <button className="nav-item" onClick={() => navigate('/meeting')} title="Focus Room">
+        <button className="nav-item" onClick={() => navigate('/meeting/focus-community?type=focus')} title="Focus Room">
           <FontAwesomeIcon icon={faVideo} style={{ fontSize: '17px' }} />
           <span>Focus</span>
         </button>

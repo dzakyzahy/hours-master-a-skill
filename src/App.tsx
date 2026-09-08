@@ -12,6 +12,7 @@ import { StatusBar, Style } from '@capacitor/status-bar';
 import { Capacitor } from '@capacitor/core';
 import { usePresence } from './hooks/usePresence';
 import { useFriendRequests } from './hooks/useFriendRequests';
+import { IncomingCallModal } from './components/meeting/IncomingCallModal';
 import './index.css';
 
 const Dashboard = lazy(() => import('./pages/Dashboard').then(m => ({ default: m.Dashboard })));
@@ -81,8 +82,9 @@ function PageLoader() {
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useStore();
+  const location = useLocation();
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
   return <>{children}</>;
 }
@@ -430,6 +432,7 @@ export default function App() {
             />
           </Routes>
         </Suspense>
+        <IncomingCallModal />
         <GlobalFloatingTimer />
       </HashRouter>
     </div>

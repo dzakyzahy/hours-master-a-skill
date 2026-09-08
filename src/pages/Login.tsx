@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useStore } from '../store';
 import { SkilloLogo } from '../components/SkilloLogo';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -40,6 +40,7 @@ export function Login() {
 
   const { login, register, resetPassword, setBiometricVerified } = useStore();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,7 +57,9 @@ export function Login() {
         setError('Kredensial tidak cocok. Silakan periksa email/username dan kata sandi Anda.');
       } else {
         setBiometricVerified(true);
-        navigate('/');
+        const fromState = (location.state as any)?.from;
+        const destination = fromState?.pathname ? (fromState.pathname + (fromState.search || '')) : '/';
+        navigate(destination);
       }
     } catch (err: any) {
       setError(err?.message || 'Autentikasi gagal. Silakan coba beberapa saat lagi.');
