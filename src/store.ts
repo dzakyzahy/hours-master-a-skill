@@ -523,19 +523,28 @@ export const useStore = create<AppState>()(
         )
       })),
 
-      deleteProject: (id) => set((state) => ({
-        projects: state.projects.map(p => p.id === id ? { ...p, deletedAt: Date.now() } : p),
-        activeProjectId: state.activeProjectId === id ? null : state.activeProjectId
-      })),
+      deleteProject: (id) => {
+        set((state) => ({
+          projects: state.projects.map(p => p.id === id ? { ...p, deletedAt: Date.now() } : p),
+          activeProjectId: state.activeProjectId === id ? null : state.activeProjectId
+        }));
+        get().syncTotalHoursToSupabase();
+      },
 
-      restoreProject: (id) => set((state) => ({
-        projects: state.projects.map(p => p.id === id ? { ...p, deletedAt: undefined } : p)
-      })),
+      restoreProject: (id) => {
+        set((state) => ({
+          projects: state.projects.map(p => p.id === id ? { ...p, deletedAt: undefined } : p)
+        }));
+        get().syncTotalHoursToSupabase();
+      },
 
-      hardDeleteProject: (id) => set((state) => ({
-        projects: state.projects.filter(p => p.id !== id),
-        activeProjectId: state.activeProjectId === id ? null : state.activeProjectId
-      })),
+      hardDeleteProject: (id) => {
+        set((state) => ({
+          projects: state.projects.filter(p => p.id !== id),
+          activeProjectId: state.activeProjectId === id ? null : state.activeProjectId
+        }));
+        get().syncTotalHoursToSupabase();
+      },
 
       addManualTime: (id, minutes) => {
         const hoursToAdd = minutes / 60;

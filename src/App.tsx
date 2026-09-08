@@ -50,6 +50,14 @@ export default function App() {
     document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
 
+  // Auto-repair total hours bug on startup
+  const { isAuthenticated, syncTotalHoursToSupabase } = useStore();
+  useEffect(() => {
+    if (isAuthenticated) {
+      syncTotalHoursToSupabase();
+    }
+  }, [isAuthenticated, syncTotalHoursToSupabase]);
+
   // Native Capacitor Integration (Android Back Button & Status Bar)
   useEffect(() => {
     if (Capacitor.isNativePlatform()) {
