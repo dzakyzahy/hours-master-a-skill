@@ -103,52 +103,42 @@ export function Profile() {
   };
 
   return (
-    <div className="no-drag mobile-content-container" style={{ padding: '32px 20px 80px', flex: 1, maxWidth: '680px', margin: '0 auto', width: '100%' }}>
-      {/* Header with Symmetrical Back & Theme Switcher */}
-      <header className="header-topbar mb-8" style={{ borderBottom: '1px solid var(--border-hairline)', paddingBottom: '16px' }}>
-        <div className="flex items-center gap-4">
+    <div className="no-drag mobile-content-container" style={{ maxWidth: '680px', margin: '0 auto', width: '100%' }}>
+      {/* Header with Unified Single-Row App Header */}
+      <header className="app-header-bar">
+        <div className="header-nav-group">
           <button 
-            className="btn" 
+            type="button"
+            className="header-back-btn" 
             onClick={() => navigate('/')} 
-            style={{ 
-              padding: '0 12px', 
-              height: '34px', 
-              fontSize: '12px', 
-              fontWeight: 500, 
-              gap: '6px', 
-              borderRadius: '6px',
-              border: '1px solid var(--border-hairline-strong)',
-              background: 'var(--surface-input)',
-              color: 'var(--text-secondary)'
-            }} 
             title="Kembali ke Beranda"
+            aria-label="Kembali ke Beranda"
           >
             <FontAwesomeIcon icon={faArrowLeft} style={{ fontSize: '11px' }} />
-            <span>Kembali</span>
+            <span className="header-back-label">Kembali</span>
           </button>
-          <div>
-            <h1 style={{ margin: 0, fontSize: '18px', fontWeight: 600, letterSpacing: '-0.02em', color: 'var(--text-primary)', fontFamily: "'Geist', sans-serif" }}>
+          <div className="header-title-block">
+            <h1 className="header-title-main">
               Profil & Pengaturan
             </h1>
-            <p style={{ margin: '2px 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>
-              Kelola kredensial akun dan identitas kolaborasi tim
+            <p className="header-subtitle-text">
+              Kelola kredensial akun & identitas kolaborasi tim
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          {/* Dedicated Isolated Theme Switcher */}
+        <div className="header-actions-group">
           <ThemeSwitcher compact={true} />
         </div>
       </header>
 
       {/* User Identity Banner Card */}
-      <div className="glass-panel mb-6" style={{ padding: '24px', display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
+      <div className="glass-panel mb-6" style={{ padding: '20px', display: 'flex', alignItems: 'center', gap: '16px' }}>
         <div 
           style={{ 
-            width: '56px', 
-            height: '56px', 
-            borderRadius: '8px', 
+            width: '52px', 
+            height: '52px', 
+            borderRadius: '10px', 
             background: 'var(--surface-input)', 
             border: '1px solid var(--border-hairline-strong)', 
             display: 'flex', 
@@ -158,18 +148,19 @@ export function Profile() {
             fontWeight: 700,
             fontFamily: 'Geist Mono, monospace',
             color: 'var(--text-primary)',
+            flexShrink: 0
           }}
         >
           {userInitials}
         </div>
-        <div style={{ flex: 1, minWidth: '200px' }}>
-          <div className="flex items-center gap-2 mb-1">
-            <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 600, letterSpacing: '-0.015em' }} className="capitalize">{newUsername}</h2>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div className="flex items-center gap-2 mb-1" style={{ flexWrap: 'wrap' }}>
+            <h2 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 600, letterSpacing: '-0.015em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} className="capitalize">{newUsername}</h2>
             <span style={{ fontFamily: 'Geist Mono, monospace', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.04em', padding: '2px 8px', borderRadius: '4px', border: '1px solid rgba(34,197,94,0.3)', background: 'rgba(34,197,94,0.08)', color: '#22c55e' }} className="inline-flex items-center gap-1.5">
               <span style={{ width: '5px', height: '5px', borderRadius: '50%', backgroundColor: '#22c55e' }} /> Online
             </span>
           </div>
-          <p style={{ margin: '0 0 6px', fontSize: '12px', color: 'var(--text-secondary)', fontFamily: 'Geist Mono, monospace' }}>{email}</p>
+          <p style={{ margin: '0 0 6px', fontSize: '12px', color: 'var(--text-secondary)', fontFamily: 'Geist Mono, monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{email}</p>
           <span style={{ fontSize: '11px', fontFamily: 'Geist Mono, monospace', color: 'var(--text-secondary)', background: 'var(--surface-input)', padding: '3px 8px', borderRadius: '4px', border: '1px solid var(--border-hairline)' }} className="inline-block">
             {roleTitle}
           </span>
@@ -177,10 +168,10 @@ export function Profile() {
       </div>
 
       {/* Settings Grid - Generous relaxed vertical layout */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
         {/* Account Form */}
-        <div className="glass-panel" style={{ padding: '32px 28px' }}>
-          <div className="flex items-center gap-2" style={{ marginBottom: '24px' }}>
+        <div className="glass-panel" style={{ padding: '24px 20px' }}>
+          <div className="flex items-center gap-2" style={{ marginBottom: '20px' }}>
             <FontAwesomeIcon icon={faUser} style={{ color: 'var(--text-secondary)', fontSize: '14px' }} />
             <h2 style={{ margin: 0, fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.015em' }}>
               Pengaturan Akun
@@ -246,7 +237,7 @@ export function Profile() {
         </div>
 
         {/* System & Update Info Card */}
-        <div className="glass-panel" style={{ width: '100%', padding: '32px 28px' }}>
+        <div className="glass-panel" style={{ width: '100%', padding: '24px 20px' }}>
           <div className="flex items-center justify-between" style={{ marginBottom: '24px' }}>
             <div className="flex items-center gap-2">
               <FontAwesomeIcon icon={faShieldHalved} style={{ color: 'var(--text-secondary)', fontSize: '14px' }} />

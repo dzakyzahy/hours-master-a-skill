@@ -57,9 +57,9 @@ export function Home() {
   const onlineFriendsCount = friends.filter(f => f.isOnline).length;
 
   return (
-    <div style={{ padding: '32px 20px 80px', flex: 1, zIndex: 10, position: 'relative', maxWidth: '1120px', margin: '0 auto', width: '100%' }} className="no-drag mobile-content-container">
+    <div style={{ flex: 1, zIndex: 10, position: 'relative', maxWidth: '1120px', margin: '0 auto', width: '100%' }} className="no-drag mobile-content-container">
       {/* Top Bar with Clear Symmetrical Alignment */}
-      <header className="header-topbar">
+      <header className="app-header-bar">
         {/* Left: Brand + Identity */}
         <div className="header-brand-wrap">
           <SkilloLogo size={34} animated={true} />

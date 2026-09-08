@@ -10,18 +10,21 @@ interface ThemeSwitcherProps {
 
 export function ThemeSwitcher({ compact = false, iconOnly = false, className = '' }: ThemeSwitcherProps) {
   const { theme, setTheme } = useStore();
+  const isLight = theme === 'light';
 
   if (iconOnly) {
     return (
       <button
         type="button"
-        className={`btn-icon ${className}`}
-        onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
-        aria-label={theme === 'light' ? 'Ganti ke Mode Gelap' : 'Ganti ke Mode Terang'}
-        title={theme === 'light' ? 'Ganti ke Mode Gelap' : 'Ganti ke Mode Terang'}
-        style={{ width: '36px', height: '36px', borderRadius: '50%' }}
+        className={`theme-switcher-toggle-btn ${className}`}
+        onClick={() => setTheme(isLight ? 'dark' : 'light')}
+        aria-label={isLight ? 'Ganti ke Mode Gelap' : 'Ganti ke Mode Terang'}
+        title={isLight ? 'Ganti ke Mode Gelap' : 'Ganti ke Mode Terang'}
       >
-        <FontAwesomeIcon icon={theme === 'light' ? faMoon : faSun} style={{ fontSize: '13px' }} />
+        <FontAwesomeIcon 
+          icon={isLight ? faMoon : faSun} 
+          className="theme-switcher-toggle-icon" 
+        />
       </button>
     );
   }
@@ -31,31 +34,33 @@ export function ThemeSwitcher({ compact = false, iconOnly = false, className = '
       className={`theme-switcher-segmented ${className}`}
       role="radiogroup" 
       aria-label="Mode Tema Aplikasi"
-      title="Pilih tema aplikasi"
     >
       <button
         type="button"
         role="radio"
-        aria-checked={theme === 'light'}
-        className={`theme-switcher-option ${theme === 'light' ? 'active' : ''}`}
+        aria-checked={isLight}
+        className={`theme-switcher-option ${isLight ? 'active' : ''}`}
         onClick={() => setTheme('light')}
-        title="Mode Terang (Light Mode)"
+        title="Mode Terang"
+        aria-label="Pilih Mode Terang"
       >
-        <FontAwesomeIcon icon={faSun} className="text-[14px]" />
+        <FontAwesomeIcon icon={faSun} style={{ fontSize: '13px' }} />
         {!compact && <span className="theme-switcher-text">Terang</span>}
       </button>
 
       <button
         type="button"
         role="radio"
-        aria-checked={theme === 'dark'}
-        className={`theme-switcher-option ${theme === 'dark' ? 'active' : ''}`}
+        aria-checked={!isLight}
+        className={`theme-switcher-option ${!isLight ? 'active' : ''}`}
         onClick={() => setTheme('dark')}
-        title="Mode Gelap (Dark Mode)"
+        title="Mode Gelap"
+        aria-label="Pilih Mode Gelap"
       >
-        <FontAwesomeIcon icon={faMoon} className="text-[14px]" />
+        <FontAwesomeIcon icon={faMoon} style={{ fontSize: '13px' }} />
         {!compact && <span className="theme-switcher-text">Gelap</span>}
       </button>
     </div>
   );
 }
+

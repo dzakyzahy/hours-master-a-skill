@@ -82,36 +82,47 @@ export function Dashboard() {
   };
 
   return (
-    <div style={{ padding: '32px 24px 80px', flex: 1, display: 'flex', flexDirection: 'column', zIndex: 10, position: 'relative', overflowY: 'auto', maxWidth: '1120px', margin: '0 auto', width: '100%' }} className="no-drag">
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', zIndex: 10, position: 'relative', maxWidth: '1120px', margin: '0 auto', width: '100%' }} className="no-drag mobile-content-container">
       {/* Top Header Bar */}
-      <header className="header-topbar">
-        <div className="flex items-center gap-3">
-          <button className="btn" onClick={() => navigate('/')} style={{ padding: '0 12px', height: '36px', gap: '6px' }} title="Kembali ke Beranda">
-            <FontAwesomeIcon icon={faArrowLeft} style={{ fontSize: '13px' }} /> Kembali
+      <header className="app-header-bar">
+        <div className="header-nav-group">
+          <button 
+            type="button"
+            className="header-back-btn" 
+            onClick={() => navigate('/')} 
+            title="Kembali ke Beranda"
+            aria-label="Kembali ke Beranda"
+          >
+            <FontAwesomeIcon icon={faArrowLeft} style={{ fontSize: '11px' }} />
+            <span className="header-back-label">Kembali</span>
           </button>
-          <div>
-            <span style={{ fontSize: '11px', fontFamily: 'Geist Mono, monospace', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+          <div className="header-title-block">
+            <span className="header-subtitle-text" style={{ fontFamily: 'Geist Mono, monospace', textTransform: 'uppercase', letterSpacing: '0.04em', fontSize: '10.5px' }}>
               Dashboard Proyek
             </span>
-            <h1 style={{ margin: 0, fontSize: '18px', fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--text-primary)', fontFamily: 'Geist, sans-serif' }}>
+            <h1 className="header-title-main">
               {project.name}
             </h1>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="header-actions-group">
           <button 
+            type="button"
             className="btn-icon"
             onClick={() => setEditProject(project)}
             title="Edit Proyek"
+            aria-label="Edit Proyek"
           >
             <FontAwesomeIcon icon={faPen} style={{ fontSize: '13px' }} />
           </button>
           <button 
+            type="button"
             className="btn-icon"
-            style={{ color: '#ef4444' }}
+            style={{ color: 'var(--color-danger)' }}
             onClick={() => { deleteProject(project.id); navigate('/'); }}
             title="Pindahkan ke Tempat Sampah"
+            aria-label="Pindahkan ke Tempat Sampah"
           >
             <FontAwesomeIcon icon={faTrashCan} style={{ fontSize: '13px' }} />
           </button>

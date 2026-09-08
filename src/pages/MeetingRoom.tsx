@@ -241,12 +241,13 @@ export function MeetingRoom() {
         >
           <button
             type="button"
-            className="btn"
+            className="header-back-btn"
             onClick={() => navigate('/')}
-            style={{ fontSize: '12px', padding: '6px 14px', gap: '6px', borderRadius: '8px' }}
+            title="Kembali ke Beranda"
+            aria-label="Kembali ke Beranda"
           >
             <FontAwesomeIcon icon={faArrowLeft} style={{ fontSize: '11px' }} />
-            <span>Kembali ke Beranda</span>
+            <span className="header-back-label">Kembali</span>
           </button>
           <ThemeSwitcher compact={true} />
         </div>
