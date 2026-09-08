@@ -12,7 +12,8 @@ import {
   faMicrophone, 
   faMicrophoneSlash,
   faUsers,
-  faCircleDot
+  faCircleDot,
+  faShareNodes
 } from '@fortawesome/free-solid-svg-icons';
 import toast from 'react-hot-toast';
 import { useStore } from '../store';
@@ -217,6 +218,32 @@ export function MeetingRoom() {
     } else {
       fallbackCopy();
     }
+  };
+
+  // Direct share to WhatsApp / Native Share Sheet
+  const handleShareWhatsApp = async () => {
+    const origin = window.location.origin;
+    const pathname = window.location.pathname.replace(/\/$/, '');
+    const query = callType === 'direct' && targetFriend ? `?type=direct&with=${encodeURIComponent(targetFriend)}` : '';
+    const fullUrl = `${origin}${pathname}/#/meeting/${effectiveRoomId}${query}`;
+    const deepLink = `skillo://meeting/${effectiveRoomId}${query}`;
+    const textMsg = `Halo! Yuk gabung ke ruang meet Skillo bersama saya:\n${fullUrl}\n(Buka langsung di aplikasi: ${deepLink})`;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Ruang Kolaborasi Skillo',
+          text: textMsg,
+          url: fullUrl
+        });
+        return;
+      } catch (err: any) {
+        if (err?.name === 'AbortError') return;
+      }
+    }
+
+    const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(textMsg)}`;
+    window.open(waUrl, '_blank');
   };
 
   const localParticipant: Participant = {
@@ -437,25 +464,52 @@ export function MeetingRoom() {
               <span>Gabung Sekarang</span>
             </button>
 
-            <button
-              type="button"
-              className="btn"
-              onClick={handleCopyLink}
-              style={{
-                height: '40px',
-                fontSize: '12px',
-                borderRadius: '10px',
-                width: '100%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
-                color: 'var(--text-secondary)',
-              }}
-            >
-              <FontAwesomeIcon icon={faCopy} style={{ fontSize: '11px' }} />
-              <span>Salin Link Undangan Ruang</span>
-            </button>
+            <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
+              <button
+                type="button"
+                className="btn"
+                onClick={handleShareWhatsApp}
+                style={{
+                  flex: 1,
+                  height: '42px',
+                  fontSize: '12px',
+                  borderRadius: '10px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px',
+                  background: 'rgba(34, 197, 94, 0.08)',
+                  borderColor: 'rgba(34, 197, 94, 0.3)',
+                  color: '#22c55e',
+                  fontWeight: 600
+                }}
+                title="Kirim tautan undangan langsung ke WhatsApp"
+              >
+                <FontAwesomeIcon icon={faShareNodes} style={{ fontSize: '11px' }} />
+                <span>Kirim ke WhatsApp</span>
+              </button>
+
+              <button
+                type="button"
+                className="btn"
+                onClick={handleCopyLink}
+                style={{
+                  height: '42px',
+                  padding: '0 16px',
+                  fontSize: '12px',
+                  borderRadius: '10px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px',
+                  color: 'var(--text-secondary)',
+                }}
+                title="Salin Link Undangan Ruang"
+              >
+                <FontAwesomeIcon icon={faCopy} style={{ fontSize: '11px' }} />
+                <span>Salin</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -538,17 +592,22 @@ export function MeetingRoom() {
           <button
             type="button"
             className="btn"
-            onClick={handleCopyLink}
+            onClick={handleShareWhatsApp}
             style={{
               marginTop: '20px',
               fontSize: '11.5px',
-              padding: '6px 14px',
+              padding: '8px 16px',
               borderRadius: '8px',
               gap: '6px',
+              background: 'rgba(34, 197, 94, 0.08)',
+              borderColor: 'rgba(34, 197, 94, 0.3)',
+              color: '#22c55e',
+              fontWeight: 600
             }}
+            title="Kirim link panggilan ke WhatsApp rekan"
           >
-            <FontAwesomeIcon icon={faCopy} style={{ fontSize: '11px' }} />
-            <span>Salin link panggilan jika rekan offline</span>
+            <FontAwesomeIcon icon={faShareNodes} style={{ fontSize: '11px' }} />
+            <span>Kirim Link ke WhatsApp Rekan</span>
           </button>
         </div>
 
@@ -669,10 +728,10 @@ export function MeetingRoom() {
               alignItems: 'center',
               justifyContent: 'center',
             }}
-            onClick={handleCopyLink}
-            title="Bagikan Tautan Ruang"
+            onClick={handleShareWhatsApp}
+            title="Bagikan Tautan ke WhatsApp / Rekan"
           >
-            <FontAwesomeIcon icon={faCopy} style={{ fontSize: '11px' }} />
+            <FontAwesomeIcon icon={faShareNodes} style={{ fontSize: '11px' }} />
             <span className="meeting-btn-text">Bagikan Link</span>
           </button>
           <ThemeSwitcher compact={true} />

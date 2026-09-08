@@ -376,8 +376,46 @@ export default function App() {
         }
       });
 
+      // Deep Link Handler (WhatsApp, Web, or Custom Scheme)
+      const handleIncomingUrl = (urlStr?: string) => {
+        if (!urlStr) return;
+        try {
+          if (urlStr.includes('#/')) {
+            const hashPart = urlStr.split('#/')[1];
+            if (hashPart) {
+              window.location.hash = '#/' + hashPart;
+            }
+          } else if (urlStr.includes('skillo://')) {
+            const path = urlStr.replace('skillo://', '').replace(/^\//, '');
+            if (path) {
+              window.location.hash = '#/' + path;
+            }
+          } else {
+            const urlObj = new URL(urlStr);
+            if (urlObj.pathname && urlObj.pathname !== '/') {
+              window.location.hash = '#' + urlObj.pathname + urlObj.search;
+            }
+          }
+        } catch (e) {
+          console.warn('Failed to parse incoming deep link:', e);
+        }
+      };
+
+      CapApp.getLaunchUrl().then((launchUrl) => {
+        if (launchUrl?.url) {
+          handleIncomingUrl(launchUrl.url);
+        }
+      }).catch(() => {});
+
+      const urlListener = CapApp.addListener('appUrlOpen', (event: any) => {
+        if (event?.url) {
+          handleIncomingUrl(event.url);
+        }
+      });
+
       return () => {
         backListener.then((l: any) => l.remove()).catch(() => {});
+        urlListener.then((l: any) => l.remove()).catch(() => {});
       };
     }
   }, [theme]);
