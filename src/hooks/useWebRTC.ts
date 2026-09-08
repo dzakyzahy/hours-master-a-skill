@@ -12,11 +12,13 @@ interface SignalPayload {
   data?: any;
 }
 
-const ICE_SERVERS = {
+const ICE_SERVERS: RTCConfiguration = {
   iceServers: [
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' },
-    { urls: 'stun:stun2.l.google.com:19302' }
+    { urls: 'stun:stun2.l.google.com:19302' },
+    { urls: 'stun:stun3.l.google.com:19302' },
+    { urls: 'stun:stun4.l.google.com:19302' }
   ]
 };
 
@@ -31,6 +33,7 @@ export function useWebRTC(
   const isEnabled = options?.enabled ?? true;
   const [remoteParticipants, setRemoteParticipants] = useState<Participant[]>([]);
   const peersRef = useRef<Map<string, RTCPeerConnection>>(new Map());
+  const pendingCandidatesRef = useRef<Map<string, RTCIceCandidateInit[]>>(new Map());
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
   // Broadcast helper
@@ -140,6 +143,7 @@ export function useWebRTC(
     setRemoteParticipants([]);
     peersRef.current.forEach(peer => peer.close());
     peersRef.current.clear();
+    pendingCandidatesRef.current.clear();
 
     const channel = supabase.channel(`room_${roomId}`, {
       config: { broadcast: { self: false } }
@@ -169,6 +173,18 @@ export function useWebRTC(
         console.log('Got offer from:', peerId);
         const peer = peersRef.current.get(peerId) || createPeer(peerId, signal.senderName, false);
         await peer.setRemoteDescription(new RTCSessionDescription(signal.data));
+        
+        // Flush any ICE candidates that arrived before remote description
+        const queued = pendingCandidatesRef.current.get(peerId) || [];
+        for (const cand of queued) {
+          try {
+            await peer.addIceCandidate(new RTCIceCandidate(cand));
+          } catch (e) {
+            console.error('Error adding queued ICE candidate', e);
+          }
+        }
+        pendingCandidatesRef.current.delete(peerId);
+
         const answer = await peer.createAnswer();
         await peer.setLocalDescription(answer);
         sendSignal('answer', peerId, answer);
@@ -179,16 +195,34 @@ export function useWebRTC(
         const peer = peersRef.current.get(peerId);
         if (peer) {
           await peer.setRemoteDescription(new RTCSessionDescription(signal.data));
+          
+          // Flush any ICE candidates that arrived before remote description
+          const queued = pendingCandidatesRef.current.get(peerId) || [];
+          for (const cand of queued) {
+            try {
+              await peer.addIceCandidate(new RTCIceCandidate(cand));
+            } catch (e) {
+              console.error('Error adding queued ICE candidate', e);
+            }
+          }
+          pendingCandidatesRef.current.delete(peerId);
         }
       } 
       
       else if (signal.type === 'ice-candidate') {
         const peer = peersRef.current.get(peerId);
         if (peer && signal.data) {
-          try {
-            await peer.addIceCandidate(new RTCIceCandidate(signal.data));
-          } catch (e) {
-            console.error('Error adding ICE candidate', e);
+          if (peer.remoteDescription && peer.remoteDescription.type) {
+            try {
+              await peer.addIceCandidate(new RTCIceCandidate(signal.data));
+            } catch (e) {
+              console.error('Error adding ICE candidate', e);
+            }
+          } else {
+            // Queue candidate until setRemoteDescription is resolved
+            const list = pendingCandidatesRef.current.get(peerId) || [];
+            list.push(signal.data);
+            pendingCandidatesRef.current.set(peerId, list);
           }
         }
       }
@@ -220,6 +254,7 @@ export function useWebRTC(
       channel.unsubscribe();
       peers.forEach(peer => peer.close());
       peers.clear();
+      pendingCandidatesRef.current.clear();
       channelRef.current = null;
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps

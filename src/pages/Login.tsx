@@ -83,7 +83,9 @@ export function Login() {
       } else {
         toast.success(`Selamat datang di Skillo, ${regUsername}!`);
         setBiometricVerified(true);
-        navigate('/');
+        const fromState = (location.state as any)?.from;
+        const destination = fromState?.pathname ? (fromState.pathname + (fromState.search || '')) : '/';
+        navigate(destination);
       }
     } catch (err: any) {
       setError(err?.message || 'Terjadi kesalahan saat mendaftar akun.');

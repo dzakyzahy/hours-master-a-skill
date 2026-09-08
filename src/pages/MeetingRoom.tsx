@@ -189,18 +189,33 @@ export function MeetingRoom() {
     }
   };
 
-  // Copy shareable link helper
+  // Copy shareable link helper with robust fallback
   const handleCopyLink = () => {
     const origin = window.location.origin;
     const pathname = window.location.pathname.replace(/\/$/, '');
     const query = callType === 'direct' && targetFriend ? `?type=direct&with=${encodeURIComponent(targetFriend)}` : '';
     const fullUrl = `${origin}${pathname}/#/meeting/${effectiveRoomId}${query}`;
 
+    const fallbackCopy = () => {
+      try {
+        const tempInput = document.createElement('input');
+        tempInput.value = fullUrl;
+        document.body.appendChild(tempInput);
+        tempInput.select();
+        document.execCommand('copy');
+        document.body.removeChild(tempInput);
+        toast.success('Tautan undangan disalin!');
+      } catch {
+        toast.success(`Tautan: ${fullUrl}`);
+      }
+    };
+
     if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(fullUrl);
-      toast.success('Tautan undangan disalin!');
+      navigator.clipboard.writeText(fullUrl)
+        .then(() => toast.success('Tautan undangan disalin!'))
+        .catch(() => fallbackCopy());
     } else {
-      toast.success(`Tautan: ${fullUrl}`);
+      fallbackCopy();
     }
   };
 

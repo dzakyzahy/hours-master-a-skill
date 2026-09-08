@@ -105,6 +105,7 @@ html, body {
   font-family: 'Geist', -apple-system, BlinkMacSystemFont, sans-serif;
   overflow: hidden;
   -webkit-font-smoothing: antialiased;
+  scroll-behavior: smooth;
 }
 
 #root {
@@ -862,6 +863,7 @@ h1, h2, h3, h4 {
 .mobile-content-container {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
   height: 100%;
 }
 
@@ -967,6 +969,7 @@ button, a {
     padding: calc(env(safe-area-inset-top, 0px) + 20px) 14px calc(96px + env(safe-area-inset-bottom, 0px)) 14px !important;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
     height: 100%;
   }
 
@@ -1889,6 +1892,8 @@ button, a {
 .chat-lobby-list {
   flex: 1;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
   padding: 8px;
   display: flex;
   flex-direction: column;
@@ -2064,6 +2069,7 @@ button, a {
   flex-direction: column;
   gap: 10px;
   -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
 }
 
 .chat-room-empty {
@@ -2276,6 +2282,7 @@ button, a {
   align-items: center;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
   padding: max(16px, env(safe-area-inset-top, 0px)) 16px max(32px, env(safe-area-inset-bottom, 0px)) 16px;
   box-sizing: border-box;
 }
