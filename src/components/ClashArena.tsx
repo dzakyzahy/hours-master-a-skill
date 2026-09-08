@@ -7,9 +7,11 @@ import {
   faMedal, 
   faAward,
   faFire,
-  faBolt
+  faBolt,
+  faThumbtack
 } from '@fortawesome/free-solid-svg-icons';
-import type { FriendUser } from '../store';
+import toast from 'react-hot-toast';
+import { useStore, type FriendUser } from '../store';
 import { playDuelStart } from '../utils/audio';
 
 interface ClashArenaProps {
@@ -19,8 +21,18 @@ interface ClashArenaProps {
 }
 
 export function ClashArena({ friends, myUsername, myTotalHours }: ClashArenaProps) {
+  const { clashPinned, toggleClashPinned } = useStore();
   const [viewMode, setViewMode] = useState<'leaderboard' | '1v1'>('leaderboard');
   const [selectedOpponent, setSelectedOpponent] = useState<FriendUser | null>(friends[0] || null);
+
+  const handleTogglePin = () => {
+    toggleClashPinned();
+    if (!clashPinned) {
+      toast.success('Disematkan ke Dashboard!', { id: 'clash-pin' });
+    } else {
+      toast('Sematan dilepas dari Dashboard', { id: 'clash-pin', icon: '📌' });
+    }
+  };
 
   // Compile all participants including myself
   const allParticipants = [
@@ -57,24 +69,44 @@ export function ClashArena({ friends, myUsername, myTotalHours }: ClashArenaProp
           <FontAwesomeIcon icon={faHandFist} style={{ fontSize: '20px' }} /> Clash Arena
         </h2>
         
-        <div style={{ display: 'flex', background: 'var(--surface-input)', border: '1px solid var(--border-hairline)', borderRadius: '6px', padding: '2px', gap: '2px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
           <button 
-            className={viewMode === 'leaderboard' ? 'btn-primary' : 'btn'}
-            onClick={() => setViewMode('leaderboard')}
-            style={{ height: '28px', fontSize: '11px', padding: '0 12px', gap: '5px' }}
-          >
-            <FontAwesomeIcon icon={faTrophy} style={{ fontSize: '11px' }} /> Leaderboard
-          </button>
-          <button 
-            className={viewMode === '1v1' ? 'btn-primary' : 'btn'}
-            onClick={() => {
-              setViewMode('1v1');
-              playDuelStart();
+            type="button"
+            className={clashPinned ? 'btn-primary' : 'btn'}
+            onClick={handleTogglePin}
+            style={{ 
+              height: '28px', 
+              fontSize: '11px', 
+              padding: '0 10px', 
+              gap: '6px', 
+              borderRadius: '6px'
             }}
-            style={{ height: '28px', fontSize: '11px', padding: '0 12px', gap: '5px' }}
+            title={clashPinned ? 'Lepas sematan dari Dashboard' : 'Sematkan ke Dashboard'}
+            aria-label={clashPinned ? 'Lepas sematan dari Dashboard' : 'Sematkan ke Dashboard'}
           >
-            <FontAwesomeIcon icon={faHandFist} style={{ fontSize: '11px' }} /> 1 VS 1
+            <FontAwesomeIcon icon={faThumbtack} style={{ fontSize: '10.5px', transform: clashPinned ? 'rotate(45deg)' : 'none' }} />
+            <span>{clashPinned ? 'Disematkan' : 'Sematkan'}</span>
           </button>
+
+          <div style={{ display: 'flex', background: 'var(--surface-input)', border: '1px solid var(--border-hairline)', borderRadius: '6px', padding: '2px', gap: '2px' }}>
+            <button 
+              className={viewMode === 'leaderboard' ? 'btn-primary' : 'btn'}
+              onClick={() => setViewMode('leaderboard')}
+              style={{ height: '28px', fontSize: '11px', padding: '0 12px', gap: '5px' }}
+            >
+              <FontAwesomeIcon icon={faTrophy} style={{ fontSize: '11px' }} /> Leaderboard
+            </button>
+            <button 
+              className={viewMode === '1v1' ? 'btn-primary' : 'btn'}
+              onClick={() => {
+                setViewMode('1v1');
+                playDuelStart();
+              }}
+              style={{ height: '28px', fontSize: '11px', padding: '0 12px', gap: '5px' }}
+            >
+              <FontAwesomeIcon icon={faHandFist} style={{ fontSize: '11px' }} /> 1 VS 1
+            </button>
+          </div>
         </div>
       </div>
 

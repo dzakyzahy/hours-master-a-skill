@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
-  faUser, 
   faFloppyDisk, 
   faArrowLeft, 
   faShieldHalved, 
@@ -11,12 +10,15 @@ import {
   faFingerprint,
   faVolumeHigh,
   faVolumeXmark,
-  faRightFromBracket
+  faRightFromBracket,
+  faPaintbrush,
+  faCheck
 } from '@fortawesome/free-solid-svg-icons';
 import { supabase, isSupabaseConfigured } from '../supabaseClient';
 import { useStore } from '../store';
 import { ApiKeyModal } from '../components/ApiKeyModal';
 import { ThemeSwitcher } from '../components/ThemeSwitcher';
+import { AVATAR_PRESETS, getAvatarDisplay } from '../utils/profilePresets';
 
 declare global {
   interface Window {
@@ -28,18 +30,34 @@ declare global {
 }
 
 export function Profile() {
-  const { username, userEmail, geminiApiKey, loadGeminiApiKey, soundEnabled, toggleSound, logout } = useStore();
+  const { 
+    username, 
+    userEmail, 
+    geminiApiKey, 
+    loadGeminiApiKey, 
+    soundEnabled, 
+    toggleSound, 
+    logout,
+    avatar: storeAvatar,
+    title: storeTitle,
+    bio: storeBio,
+    updateProfileCustomization 
+  } = useStore();
   const navigate = useNavigate();
+  const isDiky = (username || '').toLowerCase() === 'diky';
+  const defaultRoleTitle = isDiky ? 'UI/UX & Mobile Design Lead' : 'Tech Lead & Full-Stack Architect';
+
   const [newUsername, setNewUsername] = useState(username || 'diky');
   const [email, setEmail] = useState(userEmail || (username === 'diky' ? 'dikydwi442@gmail.com' : 'dzakyzr3@gmail.com'));
   const [password, setPassword] = useState('');
+  const [selectedAvatar, setSelectedAvatar] = useState(storeAvatar || 'cyber-neon');
+  const [customTitle, setCustomTitle] = useState(storeTitle || defaultRoleTitle);
+  const [customBio, setCustomBio] = useState(storeBio || 'Belajar dan bertumbuh di Skillo');
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState('');
   const [updateStatus, setUpdateStatus] = useState('');
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
 
-  const isDiky = (username || '').toLowerCase() === 'diky';
-  const roleTitle = isDiky ? 'UI/UX & Mobile Design Lead' : 'Tech Lead & Full-Stack Architect';
   const userInitials = (newUsername || 'DK').substring(0, 2).toUpperCase();
 
   useEffect(() => {
@@ -56,8 +74,13 @@ export function Profile() {
         const { data: authData } = await supabase.auth.getUser();
         if (authData?.user) {
           if (authData.user.email) setEmail(authData.user.email);
-          const { data } = await supabase.from('profiles').select('username').eq('id', authData.user.id).single();
-          if (data?.username) setNewUsername(data.username);
+          const { data } = await supabase.from('profiles').select('*').eq('id', authData.user.id).single();
+          if (data) {
+            if (data.username) setNewUsername(data.username);
+            if (data.avatar_url) setSelectedAvatar(data.avatar_url);
+            if (data.title) setCustomTitle(data.title);
+            if (data.bio) setCustomBio(data.bio);
+          }
         }
       } catch {}
     }
@@ -73,6 +96,11 @@ export function Profile() {
     try {
       // Local state update
       useStore.setState({ username: newUsername, userEmail: email });
+      updateProfileCustomization({
+        avatar: selectedAvatar,
+        title: customTitle,
+        bio: customBio
+      });
       localStorage.setItem('last_user', newUsername);
 
       if (isSupabaseConfigured) {
@@ -86,13 +114,20 @@ export function Profile() {
             await supabase.auth.updateUser(updates);
           }
 
-          if (newUsername && newUsername !== username) {
+          try {
+            await supabase.from('profiles').update({
+              username: newUsername,
+              avatar_url: selectedAvatar,
+              title: customTitle,
+              bio: customBio
+            }).eq('id', authData.user.id);
+          } catch {
             await supabase.from('profiles').update({ username: newUsername }).eq('id', authData.user.id);
           }
         }
       }
 
-      setMsg('Profil berhasil diperbarui!');
+      setMsg('Profil & personalisasi berhasil disimpan!');
       setPassword('');
     } catch (error: any) {
       setMsg(`Catatan: ${error.message || 'Data disimpan secara lokal'}`);
@@ -132,52 +167,155 @@ export function Profile() {
       </header>
 
       {/* User Identity Banner Card */}
-      <div className="glass-panel mb-6" style={{ padding: '20px', display: 'flex', alignItems: 'center', gap: '16px' }}>
-        <div 
-          style={{ 
-            width: '52px', 
-            height: '52px', 
-            borderRadius: '10px', 
-            background: 'var(--surface-input)', 
-            border: '1px solid var(--border-hairline-strong)', 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center',
-            fontSize: '1.25rem',
-            fontWeight: 700,
-            fontFamily: 'Geist Mono, monospace',
-            color: 'var(--text-primary)',
-            flexShrink: 0
-          }}
-        >
-          {userInitials}
-        </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div className="flex items-center gap-2 mb-1" style={{ flexWrap: 'wrap' }}>
-            <h2 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 600, letterSpacing: '-0.015em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} className="capitalize">{newUsername}</h2>
-            <span style={{ fontFamily: 'Geist Mono, monospace', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.04em', padding: '2px 8px', borderRadius: '4px', border: '1px solid rgba(34,197,94,0.3)', background: 'rgba(34,197,94,0.08)', color: '#22c55e' }} className="inline-flex items-center gap-1.5">
-              <span style={{ width: '5px', height: '5px', borderRadius: '50%', backgroundColor: '#22c55e' }} /> Online
-            </span>
+      {(() => {
+        const avatarDisplay = getAvatarDisplay(selectedAvatar, userInitials);
+        return (
+          <div className="glass-panel mb-6" style={{ padding: '20px', display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <div 
+              style={{ 
+                width: '56px', 
+                height: '56px', 
+                borderRadius: '12px', 
+                background: avatarDisplay.gradient, 
+                border: '1px solid var(--border-hairline-strong)', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center',
+                fontSize: '1.25rem',
+                fontWeight: 700,
+                fontFamily: 'Geist Mono, monospace',
+                color: avatarDisplay.textColor,
+                flexShrink: 0,
+                boxShadow: '0 4px 14px rgba(0, 0, 0, 0.2)'
+              }}
+            >
+              {avatarDisplay.isCustomImage ? (
+                <img src={avatarDisplay.imageUrl} alt={newUsername} style={{ width: '100%', height: '100%', borderRadius: '12px', objectFit: 'cover' }} />
+              ) : (
+                avatarDisplay.initials
+              )}
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div className="flex items-center gap-2 mb-1" style={{ flexWrap: 'wrap' }}>
+                <h2 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 600, letterSpacing: '-0.015em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} className="capitalize">{newUsername}</h2>
+                <span style={{ fontFamily: 'Geist Mono, monospace', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.04em', padding: '2px 8px', borderRadius: '4px', border: '1px solid rgba(34,197,94,0.3)', background: 'rgba(34,197,94,0.08)', color: '#22c55e' }} className="inline-flex items-center gap-1.5">
+                  <span style={{ width: '5px', height: '5px', borderRadius: '50%', backgroundColor: '#22c55e' }} /> Online
+                </span>
+              </div>
+              <p style={{ margin: '0 0 6px', fontSize: '12px', color: 'var(--text-secondary)', fontFamily: 'Geist Mono, monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{email}</p>
+              <div className="flex items-center gap-2" style={{ flexWrap: 'wrap' }}>
+                <span style={{ fontSize: '11px', fontFamily: 'Geist Mono, monospace', color: 'var(--accent-primary)', background: 'var(--surface-input)', padding: '3px 8px', borderRadius: '4px', border: '1px solid var(--border-hairline)' }} className="inline-block">
+                  {customTitle || defaultRoleTitle}
+                </span>
+              </div>
+              {customBio && (
+                <p style={{ margin: '6px 0 0', fontSize: '11.5px', color: 'var(--text-secondary)', fontStyle: 'italic', lineHeight: 1.4 }}>
+                  "{customBio}"
+                </p>
+              )}
+            </div>
           </div>
-          <p style={{ margin: '0 0 6px', fontSize: '12px', color: 'var(--text-secondary)', fontFamily: 'Geist Mono, monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{email}</p>
-          <span style={{ fontSize: '11px', fontFamily: 'Geist Mono, monospace', color: 'var(--text-secondary)', background: 'var(--surface-input)', padding: '3px 8px', borderRadius: '4px', border: '1px solid var(--border-hairline)' }} className="inline-block">
-            {roleTitle}
-          </span>
-        </div>
-      </div>
+        );
+      })()}
 
       {/* Settings Grid - Generous relaxed vertical layout */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-        {/* Account Form */}
+        {/* Personalization & Account Form */}
         <div className="glass-panel" style={{ padding: '24px 20px' }}>
           <div className="flex items-center gap-2" style={{ marginBottom: '20px' }}>
-            <FontAwesomeIcon icon={faUser} style={{ color: 'var(--text-secondary)', fontSize: '14px' }} />
+            <FontAwesomeIcon icon={faPaintbrush} style={{ color: 'var(--accent-primary)', fontSize: '14px' }} />
             <h2 style={{ margin: 0, fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.015em' }}>
-              Pengaturan Akun
+              Personalisasi & Identitas Tim
             </h2>
           </div>
 
-          <form onSubmit={handleUpdate} style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
+          <form onSubmit={handleUpdate} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            {/* Avatar Preset Picker */}
+            <div>
+              <label style={{ fontSize: '12.5px', fontWeight: 500, color: 'var(--text-secondary)', marginBottom: '10px', display: 'block' }}>
+                Pilih Tema Avatar
+              </label>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '10px' }}>
+                {AVATAR_PRESETS.map((preset) => {
+                  const isSelected = selectedAvatar === preset.id;
+                  return (
+                    <button
+                      key={preset.id}
+                      type="button"
+                      onClick={() => setSelectedAvatar(preset.id)}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '10px',
+                        padding: '8px 10px',
+                        borderRadius: '8px',
+                        border: isSelected ? '1.5px solid var(--accent-primary)' : '1px solid var(--border-hairline)',
+                        background: isSelected ? 'rgba(14, 165, 233, 0.08)' : 'var(--surface-input)',
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                        transition: 'all 0.15s ease'
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: '28px',
+                          height: '28px',
+                          borderRadius: '50%',
+                          background: preset.gradient,
+                          color: preset.textColor,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '10px',
+                          fontWeight: 700,
+                          flexShrink: 0,
+                          boxShadow: isSelected ? '0 0 8px rgba(14, 165, 233, 0.4)' : 'none'
+                        }}
+                      >
+                        {isSelected ? <FontAwesomeIcon icon={faCheck} style={{ fontSize: '10px' }} /> : userInitials}
+                      </div>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontSize: '11.5px', fontWeight: isSelected ? 600 : 500, color: isSelected ? 'var(--accent-primary)' : 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {preset.name}
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Title / Role */}
+            <div>
+              <label style={{ fontSize: '12.5px', fontWeight: 500, color: 'var(--text-secondary)', marginBottom: '8px', display: 'block' }}>
+                Gelar / Peran Utama (Title)
+              </label>
+              <input
+                type="text"
+                className="input-field"
+                placeholder="Contoh: UI/UX & Mobile Design Lead"
+                value={customTitle}
+                onChange={(e) => setCustomTitle(e.target.value)}
+              />
+            </div>
+
+            {/* Bio / Motto */}
+            <div>
+              <label style={{ fontSize: '12.5px', fontWeight: 500, color: 'var(--text-secondary)', marginBottom: '8px', display: 'block' }}>
+                Bio Singkat & Fokus Belajar
+              </label>
+              <textarea
+                className="input-field"
+                rows={2}
+                placeholder="Tuliskan tujuan atau fokus belajar..."
+                value={customBio}
+                onChange={(e) => setCustomBio(e.target.value)}
+                style={{ resize: 'vertical', minHeight: '60px', fontFamily: 'inherit', fontSize: '12.5px' }}
+              />
+            </div>
+
+            <div style={{ height: '1px', background: 'var(--border-hairline)', margin: '4px 0' }} />
+
             <div>
               <label style={{ fontSize: '12.5px', fontWeight: 500, color: 'var(--text-secondary)', marginBottom: '8px', display: 'block' }}>
                 Nama Pengguna

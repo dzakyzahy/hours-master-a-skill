@@ -135,6 +135,15 @@ interface AppState {
   clearGeminiApiKey: () => Promise<void>;
   loadGeminiApiKey: () => Promise<string>;
 
+  // Personalization & Clash Pin
+  clashPinned: boolean;
+  toggleClashPinned: () => void;
+  setClashPinned: (pinned: boolean) => void;
+  avatar: string;
+  title: string;
+  bio: string;
+  updateProfileCustomization: (customization: { avatar?: string; title?: string; bio?: string }) => void;
+
   // Projects
   projects: Project[];
   activeProjectId: string | null;
@@ -846,6 +855,19 @@ export const useStore = create<AppState>()(
         return key || '';
       },
 
+      clashPinned: false,
+      toggleClashPinned: () => set((state) => ({ clashPinned: !state.clashPinned })),
+      setClashPinned: (pinned: boolean) => set({ clashPinned: pinned }),
+
+      avatar: 'cyber-neon',
+      title: 'UI/UX & Mobile Design Lead',
+      bio: 'Belajar dan bertumbuh di Skillo',
+      updateProfileCustomization: (customization) => set((state) => ({
+        avatar: customization.avatar !== undefined ? customization.avatar : state.avatar,
+        title: customization.title !== undefined ? customization.title : state.title,
+        bio: customization.bio !== undefined ? customization.bio : state.bio,
+      })),
+
       projects: [
         {
           id: 'default-1',
@@ -1131,6 +1153,10 @@ export const useStore = create<AppState>()(
         friends: state.friends,
         theme: state.theme,
         soundEnabled: state.soundEnabled,
+        clashPinned: state.clashPinned,
+        avatar: state.avatar,
+        title: state.title,
+        bio: state.bio,
         projects: state.projects,
         activeProjectId: state.activeProjectId,
         activeTimer: state.activeTimer,

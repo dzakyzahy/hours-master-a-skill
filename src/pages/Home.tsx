@@ -19,6 +19,7 @@ import { ManualProjectModal } from '../components/ManualProjectModal';
 import { ApiKeyModal } from '../components/ApiKeyModal';
 import { SkilloLogo } from '../components/SkilloLogo';
 import { ThemeSwitcher } from '../components/ThemeSwitcher';
+import { getAvatarDisplay } from '../utils/profilePresets';
 
 export function Home() {
   const { 
@@ -33,7 +34,8 @@ export function Home() {
     friends, 
     geminiApiKey,
     friendRequests,
-    fetchFriendRequests
+    fetchFriendRequests,
+    avatar: userAvatar
   } = useStore();
   const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -145,32 +147,45 @@ export function Home() {
             )}
           </button>
 
-          <button 
-            className="btn-icon" 
-            onClick={() => navigate('/profile')} 
-            title={`Profil Saya (${username || 'user'})`}
-            style={{ 
-              position: 'relative', 
-              fontWeight: 700, 
-              fontSize: '11px', 
-              fontFamily: 'Geist Mono, monospace',
-              color: 'var(--text-primary)'
-            }}
-          >
-            {(username || 'DK').substring(0, 2).toUpperCase()}
-            <span 
-              style={{ 
-                position: 'absolute', 
-                bottom: '4px', 
-                right: '4px', 
-                width: '6px', 
-                height: '6px', 
-                borderRadius: '50%', 
-                backgroundColor: 'var(--color-success)',
-                border: '1.5px solid var(--surface-card)'
-              }} 
-            />
-          </button>
+          {(() => {
+            const avatarDisplay = getAvatarDisplay(userAvatar, (username || 'DK').substring(0, 2).toUpperCase());
+            return (
+              <button 
+                className="btn-icon" 
+                onClick={() => navigate('/profile')} 
+                title={`Profil Saya (${username || 'user'})`}
+                style={{ 
+                  position: 'relative', 
+                  fontWeight: 700, 
+                  fontSize: '11px', 
+                  fontFamily: 'Geist Mono, monospace',
+                  color: avatarDisplay.textColor,
+                  background: avatarDisplay.isCustomImage ? 'none' : avatarDisplay.gradient,
+                  border: '1px solid var(--border-hairline-strong)',
+                  overflow: 'hidden',
+                  padding: 0
+                }}
+              >
+                {avatarDisplay.isCustomImage ? (
+                  <img src={avatarDisplay.imageUrl} alt={username} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : (
+                  avatarDisplay.initials
+                )}
+                <span 
+                  style={{ 
+                    position: 'absolute', 
+                    bottom: '2px', 
+                    right: '2px', 
+                    width: '6px', 
+                    height: '6px', 
+                    borderRadius: '50%', 
+                    backgroundColor: 'var(--color-success)',
+                    border: '1.5px solid var(--surface-card)'
+                  }} 
+                />
+              </button>
+            );
+          })()}
 
           <button className="btn-icon" onClick={logout} title="Keluar dari Akun">
             <FontAwesomeIcon icon={faRightFromBracket} style={{ fontSize: '13px' }} />

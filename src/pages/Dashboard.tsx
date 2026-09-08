@@ -18,6 +18,7 @@ import { supabase } from '../supabaseClient';
 import { useGlobalTimer } from '../hooks/useGlobalTimer';
 import { EditProjectModal } from '../components/EditProjectModal';
 import { ThemeSwitcher } from '../components/ThemeSwitcher';
+import { ClashPinnedCard } from '../components/ClashPinnedCard';
 
 export function Dashboard() {
   const { projects, activeProjectId, addHours, toggleTimer, activeTimer, setRemoteTimerState, setTotalHours, deleteProject } = useStore();
@@ -134,8 +135,11 @@ export function Dashboard() {
         </div>
       </header>
 
+      {/* Pinned Clash Arena Leaderboard Card */}
+      <ClashPinnedCard />
+
       {/* Primary Metrics Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
+      <div className="dashboard-metrics-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
         
         {/* Total Progress Card */}
         <div className="glass-panel flex flex-col justify-between" style={{ padding: '24px' }}>

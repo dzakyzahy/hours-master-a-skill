@@ -2398,3 +2398,109 @@ button, a {
     font-size: 0.75rem !important;
   }
 }
+
+/* =========================================================
+   TASK 6: RESPONSIVE LANDSCAPE MODE OPTIMIZATIONS
+   Optimized for mobile devices held horizontally (Samsung A15, etc.)
+   ========================================================= */
+@media (orientation: landscape) and (max-height: 600px) {
+  /* Ultra-compact App & Meeting Header */
+  .app-header-bar {
+    padding: 6px 14px !important;
+    margin-bottom: 10px !important;
+    min-height: 40px !important;
+  }
+  
+  .meeting-header {
+    height: 40px !important;
+    padding: 4px 12px !important;
+  }
+
+  .meeting-btn-text {
+    display: none !important;
+  }
+
+  /* Meeting Video Grid - Force side-by-side tiles for 2 participants in landscape */
+  .meeting-adaptive-grid {
+    gap: 8px !important;
+    padding: 4px !important;
+    max-height: calc(100vh - 90px) !important;
+  }
+
+  .meeting-grid-2 {
+    grid-template-columns: repeat(2, 1fr) !important;
+    grid-template-rows: 1fr !important;
+    width: 100% !important;
+    height: 100% !important;
+    max-height: calc(100vh - 90px) !important;
+  }
+
+  /* Meeting Controls Dock - Compact for landscape */
+  .meeting-controls-dock {
+    gap: 6px !important;
+    padding: 4px 10px !important;
+    transform: scale(0.92);
+    transform-origin: bottom center;
+  }
+
+  .meeting-controls-dock button {
+    width: 38px !important;
+    height: 38px !important;
+  }
+
+  .meeting-controls-dock .meeting-dock-chip {
+    height: 38px !important;
+    padding: 0 8px !important;
+  }
+
+  /* Outgoing call waiting layout in landscape */
+  .call-waiting-avatar {
+    width: 64px !important;
+    height: 64px !important;
+    font-size: 20px !important;
+  }
+
+  /* Compact Mobile Content Container in landscape */
+  .mobile-content-container {
+    padding-top: max(8px, env(safe-area-inset-top, 0px)) !important;
+    padding-bottom: max(54px, env(safe-area-inset-bottom, 0px)) !important;
+    padding-left: max(14px, env(safe-area-inset-left, 0px)) !important;
+    padding-right: max(14px, env(safe-area-inset-right, 0px)) !important;
+  }
+
+  /* Compact Bottom Navigation in landscape */
+  .mobile-bottom-nav {
+    height: 46px !important;
+    padding: 2px 16px !important;
+  }
+
+  .mobile-bottom-nav .nav-item {
+    font-size: 9.5px !important;
+    gap: 2px !important;
+  }
+
+  .mobile-bottom-nav .nav-item svg {
+    font-size: 14px !important;
+  }
+
+  .mobile-bottom-nav .nav-item-fab {
+    width: 38px !important;
+    height: 38px !important;
+    margin-top: -16px !important;
+  }
+
+  .mobile-bottom-nav .nav-item-fab svg {
+    font-size: 15px !important;
+  }
+
+  /* Dashboard Primary Metrics Grid in landscape */
+  .dashboard-metrics-grid {
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)) !important;
+    gap: 12px !important;
+  }
+
+  .dashboard-metrics-grid .glass-panel {
+    padding: 16px !important;
+  }
+}
+

@@ -596,6 +596,7 @@ _Ketuk tautan di atas untuk langsung masuk ke sesi._`;
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
           <div style={{ position: 'relative', marginBottom: '24px' }}>
             <div
+              className="call-waiting-avatar"
               style={{
                 width: '100px',
                 height: '100px',

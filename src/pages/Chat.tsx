@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faArrowLeft, 
@@ -76,8 +76,24 @@ const saveMessagesToStorage = (msgs: LocalChatMessage[]) => {
 
 export function Chat() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { username, userId, friends, friendRequests, sentFriendRequests, sendFriendRequest, acceptFriendRequest, rejectFriendRequest, checkFriendsOnlineStatus, projects, fetchFriendRequests, fetchSentFriendRequests, fetchFriends } = useStore();
-  const [activeTab, setActiveTab] = useState<'friends' | 'requests' | 'chat' | 'clash'>('friends');
+  const initialTab = (location.state as any)?.tab;
+  const [activeTab, setActiveTab] = useState<'friends' | 'requests' | 'chat' | 'clash'>(() => {
+    if (initialTab === 'clash' || initialTab === 'chat' || initialTab === 'requests' || initialTab === 'friends') {
+      return initialTab;
+    }
+    return 'friends';
+  });
+  const [prevLocationKey, setPrevLocationKey] = useState(location.key);
+
+  if (location.key !== prevLocationKey) {
+    setPrevLocationKey(location.key);
+    const requestedTab = (location.state as any)?.tab;
+    if (requestedTab && (requestedTab === 'clash' || requestedTab === 'chat' || requestedTab === 'requests' || requestedTab === 'friends')) {
+      setActiveTab(requestedTab);
+    }
+  }
   
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
