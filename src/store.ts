@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { supabase, isSupabaseConfigured } from './supabaseClient';
 import { playTimerStart, playTimerStop } from './utils/audio';
+import { evaluateAchievements } from './utils/achievements';
 
 export interface SkillPhase {
   title: string;
@@ -143,6 +144,11 @@ interface AppState {
   title: string;
   bio: string;
   updateProfileCustomization: (customization: { avatar?: string; title?: string; bio?: string }) => void;
+
+  // Achievements & Badges (Fase 4)
+  unlockedAchievements: string[];
+  unlockAchievement: (id: string) => void;
+  checkAndUnlockAchievements: () => string[];
 
   // Projects
   projects: Project[];
@@ -868,6 +874,41 @@ export const useStore = create<AppState>()(
         bio: customization.bio !== undefined ? customization.bio : state.bio,
       })),
 
+      unlockedAchievements: ['first_step'],
+      unlockAchievement: (id: string) => set((state) => ({
+        unlockedAchievements: state.unlockedAchievements.includes(id)
+          ? state.unlockedAchievements
+          : [...state.unlockedAchievements, id]
+      })),
+      checkAndUnlockAchievements: () => {
+        const state = get();
+        const activeProjects = state.projects.filter(p => !p.deletedAt);
+        const totalHours = activeProjects.reduce((acc, p) => acc + p.totalHours, 0);
+        const maxProjectHours = activeProjects.length > 0 ? Math.max(...activeProjects.map(p => p.totalHours)) : 0;
+        const dailyGoalMet = activeProjects.some(p => p.hoursToday >= p.dailyGoal && p.dailyGoal > 0);
+        const hasCustomBio = Boolean(
+          (state.bio && state.bio !== 'Belajar dan bertumbuh di Skillo') ||
+          (state.title && state.title.trim().length > 0)
+        );
+
+        const newlyUnlocked = evaluateAchievements({
+          totalHours,
+          maxProjectHours,
+          dailyGoalMet,
+          clashPinned: state.clashPinned,
+          friendCount: state.friends.length,
+          hasCustomBio
+        }, state.unlockedAchievements);
+
+        if (newlyUnlocked.length > 0) {
+          set((s) => ({
+            unlockedAchievements: [...s.unlockedAchievements, ...newlyUnlocked]
+          }));
+        }
+
+        return newlyUnlocked;
+      },
+
       projects: [
         {
           id: 'default-1',
@@ -1157,6 +1198,7 @@ export const useStore = create<AppState>()(
         avatar: state.avatar,
         title: state.title,
         bio: state.bio,
+        unlockedAchievements: state.unlockedAchievements,
         projects: state.projects,
         activeProjectId: state.activeProjectId,
         activeTimer: state.activeTimer,

@@ -19,6 +19,7 @@ import { useStore } from '../store';
 import { ApiKeyModal } from '../components/ApiKeyModal';
 import { ThemeSwitcher } from '../components/ThemeSwitcher';
 import { AVATAR_PRESETS, getAvatarDisplay } from '../utils/profilePresets';
+import { AchievementsSection } from '../components/AchievementsSection';
 
 declare global {
   interface Window {
@@ -372,6 +373,9 @@ export function Profile() {
             </button>
           </form>
         </div>
+
+        {/* Achievements & Badges Section */}
+        <AchievementsSection />
 
         {/* System & Update Info Card */}
         <div className="glass-panel" style={{ width: '100%', padding: '24px 20px' }}>
