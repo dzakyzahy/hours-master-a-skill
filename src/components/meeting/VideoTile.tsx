@@ -10,12 +10,30 @@ interface VideoTileProps {
 
 export function VideoTile({ participant, isDominant = false }: VideoTileProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const audioRef = useRef<HTMLAudioElement>(null);
 
+  // Bind audio stream to dedicated persistent audio element for remote participants
   useEffect(() => {
-    if (videoRef.current && participant.stream) {
-      videoRef.current.srcObject = participant.stream;
+    if (audioRef.current && participant.stream && !participant.isLocal) {
+      audioRef.current.srcObject = participant.stream;
+      audioRef.current.muted = participant.isAudioMuted;
+      audioRef.current.play().catch(err => {
+        console.warn('[VideoTile] Remote audio play caught:', err);
+      });
     }
-  }, [participant.stream]);
+  }, [participant.stream, participant.isLocal, participant.isAudioMuted]);
+
+  // Bind video stream to video element when video is on
+  useEffect(() => {
+    if (videoRef.current && participant.stream && !participant.isVideoOff) {
+      videoRef.current.srcObject = participant.stream;
+      if (!participant.isLocal) {
+        videoRef.current.play().catch(err => {
+          console.warn('[VideoTile] Remote video play caught:', err);
+        });
+      }
+    }
+  }, [participant.stream, participant.isVideoOff, participant.isLocal]);
 
   const initials = participant.name
     .split(' ')
@@ -47,13 +65,24 @@ export function VideoTile({ participant, isDominant = false }: VideoTileProps) {
         justifyContent: 'center',
       }}
     >
+      {/* Dedicated persistent audio sink for remote participant - never destroyed when video toggles */}
+      {!participant.isLocal && (
+        <audio
+          ref={audioRef}
+          autoPlay
+          playsInline
+          muted={participant.isAudioMuted}
+          style={{ display: 'none' }}
+        />
+      )}
+
       {/* Actual Video Stream if Available & Video Enabled */}
       {participant.stream && !participant.isVideoOff ? (
         <video
           ref={videoRef}
           autoPlay
           playsInline
-          muted={participant.isLocal}
+          muted={true}
           style={{
             width: '100%',
             height: '100%',
@@ -62,6 +91,7 @@ export function VideoTile({ participant, isDominant = false }: VideoTileProps) {
           }}
         />
       ) : (
+
         /* Minimalist Avatar Fallback */
         <div
           style={{

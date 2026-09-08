@@ -18,6 +18,7 @@ import toast from 'react-hot-toast';
 import { ThemeSwitcher } from '../components/ThemeSwitcher';
 import { playMessageSent, playMessageReceived } from '../utils/audio';
 import { useCallSignaling } from '../hooks/useCallSignaling';
+import { showChatMessageNotification, requestCallNotificationPermissions } from '../utils/callNotifications';
 
 interface LocalChatMessage {
   id: string;
@@ -115,6 +116,7 @@ export function Chat() {
 
   // Sync friends status continuously with reasonable 8s interval (prevents Supabase rate spikes)
   useEffect(() => {
+    requestCallNotificationPermissions();
     fetchFriends();
     checkFriendsOnlineStatus();
     fetchFriendRequests();
@@ -163,6 +165,7 @@ export function Chat() {
                 saveMessagesToStorage(next);
                 if (sender !== myUser) {
                   playMessageReceived();
+                  showChatMessageNotification(payload.sender, payload.text);
                 }
                 return next;
               });
@@ -194,12 +197,14 @@ export function Chat() {
               const next = [...prev, msg.payload];
               saveMessagesToStorage(next);
               playMessageReceived();
+              showChatMessageNotification(msg.payload.sender, msg.payload.text);
               return next;
             });
           }
         };
       }
     } catch {}
+
 
     // 3. Storage event synchronization for multi-window local testing
     const handleStorage = (e: StorageEvent) => {

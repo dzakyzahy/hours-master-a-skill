@@ -87,10 +87,39 @@ export function MeetingRoom() {
           throw new Error('getUserMedia not supported');
         }
 
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: VIDEO_CONSTRAINTS,
-          audio: AUDIO_CONSTRAINTS,
-        });
+        let stream: MediaStream | null = null;
+
+        // Tier 1: Try optimal video + audio constraints
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: VIDEO_CONSTRAINTS,
+            audio: AUDIO_CONSTRAINTS,
+          });
+        } catch (tier1Err) {
+          console.warn('[setupCamera] Optimal constraints failed, attempting standard constraints:', tier1Err);
+          
+          // Tier 2: Try basic video + audio
+          try {
+            stream = await navigator.mediaDevices.getUserMedia({
+              video: true,
+              audio: true,
+            });
+          } catch (tier2Err) {
+            console.warn('[setupCamera] Video+audio failed, falling back to audio-only stream:', tier2Err);
+            
+            // Tier 3: Audio only fallback (guarantees voice mic works even if camera fails/denied)
+            try {
+              stream = await navigator.mediaDevices.getUserMedia({
+                video: false,
+                audio: true,
+              });
+              setIsVideoOff(true);
+            } catch (tier3Err) {
+              console.warn('[setupCamera] Audio-only also failed:', tier3Err);
+              throw tier3Err;
+            }
+          }
+        }
 
         if (!active || !stream) {
           stream?.getTracks().forEach(t => t.stop());
@@ -100,7 +129,12 @@ export function MeetingRoom() {
         localStreamRef.current = stream;
         setLocalStream(stream);
 
-        if (previewVideoRef.current) {
+        // If audio-only, ensure isVideoOff is true
+        if (stream.getVideoTracks().length === 0) {
+          setIsVideoOff(true);
+        }
+
+        if (previewVideoRef.current && stream.getVideoTracks().length > 0) {
           previewVideoRef.current.srcObject = stream;
         }
       } catch (err) {
@@ -108,6 +142,7 @@ export function MeetingRoom() {
         setIsVideoOff(true);
       }
     }
+
 
     setupCamera();
 

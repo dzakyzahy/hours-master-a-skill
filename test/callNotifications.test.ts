@@ -73,4 +73,29 @@ describe('callNotifications', () => {
     assert.ok(cancelled);
     assert.deepStrictEqual(cancelled.notifications, [{ id: CALL_NOTIFICATION_ID }]);
   });
+
+  it('includes smallIcon in incoming call notification for status bar display', () => {
+    const notif = buildIncomingCallNotification('diky', 'room_xyz');
+    assert.strictEqual(notif.smallIcon, 'ic_launcher');
+  });
+
+  it('builds chat notification channel with high importance', async () => {
+    const { buildChatNotificationChannel, CHAT_CHANNEL_ID } = await import('../src/utils/callNotifications.ts');
+    const channel = buildChatNotificationChannel();
+    assert.strictEqual(channel.id, CHAT_CHANNEL_ID);
+    assert.strictEqual(channel.importance, 4);
+    assert.strictEqual(channel.visibility, 1);
+  });
+
+  it('builds chat message notification with smallIcon and message body', async () => {
+    const { buildChatMessageNotification, CHAT_CHANNEL_ID, CHAT_NOTIFICATION_ID } = await import('../src/utils/callNotifications.ts');
+    const notif = buildChatMessageNotification('zahy', 'Halo bro, ada tugas baru');
+    assert.strictEqual(notif.id, CHAT_NOTIFICATION_ID);
+    assert.strictEqual(notif.channelId, CHAT_CHANNEL_ID);
+    assert.strictEqual(notif.title, '💬 Pesan dari zahy');
+    assert.strictEqual(notif.body, 'Halo bro, ada tugas baru');
+    assert.strictEqual(notif.smallIcon, 'ic_launcher');
+    assert.strictEqual(notif.autoCancel, true);
+  });
 });
+

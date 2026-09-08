@@ -8,8 +8,6 @@ import {
   faCircleCheck, 
   faKey, 
   faFingerprint,
-  faVolumeHigh,
-  faVolumeXmark,
   faRightFromBracket,
   faPaintbrush,
   faCheck
@@ -37,8 +35,6 @@ export function Profile() {
     userEmail, 
     geminiApiKey, 
     loadGeminiApiKey, 
-    soundEnabled, 
-    toggleSound, 
     logout,
     biometricEnabled,
     setBiometricEnabled,
@@ -520,57 +516,6 @@ export function Profile() {
           </div>
 
 
-          {/* Sound & Audio FX Section */}
-          <div style={{ marginBottom: '24px', paddingBottom: '22px', borderBottom: '1px solid var(--border-hairline)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <div 
-                  style={{ 
-                    width: '34px', 
-                    height: '34px', 
-                    borderRadius: 'var(--radius-input, 8px)', 
-                    background: 'var(--surface-input)', 
-                    border: '1px solid var(--border-hairline)', 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'center', 
-                    color: soundEnabled ? 'var(--accent-primary)' : 'var(--text-secondary)',
-                    flexShrink: 0
-                  }}
-                >
-                  <FontAwesomeIcon icon={soundEnabled ? faVolumeHigh : faVolumeXmark} style={{ fontSize: '14px' }} />
-                </div>
-                <div>
-                  <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', display: 'block' }}>
-                    Efek Suara & Audio
-                  </span>
-                  <span style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'block', marginTop: '2px' }}>
-                    Notifikasi synth pesan, timer, & duel
-                  </span>
-                </div>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <button
-                  type="button"
-                  onClick={toggleSound}
-                  style={{
-                    padding: '4px 12px',
-                    borderRadius: 'var(--radius-btn, 8px)',
-                    fontSize: '11.5px',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    border: soundEnabled ? '1px solid rgba(14, 165, 233, 0.3)' : '1px solid var(--border-hairline)',
-                    background: soundEnabled ? 'rgba(14, 165, 233, 0.1)' : 'var(--surface-input)',
-                    color: soundEnabled ? 'var(--accent-primary)' : 'var(--text-secondary)',
-                    transition: 'all 0.15s cubic-bezier(0.16, 1, 0.3, 1)'
-                  }}
-                >
-                  {soundEnabled ? 'Aktif' : 'Mati'}
-                </button>
-              </div>
-            </div>
-          </div>
-
           {/* Biometrics & Device Security Section */}
           <div style={{ marginBottom: '24px', paddingBottom: '22px', borderBottom: '1px solid var(--border-hairline)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -656,7 +601,7 @@ export function Profile() {
               </button>
             </div>
             <p style={{ margin: '0', fontSize: '11.5px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-              Skillo memeriksa rilis build terbaru dan sinkronisasi modul secara otomatis.
+              Pengecekan rilis build berdasarkan kanal rilis resmi (GitHub Releases & distribusi APK Android).
             </p>
             {updateStatus && (
               <div style={{ margin: '12px 0 0', fontSize: '11.5px', color: 'var(--text-primary)', padding: '10px 12px', borderRadius: 'var(--radius-input, 8px)', background: 'var(--surface-input)', border: '1px solid var(--border-hairline)', display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -664,12 +609,13 @@ export function Profile() {
                 <div>
                   <div>{updateStatus}</div>
                   <div style={{ fontSize: '10.5px', color: 'var(--text-placeholder)', marginTop: '2px', fontFamily: 'Geist Mono, monospace' }}>
-                    Status: Build Stabil (Android APK / Web) · Up-to-date
+                    Sumber: GitHub Releases & APK Build v1.1.0 (Stabil)
                   </div>
                 </div>
               </div>
             )}
           </div>
+
 
           {/* Bottom Info: Platform & P2P */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', fontSize: '11.5px', fontFamily: 'Geist Mono, monospace', color: 'var(--text-secondary)' }}>

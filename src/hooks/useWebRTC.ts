@@ -42,6 +42,12 @@ export function useWebRTC(
   const peersRef = useRef<Map<string, RTCPeerConnection>>(new Map());
   const pendingCandidatesRef = useRef<Map<string, RTCIceCandidateInit[]>>(new Map());
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const localStreamRef = useRef<MediaStream | null>(localStream);
+
+  // Keep localStreamRef synchronized
+  useEffect(() => {
+    localStreamRef.current = localStream;
+  }, [localStream]);
 
   // Broadcast helper
   const sendSignal = useCallback((type: SignalType, targetId?: string, data?: any) => {
@@ -59,6 +65,43 @@ export function useWebRTC(
     });
   }, [localUserId, localUserName]);
 
+  // Dynamically sync tracks to existing peers when localStream arrives or changes
+  useEffect(() => {
+    if (!localStream) return;
+
+    peersRef.current.forEach((peer, peerId) => {
+      try {
+        const senders = peer.getSenders();
+        let tracksAdded = false;
+
+        localStream.getTracks().forEach(track => {
+          const sender = senders.find(s => s.track?.kind === track.kind);
+          if (sender) {
+            if (sender.track !== track) {
+              sender.replaceTrack(track).catch(err => {
+                console.warn(`[useWebRTC] Failed to replace ${track.kind} track:`, err);
+              });
+            }
+          } else {
+            peer.addTrack(track, localStream);
+            tracksAdded = true;
+          }
+        });
+
+        if (tracksAdded && peer.signalingState === 'stable') {
+          peer.createOffer().then(async offer => {
+            const enhancedSdp = enhanceVideoSdp(enhanceOpusSdp(offer.sdp || ''), 1500);
+            const desc = new RTCSessionDescription({ type: offer.type, sdp: enhancedSdp });
+            await peer.setLocalDescription(desc);
+            sendSignal('offer', peerId, desc);
+          }).catch(err => console.warn('[useWebRTC] Renegotiation offer error:', err));
+        }
+      } catch (err) {
+        console.warn('[useWebRTC] Error syncing tracks to peer:', err);
+      }
+    });
+  }, [localStream, sendSignal]);
+
   // Sync local status changes to everyone
   const { isAudioMuted, isVideoOff, isScreenSharing } = localStatus;
   useEffect(() => {
@@ -75,10 +118,15 @@ export function useWebRTC(
     const peer = new RTCPeerConnection(ICE_SERVERS);
     peersRef.current.set(peerId, peer);
 
-    // Add local stream tracks
-    if (localStream) {
-      localStream.getTracks().forEach(track => {
-        peer.addTrack(track, localStream);
+    // Add local stream tracks (checking both prop and ref)
+    const activeLocalStream = localStream || localStreamRef.current;
+    if (activeLocalStream) {
+      activeLocalStream.getTracks().forEach(track => {
+        try {
+          peer.addTrack(track, activeLocalStream);
+        } catch (e) {
+          console.warn('[useWebRTC] Error adding initial track:', e);
+        }
       });
     }
 
@@ -88,6 +136,7 @@ export function useWebRTC(
         sendSignal('ice-candidate', peerId, event.candidate);
       }
     };
+
 
     // Handle Remote Stream Track Arrival
     peer.ontrack = (event) => {
