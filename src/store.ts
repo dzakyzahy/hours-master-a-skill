@@ -1265,6 +1265,11 @@ export const useStore = create<AppState>()(
         }
         return persistedState;
       },
+      onRehydrateStorage: () => (state) => {
+        if (state?.isAuthenticated && state?.userId) {
+          state.loadUserProjects?.();
+        }
+      },
       partialize: (state) => ({
         isAuthenticated: state.isAuthenticated,
         biometricVerified: state.biometricVerified,

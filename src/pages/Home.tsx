@@ -36,12 +36,19 @@ export function Home() {
     geminiApiKey,
     friendRequests,
     fetchFriendRequests,
+    loadUserProjects,
     avatar: userAvatar
   } = useStore();
   const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
   const [showRecycleBin, setShowRecycleBin] = useState(false);
+
+  useEffect(() => {
+    if (userId && loadUserProjects) {
+      loadUserProjects();
+    }
+  }, [userId, loadUserProjects]);
 
   const isDiky = (username || '').toLowerCase() === 'diky';
   const userProjects = projects.filter(p => p.userId === userId || (!p.userId && isDiky));

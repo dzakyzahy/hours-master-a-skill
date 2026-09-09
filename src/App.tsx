@@ -364,13 +364,15 @@ export default function App() {
     document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
 
-  // Auto-repair total hours bug on startup
-  const { isAuthenticated, syncTotalHoursToSupabase } = useStore();
+  // Auto-repair total hours bug and load offline projects on startup
+  const { isAuthenticated, userId, loadUserProjects, syncTotalHoursToSupabase } = useStore();
   useEffect(() => {
-    if (isAuthenticated) {
-      syncTotalHoursToSupabase();
+    if (isAuthenticated && userId) {
+      loadUserProjects().then(() => {
+        syncTotalHoursToSupabase();
+      });
     }
-  }, [isAuthenticated, syncTotalHoursToSupabase]);
+  }, [isAuthenticated, userId, loadUserProjects, syncTotalHoursToSupabase]);
 
   // Native Capacitor Integration (Android Back Button & Status Bar)
   useEffect(() => {
