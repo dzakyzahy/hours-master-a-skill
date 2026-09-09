@@ -4,4 +4,5 @@
     <string name="title_activity_main">Skillo</string>
     <string name="package_name">com.hoursmaster.app</string>
     <string name="custom_url_scheme">com.hoursmaster.app</string>
+    <string name="server_client_id">695078683840-oj0hpbqnoummp7e23996bep641foulr7.apps.googleusercontent.com</string>
 </resources>
