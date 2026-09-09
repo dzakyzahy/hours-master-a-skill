@@ -140,11 +140,25 @@ export function useWebRTC(
 
     // Handle Remote Stream Track Arrival
     peer.ontrack = (event) => {
-      const remoteStream = event.streams[0];
+      const incomingStream = event.streams && event.streams[0];
       setRemoteParticipants(prev => {
         const existing = prev.find(p => p.id === peerId);
+        let streamToUse: MediaStream;
+
+        if (incomingStream) {
+          streamToUse = new MediaStream(incomingStream.getTracks());
+        } else if (existing?.stream) {
+          const tracks = existing.stream.getTracks();
+          if (!tracks.some(t => t.id === event.track.id)) {
+            existing.stream.addTrack(event.track);
+          }
+          streamToUse = new MediaStream(existing.stream.getTracks());
+        } else {
+          streamToUse = new MediaStream([event.track]);
+        }
+
         if (existing) {
-          return prev.map(p => p.id === peerId ? { ...p, stream: remoteStream } : p);
+          return prev.map(p => p.id === peerId ? { ...p, stream: streamToUse } : p);
         }
         return [...prev, {
           id: peerId,
@@ -154,7 +168,7 @@ export function useWebRTC(
           isVideoOff: false,
           isScreenSharing: false,
           isSpeaking: false,
-          stream: remoteStream
+          stream: streamToUse
         }];
       });
     };

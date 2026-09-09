@@ -2,6 +2,7 @@ import { Capacitor } from '@capacitor/core';
 import { LocalNotifications, type Channel, type ScheduleOptions } from '@capacitor/local-notifications';
 
 export const CALL_NOTIFICATION_ID = 1001;
+export const MISSED_CALL_NOTIFICATION_ID = 1002;
 export const CALL_CHANNEL_ID = 'skillo_calls';
 
 export const CHAT_NOTIFICATION_ID = 2001;
@@ -48,6 +49,23 @@ export function buildIncomingCallNotification(rawCallerUsername: string, roomId:
     autoCancel: false,
     extra: {
       roomId,
+      callerUsername: caller
+    }
+  };
+}
+
+export function buildMissedCallNotification(rawCallerUsername: string) {
+  const caller = cleanUsername(rawCallerUsername);
+  return {
+    id: MISSED_CALL_NOTIFICATION_ID,
+    title: '📵 Panggilan Tak Terjawab',
+    body: `Panggilan tak terjawab dari ${caller}`,
+    channelId: CALL_CHANNEL_ID,
+    smallIcon: 'ic_launcher',
+    iconColor: '#ef4444',
+    ongoing: false,
+    autoCancel: true,
+    extra: {
       callerUsername: caller
     }
   };
@@ -163,4 +181,29 @@ export async function clearIncomingCallNotification(plugin = LocalNotifications)
     console.warn('[callNotifications] Failed to clear notification:', err);
   }
 }
+
+export async function showMissedCallNotification(
+  callerUsername: string,
+  plugin = LocalNotifications
+): Promise<void> {
+  try {
+    const isNative = Capacitor.isNativePlatform();
+    if (!isNative && typeof (plugin as any).schedule !== 'function') return;
+
+    // Explicitly cancel the ongoing incoming call notification (1001) first
+    await clearIncomingCallNotification(plugin);
+
+    // Ensure call channel exists
+    await setupCallNotificationChannel(plugin);
+
+    const notif = buildMissedCallNotification(callerUsername);
+    const options: ScheduleOptions = {
+      notifications: [notif]
+    };
+    await plugin.schedule(options);
+  } catch (err) {
+    console.warn('[callNotifications] Failed to show missed call notification:', err);
+  }
+}
+
 

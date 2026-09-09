@@ -28,6 +28,12 @@ function getChatStore(userId: string) {
     name: DB_NAME,
     storeName: `chats_${userId}`,
     description: `Skillo chat messages for user ${userId}`,
+    driver: [
+      localforage.INDEXEDDB,
+      localforage.WEBSQL,
+      localforage.LOCALSTORAGE,
+      'testMemoryDriver'
+    ]
   });
 }
 

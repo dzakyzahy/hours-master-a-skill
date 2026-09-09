@@ -32,16 +32,20 @@ export function MeetingRoom() {
   const { roomId } = useParams<{ roomId?: string }>();
   const { username, userId } = useStore();
   const { cancelOutgoingCall } = useCallSignaling();
-  const { startSession, endSession } = useCallSessionStore();
+  const { session, startSession, endSession, setActiveStream } = useCallSessionStore();
 
   // Parse query params (HashRouter support)
   const searchParams = new URLSearchParams(location.search);
-  const effectiveRoomId = roomId || 'focus-community';
+  const match = location.pathname.match(/\/meeting\/([^/?]+)/);
+  const pathRoomId = match ? match[1] : undefined;
+  const effectiveRoomId = roomId || pathRoomId || session?.roomId || 'focus-community';
   const callType: 'direct' | 'focus' = 
     (searchParams.get('type') as 'direct' | 'focus') || 
+    session?.callType ||
     (effectiveRoomId.startsWith('dm_') ? 'direct' : 'focus');
-  const targetFriend = searchParams.get('with') || '';
+  const targetFriend = searchParams.get('with') || session?.withUser || '';
   const isCaller = searchParams.get('isCaller') === 'true';
+  const isInMeetingPath = location.pathname.startsWith('/meeting');
 
   // State
   const [hasJoined, setHasJoined] = useState<boolean>(callType === 'direct');
@@ -128,6 +132,7 @@ export function MeetingRoom() {
 
         localStreamRef.current = stream;
         setLocalStream(stream);
+        setActiveStream(stream);
 
         // If audio-only, ensure isVideoOff is true
         if (stream.getVideoTracks().length === 0) {
@@ -143,12 +148,12 @@ export function MeetingRoom() {
       }
     }
 
-
     setupCamera();
 
     return () => {
       active = false;
-      if (localStreamRef.current) {
+      // Only stop local tracks if no call session is active
+      if (!useCallSessionStore.getState().session && localStreamRef.current) {
         localStreamRef.current.getTracks().forEach(t => t.stop());
         localStreamRef.current = null;
       }
@@ -223,8 +228,17 @@ export function MeetingRoom() {
     }
   }, [isScreenSharing, screenStream]);
 
-  // Leave Room / Cancel Call
-  const handleLeave = () => {
+  // Minimize Call (keeps call and audio running in background with floating bar)
+  const handleMinimize = () => {
+    if (callType === 'direct') {
+      navigate('/chat');
+    } else {
+      navigate('/');
+    }
+  };
+
+  // Leave Room / Explicitly End Call
+  const handleEndCall = () => {
     endSession();
     if (localStreamRef.current) {
       localStreamRef.current.getTracks().forEach(t => t.stop());
@@ -343,6 +357,51 @@ _Ketuk tautan di atas untuk langsung masuk ke sesi._`;
   const displayParticipants = [localParticipant, ...remoteParticipants];
   const sharingParticipant = displayParticipants.find(p => p.isScreenSharing);
   const participantCount = displayParticipants.length;
+
+  // ==========================================
+  // BACKGROUND / MINIMIZED MODE
+  // (Navigated away from /meeting, but call session is alive)
+  // ==========================================
+  if (!isInMeetingPath && session) {
+    return (
+      <div 
+        style={{
+          position: 'fixed',
+          top: -9999,
+          left: -9999,
+          width: 1,
+          height: 1,
+          opacity: 0.001,
+          pointerEvents: 'none',
+          zIndex: -999
+        }}
+        aria-hidden="true"
+      >
+        {remoteParticipants.map(p => (
+          !p.isLocal && p.stream ? (
+            <audio
+              key={p.id}
+              ref={el => {
+                if (el && p.stream) {
+                  el.srcObject = p.stream;
+                  el.muted = p.isAudioMuted;
+                  el.play().catch(() => {});
+                }
+              }}
+              autoPlay
+              playsInline
+              muted={p.isAudioMuted}
+            />
+          ) : null
+        ))}
+      </div>
+    );
+  }
+
+  // Not on meeting path and no active call -> render nothing
+  if (!isInMeetingPath) {
+    return null;
+  }
 
   // ==========================================
   // VIEW 1: PRE-JOIN SCREEN (LOBBY FOCUS ROOM)
@@ -699,7 +758,7 @@ _Ketuk tautan di atas untuk langsung masuk ke sesi._`;
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
           <button
             type="button"
-            onClick={handleLeave}
+            onClick={handleEndCall}
             style={{
               width: '60px',
               height: '60px',
@@ -748,8 +807,8 @@ _Ketuk tautan di atas untuk langsung masuk ke sesi._`;
           <button 
             type="button"
             className="btn" 
-            onClick={handleLeave} 
-            title={callType === 'direct' ? 'Tinggalkan Panggilan' : 'Keluar Ruangan'} 
+            onClick={handleMinimize} 
+            title="Kembali (Panggilan tetap aktif di latar)" 
             style={{ 
               padding: '6px 10px', 
               minWidth: '40px',
@@ -768,7 +827,7 @@ _Ketuk tautan di atas untuk langsung masuk ke sesi._`;
             }}
           >
             <FontAwesomeIcon icon={faArrowLeft} style={{ fontSize: '11px' }} />
-            <span className="meeting-btn-text">Keluar</span>
+            <span className="meeting-btn-text">Kembali</span>
           </button>
 
           <div style={{ minWidth: 0, flex: 1 }}>
@@ -906,7 +965,7 @@ _Ketuk tautan di atas untuk langsung masuk ke sesi._`;
           onToggleMic={handleToggleMic}
           onToggleVideo={handleToggleVideo}
           onToggleScreenShare={handleToggleScreenShare}
-          onLeave={handleLeave}
+          onLeave={handleEndCall}
           showDevTools={showDevTools}
           onToggleDevTools={() => setShowDevTools(s => !s)}
         />

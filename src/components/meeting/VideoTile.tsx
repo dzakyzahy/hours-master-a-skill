@@ -27,11 +27,9 @@ export function VideoTile({ participant, isDominant = false }: VideoTileProps) {
   useEffect(() => {
     if (videoRef.current && participant.stream && !participant.isVideoOff) {
       videoRef.current.srcObject = participant.stream;
-      if (!participant.isLocal) {
-        videoRef.current.play().catch(err => {
-          console.warn('[VideoTile] Remote video play caught:', err);
-        });
-      }
+      videoRef.current.play().catch(err => {
+        console.warn('[VideoTile] Video play caught:', err);
+      });
     }
   }, [participant.stream, participant.isVideoOff, participant.isLocal]);
 
@@ -72,7 +70,7 @@ export function VideoTile({ participant, isDominant = false }: VideoTileProps) {
           autoPlay
           playsInline
           muted={participant.isAudioMuted}
-          style={{ display: 'none' }}
+          style={{ position: 'fixed', top: -9999, left: -9999, width: 1, height: 1, opacity: 0.001, pointerEvents: 'none' }}
         />
       )}
 
@@ -82,7 +80,7 @@ export function VideoTile({ participant, isDominant = false }: VideoTileProps) {
           ref={videoRef}
           autoPlay
           playsInline
-          muted={true}
+          muted={participant.isLocal ? true : participant.isAudioMuted}
           style={{
             width: '100%',
             height: '100%',

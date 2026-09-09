@@ -19,6 +19,7 @@ import { ThemeSwitcher } from '../components/ThemeSwitcher';
 import { playMessageSent, playMessageReceived } from '../utils/audio';
 import { useCallSignaling } from '../hooks/useCallSignaling';
 import { showChatMessageNotification, requestCallNotificationPermissions } from '../utils/callNotifications';
+import { saveChatMessage, getChatHistory } from '../services/ChatDB';
 
 interface LocalChatMessage {
   id: string;
@@ -136,6 +137,34 @@ export function Chat() {
     }
   }, [localMessages, activeTab, effectiveSelectedFriend]);
 
+  // Load chat history from local database (ChatDB via IndexedDB)
+  useEffect(() => {
+    if (!userId || !effectiveSelectedFriend) return;
+    getChatHistory(userId, effectiveSelectedFriend.id)
+      .then(history => {
+        if (history && history.length > 0) {
+          setLocalMessages(prev => {
+            const merged = [...prev];
+            for (const item of history) {
+              if (!merged.some(m => m.id === item.id)) {
+                merged.push({
+                  id: item.id,
+                  sender: item.senderId === userId ? currentUsername : (effectiveSelectedFriend.username || effectiveSelectedFriend.name || '').toLowerCase(),
+                  recipient: item.receiverId === userId ? currentUsername : (effectiveSelectedFriend.username || effectiveSelectedFriend.name || '').toLowerCase(),
+                  text: item.text,
+                  timestamp: item.timestamp
+                });
+              }
+            }
+            return merged.sort((a, b) => a.timestamp - b.timestamp);
+          });
+        }
+      })
+      .catch(err => {
+        console.warn('Gagal memuat riwayat chat dari ChatDB:', err);
+      });
+  }, [userId, effectiveSelectedFriend, currentUsername]);
+
   // Real-Time Sync: Supabase Realtime WebSocket (across internet to Dzaky) + BroadcastChannel + Window Storage
   useEffect(() => {
     const myUser = currentUsername;
@@ -163,6 +192,16 @@ export function Chat() {
                 }
                 const next = [...prev, payload];
                 saveMessagesToStorage(next);
+                if (userId) {
+                  saveChatMessage(userId, {
+                    id: payload.id,
+                    senderId: payload.sender,
+                    receiverId: userId,
+                    text: payload.text,
+                    timestamp: payload.timestamp,
+                    synced: true
+                  }).catch(() => {});
+                }
                 if (sender !== myUser) {
                   playMessageReceived();
                   showChatMessageNotification(payload.sender, payload.text);
@@ -196,6 +235,16 @@ export function Chat() {
               }
               const next = [...prev, msg.payload];
               saveMessagesToStorage(next);
+              if (userId) {
+                saveChatMessage(userId, {
+                  id: msg.payload.id,
+                  senderId: msg.payload.sender,
+                  receiverId: userId,
+                  text: msg.payload.text,
+                  timestamp: msg.payload.timestamp,
+                  synced: true
+                }).catch(() => {});
+              }
               playMessageReceived();
               showChatMessageNotification(msg.payload.sender, msg.payload.text);
               return next;
@@ -256,6 +305,17 @@ export function Chat() {
       playMessageSent();
       return next;
     });
+
+    if (userId && effectiveSelectedFriend) {
+      saveChatMessage(userId, {
+        id: newMsgObj.id,
+        senderId: userId,
+        receiverId: effectiveSelectedFriend.id,
+        text: newMsgObj.text,
+        timestamp: newMsgObj.timestamp,
+        synced: true,
+      }).catch(err => console.warn('Gagal menyimpan pesan ke ChatDB:', err));
+    }
 
     setNewMessage('');
 

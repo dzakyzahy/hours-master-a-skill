@@ -97,5 +97,38 @@ describe('callNotifications', () => {
     assert.strictEqual(notif.smallIcon, 'ic_launcher');
     assert.strictEqual(notif.autoCancel, true);
   });
+
+  it('builds missed call notification that is dismissible and has correct copy', async () => {
+    const { buildMissedCallNotification, MISSED_CALL_NOTIFICATION_ID } = await import('../src/utils/callNotifications.ts');
+    const notif = buildMissedCallNotification('diky');
+    assert.strictEqual(notif.id, MISSED_CALL_NOTIFICATION_ID);
+    assert.strictEqual(notif.title, '📵 Panggilan Tak Terjawab');
+    assert.ok(notif.body.includes('diky'));
+    assert.strictEqual(notif.ongoing, false, 'Missed call notification must NOT be ongoing (must be swipeable)');
+    assert.strictEqual(notif.autoCancel, true, 'Missed call notification must autoCancel on tap');
+    assert.strictEqual(notif.smallIcon, 'ic_launcher');
+  });
+
+  it('showMissedCallNotification cancels incoming call notification before scheduling missed call', async () => {
+    const { showMissedCallNotification, CALL_NOTIFICATION_ID, MISSED_CALL_NOTIFICATION_ID } = await import('../src/utils/callNotifications.ts');
+    let cancelledIds: number[] = [];
+    let scheduledNotif: any = null;
+
+    const mockPlugin: any = {
+      cancel: async (opts: any) => {
+        cancelledIds = opts.notifications.map((n: any) => n.id);
+      },
+      schedule: async (opts: any) => {
+        scheduledNotif = opts.notifications[0];
+      }
+    };
+
+    await showMissedCallNotification('diky', mockPlugin);
+    assert.ok(cancelledIds.includes(CALL_NOTIFICATION_ID), 'Must cancel ongoing incoming call notification (1001)');
+    assert.ok(scheduledNotif, 'Must schedule missed call notification');
+    assert.strictEqual(scheduledNotif.id, MISSED_CALL_NOTIFICATION_ID);
+    assert.strictEqual(scheduledNotif.ongoing, false);
+  });
 });
+
 

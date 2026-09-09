@@ -380,6 +380,11 @@ export default function App() {
 
       const backListener = CapApp.addListener('backButton', () => {
         const hash = window.location.hash;
+        if (hash && hash.includes('/meeting/')) {
+          // Minimize active call instead of terminating or exiting app
+          window.location.hash = '#/chat';
+          return;
+        }
         if (hash && hash !== '#/' && hash !== '#/login') {
           window.history.back();
         } else {
@@ -489,13 +494,12 @@ export default function App() {
             />
             <Route 
               path="/meeting/:roomId?" 
-              element={
-                <ProtectedRoute>
-                  <MeetingRoom />
-                </ProtectedRoute>
-              } 
+              element={<div className="meeting-route-container" />} 
             />
           </Routes>
+        </Suspense>
+        <Suspense fallback={null}>
+          <MeetingRoom />
         </Suspense>
         <IncomingCallModal />
         <ActiveCallBar />

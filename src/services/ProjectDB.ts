@@ -23,6 +23,12 @@ function getProjectStore(userId: string) {
     storeName: `projects_${userId}`,
     version: DB_VERSION,
     description: `Skillo projects for user ${userId}`,
+    driver: [
+      localforage.INDEXEDDB,
+      localforage.WEBSQL,
+      localforage.LOCALSTORAGE,
+      'testMemoryDriver'
+    ]
   });
 }
 

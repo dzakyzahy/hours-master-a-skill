@@ -4,7 +4,7 @@ import { useStore } from '../store';
 import type { CallSignal } from '../types/meeting';
 import { playIncomingRingtone, playCallEnd } from '../utils/audio';
 import { shouldProcessCallSignal } from '../utils/callSignalingCore';
-import { showIncomingCallNotification, clearIncomingCallNotification } from '../utils/callNotifications';
+import { showIncomingCallNotification, clearIncomingCallNotification, showMissedCallNotification } from '../utils/callNotifications';
 
 // Shared in-memory event emitter for callers across components
 type CallListener = (call: CallSignal | null) => void;
@@ -37,8 +37,12 @@ function handleIncomingSignal(payload: CallSignal) {
     }
   } else if (payload.type === 'CALL_CANCELLED' || payload.type === 'CALL_REJECTED') {
     if (currentIncomingCall?.roomId === payload.roomId) {
+      const missedCaller = currentIncomingCall.callerUsername;
       playCallEnd();
       setGlobalIncomingCall(null);
+      if (payload.type === 'CALL_CANCELLED' && missedCaller) {
+        showMissedCallNotification(missedCaller);
+      }
     }
   }
 }
@@ -127,7 +131,11 @@ export function useCallSignaling() {
 
       // Auto cancel incoming call if not answered after 35s
       const timeout = setTimeout(() => {
+        const missedCaller = incomingCall.callerUsername;
         setGlobalIncomingCall(null);
+        if (missedCaller) {
+          showMissedCallNotification(missedCaller);
+        }
       }, 35000);
 
       return () => {

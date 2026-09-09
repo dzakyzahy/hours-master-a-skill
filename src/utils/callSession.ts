@@ -9,12 +9,24 @@ export interface ActiveCallSession {
 
 interface CallSessionState {
   session: ActiveCallSession | null;
+  activeStream: MediaStream | null;
+  setActiveStream: (stream: MediaStream | null) => void;
   startSession: (session: ActiveCallSession) => void;
   endSession: () => void;
 }
 
-export const useCallSessionStore = create<CallSessionState>((set) => ({
+export const useCallSessionStore = create<CallSessionState>((set, get) => ({
   session: null,
+  activeStream: null,
+  setActiveStream: (stream) => set({ activeStream: stream }),
   startSession: (session) => set({ session }),
-  endSession: () => set({ session: null })
+  endSession: () => {
+    const stream = get().activeStream;
+    if (stream) {
+      try {
+        stream.getTracks().forEach(t => t.stop());
+      } catch {}
+    }
+    set({ session: null, activeStream: null });
+  }
 }));
