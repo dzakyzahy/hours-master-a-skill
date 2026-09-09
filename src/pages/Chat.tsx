@@ -1,12 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-<<<<<<< HEAD
-import { ArrowLeft, UserPlus, Users, MessageSquare, Send, Video, Swords } from 'lucide-react';
-import { useStore, type FriendUser } from '../store';
-import { ClashArena } from '../components/ClashArena';
-import { supabase } from '../supabaseClient';
-import toast from 'react-hot-toast';
-=======
 import { 
   ArrowLeft, 
   UserPlus, 
@@ -15,10 +8,12 @@ import {
   PaperPlaneRight, 
   VideoCamera
 } from '@phosphor-icons/react';
+import { Swords } from 'lucide-react';
 import { useStore, type FriendUser } from '../store';
+import { ClashArena } from '../components/ClashArena';
 import { supabase } from '../supabaseClient';
+import toast from 'react-hot-toast';
 import { ThemeSwitcher } from '../components/ThemeSwitcher';
->>>>>>> 612984cd00ee94f252907af62f974dc61799664f
 
 interface LocalChatMessage {
   id: string;
