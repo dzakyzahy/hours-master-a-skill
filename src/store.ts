@@ -3,6 +3,12 @@ import { persist } from 'zustand/middleware';
 import { supabase, isSupabaseConfigured } from './supabaseClient';
 import { playTimerStart, playTimerStop } from './utils/audio';
 import { evaluateAchievements } from './utils/achievements';
+import {
+  saveProject,
+  getProjects,
+  removeProject,
+  cleanupLegacyDefaultProject,
+} from './services/ProjectDB';
 
 export interface SkillPhase {
   title: string;
@@ -174,8 +180,17 @@ interface AppState {
   toggleTimer: (targetProjectId?: string) => Promise<void>;
   setRemoteTimerState: (isActive: boolean) => void;
   tickTimer: () => void;
+  loadUserProjects: () => Promise<void>;
+  syncToSupabase: () => Promise<void>;
+  loadFromSupabase: () => Promise<void>;
   syncTotalHoursToSupabase: () => Promise<void>;
 }
+
+// ================================================================
+// STORAGE VERSION — digunakan untuk migrasi data lama
+// Naikkan versi ini jika ada perubahan schema pada persisted state
+// ================================================================
+const STORAGE_VERSION = 2;
 
 export const useStore = create<AppState>()(
   persist(
@@ -191,17 +206,19 @@ export const useStore = create<AppState>()(
 
       
       login: async (u, p) => {
-        const trimmed = (u || '').trim().toLowerCase();
-        let emailToUse = trimmed;
-        
-        // Identify which user is attempting to log in
-        const isDiky = trimmed === 'diky' || trimmed === 'dikydwi442@gmail.com';
-        const isZahy = trimmed === 'zahy' || trimmed === 'dzaky' || trimmed === 'dzakyzr3@gmail.com';
+        const trimmed = (u || '').trim();
+        // Tentukan apakah input adalah email atau username
+        const isEmail = trimmed.includes('@');
+        const emailToUse = isEmail ? trimmed : null;
+        const usernameInput = isEmail ? null : trimmed.toLowerCase();
 
-        if (isDiky) emailToUse = 'dikydwi442@gmail.com';
-        if (isZahy) emailToUse = 'dzakyzr3@gmail.com';
+        const isDiky = usernameInput === 'diky' || trimmed === 'dikydwi442@gmail.com';
+        const isZahy = usernameInput === 'zahy' || trimmed === 'dzakyzr3@gmail.com';
 
-        // Normalize password for dev/offline or transition
+        let directEmail = emailToUse;
+        if (isDiky) directEmail = 'dikydwi442@gmail.com';
+        if (isZahy) directEmail = 'dzakyzr3@gmail.com';
+
         let passwordToUse = p;
         if (p === '123') {
           if (isZahy) passwordToUse = 'zahy123hours';
@@ -209,15 +226,30 @@ export const useStore = create<AppState>()(
         }
 
         const resolvedUsername = isDiky ? 'diky' : isZahy ? 'zahy' : (trimmed.includes('@') ? trimmed.split('@')[0] : trimmed);
-        const resolvedEmail = emailToUse;
 
         if (isSupabaseConfigured) {
           try {
-            const { data: authData, error } = await supabase.auth.signInWithPassword({ 
-              email: emailToUse, 
-              password: passwordToUse 
+            let resolvedEmail = directEmail;
+
+            // Jika input adalah username, cari email dari tabel profiles
+            if (!resolvedEmail && usernameInput) {
+              const { data: profileData } = await supabase
+                .from('profiles')
+                .select('email')
+                .eq('username', usernameInput)
+                .single();
+              resolvedEmail = profileData?.email || null;
+            }
+
+            if (!resolvedEmail) {
+              return false;
+            }
+
+            const { data: authData, error } = await supabase.auth.signInWithPassword({
+              email: resolvedEmail,
+              password: passwordToUse,
             });
-            
+
             if (!error && authData?.user) {
               const { data: profile } = await supabase
                 .from('profiles')
@@ -225,10 +257,16 @@ export const useStore = create<AppState>()(
                 .eq('id', authData.user.id)
                 .single();
 
-              const finalUser = profile?.username || resolvedUsername;
+              const finalUser = profile?.username || resolvedUsername || resolvedEmail.split('@')[0];
               const finalEmail = authData.user.email || profile?.email || resolvedEmail;
-              const userProjects = loadUserProjects(authData.user.id, finalUser);
               
+              let userProjects: Project[] = [];
+              try {
+                userProjects = await getProjects(authData.user.id);
+              } catch {
+                userProjects = loadUserProjects(authData.user.id, finalUser);
+              }
+
               set({ 
                 isAuthenticated: true, 
                 biometricVerified: true, 
@@ -250,16 +288,22 @@ export const useStore = create<AppState>()(
               return true;
             }
           } catch (netErr) {
-            console.warn("Supabase network error, checking local fallback:", netErr);
+            console.warn('Supabase network error:', netErr);
           }
         }
 
         // Offline / Dev fallback
         if (p && p.length >= 1) {
           const finalUser = isDiky ? 'diky' : isZahy ? 'zahy' : resolvedUsername;
-          const finalEmail = isDiky ? 'dikydwi442@gmail.com' : isZahy ? 'dzakyzr3@gmail.com' : resolvedEmail || `${resolvedUsername}@skillo.team`;
+          const finalEmail = isDiky ? 'dikydwi442@gmail.com' : isZahy ? 'dzakyzr3@gmail.com' : directEmail || `${resolvedUsername}@skillo.team`;
           const fallbackUserId = isDiky ? 'e2ce644a-dca1-4ae9-9c17-3ea852ba5428' : isZahy ? '6b5525ce-a74a-42ee-a50a-0353bccd4d10' : (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `00000000-0000-0000-0000-${Math.random().toString(16).substring(2, 14)}`);
-          const userProjects = loadUserProjects(fallbackUserId, finalUser);
+          
+          let userProjects: Project[] = [];
+          try {
+            userProjects = await getProjects(fallbackUserId);
+          } catch {
+            userProjects = loadUserProjects(fallbackUserId, finalUser);
+          }
           
           set({ 
             isAuthenticated: true, 
@@ -275,10 +319,6 @@ export const useStore = create<AppState>()(
             lastTimerTick: null,
             friends: [] 
           });
-          try {
-            localStorage.setItem('last_user', finalUser);
-            localStorage.setItem(`presence_${finalUser}`, Date.now().toString());
-          } catch {}
           return true;
         }
 
@@ -913,29 +953,16 @@ export const useStore = create<AppState>()(
         return newlyUnlocked;
       },
 
-      projects: [
-        {
-          id: 'default-1',
-          name: 'Ethical Hacking',
-          totalHours: 120,
-          dailyGoal: 2,
-          hoursToday: 0.5,
-          lastUpdated: Date.now(),
-          phases: [
-            { title: "Core Foundations & Low-Level Mechanics", hoursStart: 1, hoursEnd: 150, desc: "Networking, OS, Programming for Security." },
-            { title: "Web App Security & Vulnerability Analysis", hoursStart: 151, hoursEnd: 300, desc: "OWASP Top 10, Web Fundamentals." },
-            { title: "Infrastructure, Network Pentesting & AD", hoursStart: 301, hoursEnd: 480, desc: "Recon, AD Security, Host Exploitation." },
-            { title: "Defensive Engineering & Remediation", hoursStart: 481, hoursEnd: 600, desc: "Blue Team, Secure Coding, Reporting." },
-            { title: "Real-World App & Public Good", hoursStart: 601, hoursEnd: 750, desc: "Bug Bounty, CVD, Threat Intelligence." },
-          ]
-        }
-      ],
+      // Projects awalnya kosong — di-load dari ProjectDB (LocalForage) setelah login
+      // Ini mencegah data hardcoded muncul untuk semua user baru
+      projects: [],
       activeProjectId: null,
 
       setActiveProject: (id) => set({ activeProjectId: id }),
-      
-      addProject: (name, phases) => set((state) => {
-        const newProjects = [...state.projects, {
+
+      addProject: (name, phases) => {
+        const state = get();
+        const newProject: Project = {
           id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(),
           userId: state.userId,
           name,
@@ -943,114 +970,135 @@ export const useStore = create<AppState>()(
           dailyGoal: 2,
           hoursToday: 0,
           phases,
-          lastUpdated: Date.now()
-        }];
-        saveUserProjects(state.userId, newProjects);
-        return { projects: newProjects };
-      }),
+          lastUpdated: Date.now(),
+        };
+        set((s) => ({ projects: [...s.projects, newProject] }));
+        if (state.userId) {
+          saveProject(state.userId, newProject).catch(console.error);
+        }
+      },
 
-      updateProject: (id, name, phases) => set((state) => {
-        const newProjects = state.projects.map(p => 
-          p.id === id 
-            ? { ...p, name, phases, lastUpdated: Date.now() }
-            : p
+      updateProject: (id, name, phases) => {
+        const state = get();
+        const updated = state.projects.map((p) =>
+          p.id === id ? { ...p, name, phases, lastUpdated: Date.now() } : p
         );
-        saveUserProjects(state.userId, newProjects);
-        return { projects: newProjects };
-      }),
+        set({ projects: updated });
+        const updatedProject = updated.find((p) => p.id === id);
+        if (updatedProject && state.userId) {
+          saveProject(state.userId, updatedProject).catch(console.error);
+        }
+      },
 
       deleteProject: (id) => {
-        set((state) => {
-          const newProjects = state.projects.map(p => p.id === id ? { ...p, deletedAt: Date.now() } : p);
-          saveUserProjects(state.userId, newProjects);
-          return {
-            projects: newProjects,
-            activeProjectId: state.activeProjectId === id ? null : state.activeProjectId
-          };
-        });
+        const state = get();
+        const updated = state.projects.map((p) =>
+          p.id === id ? { ...p, deletedAt: Date.now() } : p
+        );
+        set({ projects: updated, activeProjectId: state.activeProjectId === id ? null : state.activeProjectId });
+        const softDeleted = updated.find((p) => p.id === id);
+        if (softDeleted && state.userId) {
+          saveProject(state.userId, softDeleted).catch(console.error);
+        }
         get().syncTotalHoursToSupabase();
       },
 
       restoreProject: (id) => {
-        set((state) => {
-          const newProjects = state.projects.map(p => p.id === id ? { ...p, deletedAt: undefined } : p);
-          saveUserProjects(state.userId, newProjects);
-          return { projects: newProjects };
-        });
+        const state = get();
+        const updated = state.projects.map((p) =>
+          p.id === id ? { ...p, deletedAt: undefined } : p
+        );
+        set({ projects: updated });
+        const restored = updated.find((p) => p.id === id);
+        if (restored && state.userId) {
+          saveProject(state.userId, restored).catch(console.error);
+        }
         get().syncTotalHoursToSupabase();
       },
 
       hardDeleteProject: (id) => {
-        set((state) => {
-          const newProjects = state.projects.filter(p => p.id !== id);
-          saveUserProjects(state.userId, newProjects);
-          return {
-            projects: newProjects,
-            activeProjectId: state.activeProjectId === id ? null : state.activeProjectId
-          };
+        const state = get();
+        set({
+          projects: state.projects.filter((p) => p.id !== id),
+          activeProjectId: state.activeProjectId === id ? null : state.activeProjectId,
         });
+        if (state.userId) {
+          removeProject(state.userId, id).catch(console.error);
+        }
         get().syncTotalHoursToSupabase();
       },
 
       addManualTime: (id, minutes) => {
         const hoursToAdd = minutes / 60;
-        set((state) => ({
-          projects: state.projects.map(p => {
-            if (p.id !== id) return p;
-            const currentToday = isSameCalendarDay(p.lastUpdated) ? p.hoursToday : 0;
-            return {
-              ...p,
-              totalHours: Math.max(0, p.totalHours + hoursToAdd),
-              hoursToday: Math.max(0, currentToday + hoursToAdd),
-              lastUpdated: Date.now()
-            };
-          })
-        }));
+        const state = get();
+        const updatedProjects = state.projects.map(p => {
+          if (p.id !== id) return p;
+          const currentToday = isSameCalendarDay(p.lastUpdated) ? p.hoursToday : 0;
+          return {
+            ...p,
+            totalHours: Math.max(0, p.totalHours + hoursToAdd),
+            hoursToday: Math.max(0, currentToday + hoursToAdd),
+            lastUpdated: Date.now()
+          };
+        });
+        set({ projects: updatedProjects });
+        const updated = updatedProjects.find(p => p.id === id);
+        if (updated && state.userId) {
+          saveProject(state.userId, updated).catch(console.error);
+        }
         get().syncTotalHoursToSupabase();
       },
 
       addHours: (h) => {
-        set((state) => {
-          const id = state.activeProjectId;
-          if (!id) return state;
+        const state = get();
+        const id = state.activeProjectId;
+        if (!id) return;
+        const updatedProjects = state.projects.map(p => {
+          if (p.id !== id) return p;
+          const currentToday = isSameCalendarDay(p.lastUpdated) ? p.hoursToday : 0;
           return {
-            projects: state.projects.map(p => {
-              if (p.id !== id) return p;
-              const currentToday = isSameCalendarDay(p.lastUpdated) ? p.hoursToday : 0;
-              return {
-                ...p,
-                totalHours: Math.max(0, p.totalHours + h),
-                hoursToday: Math.max(0, currentToday + h),
-                lastUpdated: Date.now()
-              };
-            })
+            ...p,
+            totalHours: Math.max(0, p.totalHours + h),
+            hoursToday: Math.max(0, currentToday + h),
+            lastUpdated: Date.now()
           };
         });
+        set({ projects: updatedProjects });
+        const updated = updatedProjects.find(p => p.id === id);
+        if (updated && state.userId) {
+          saveProject(state.userId, updated).catch(console.error);
+        }
         get().syncTotalHoursToSupabase();
       },
 
       setTotalHours: (h) => {
-        set((state) => {
-          const id = state.activeProjectId;
-          if (!id) return state;
-          return {
-            projects: state.projects.map(p => 
-              p.id === id ? { ...p, totalHours: h, lastUpdated: Date.now() } : p
-            )
-          };
-        });
+        const state = get();
+        const id = state.activeProjectId;
+        if (!id) return;
+        const updatedProjects = state.projects.map(p => 
+          p.id === id ? { ...p, totalHours: h, lastUpdated: Date.now() } : p
+        );
+        set({ projects: updatedProjects });
+        const updated = updatedProjects.find(p => p.id === id);
+        if (updated && state.userId) {
+          saveProject(state.userId, updated).catch(console.error);
+        }
         get().syncTotalHoursToSupabase();
       },
 
-      setDailyGoal: (h) => set((state) => {
+      setDailyGoal: (h) => {
+        const state = get();
         const id = state.activeProjectId;
-        if (!id) return state;
-        return {
-          projects: state.projects.map(p => 
-            p.id === id ? { ...p, dailyGoal: h, lastUpdated: Date.now() } : p
-          )
-        };
-      }),
+        if (!id) return;
+        const updatedProjects = state.projects.map(p => 
+          p.id === id ? { ...p, dailyGoal: h, lastUpdated: Date.now() } : p
+        );
+        set({ projects: updatedProjects });
+        const updated = updatedProjects.find(p => p.id === id);
+        if (updated && state.userId) {
+          saveProject(state.userId, updated).catch(console.error);
+        }
+      },
       activeTimer: false,
       timerStartedAt: null,
       timerProjectId: null,
@@ -1169,42 +1217,60 @@ export const useStore = create<AppState>()(
         }));
       },
 
-      setRemoteTimerState: (isActive) => {
+      setRemoteTimerState: (isActive) => set({ activeTimer: isActive }),
+      
+      // Load projects dari LocalForage untuk user yang sedang login
+      loadUserProjects: async () => {
         const state = get();
-        const now = Date.now();
-        if (isActive && !state.activeTimer) {
-          set({
-            activeTimer: true,
-            timerStartedAt: now,
-            timerProjectId: state.activeProjectId,
-            lastTimerTick: now
-          });
-        } else if (!isActive && state.activeTimer) {
-          set({
-            activeTimer: false,
-            timerStartedAt: null,
-            timerProjectId: null,
-            lastTimerTick: null
-          });
+        if (!state.userId) return;
+        try {
+          // Bersihkan project lama yang hardcoded (fix bug 120 jam)
+          await cleanupLegacyDefaultProject();
+          const projects = await getProjects(state.userId);
+          set({ projects });
+        } catch (e) {
+          console.error('Gagal load projects dari local storage:', e);
         }
       },
-      
+
+      syncToSupabase: async () => {
+        // TODO Sprint 3: Sync ke Supabase untuk user dengan Skillo Cloud subscription
+      },
+
       syncTotalHoursToSupabase: async () => {
         const state = get();
         if (!state.userId) return;
         const total = state.projects.reduce((acc, p) => acc + (p.deletedAt ? 0 : p.totalHours), 0);
-        await supabase.from('profiles').update({ total_hours: total }).eq('id', state.userId);
+        try {
+          await supabase.from('profiles').update({ total_hours: total }).eq('id', state.userId);
+        } catch (e) {
+          // Tidak kritis jika gagal — data tetap aman di local
+          console.warn('syncTotalHours gagal:', e);
+        }
+      },
+
+      loadFromSupabase: async () => {
+        // TODO Sprint 3: Load dari Supabase untuk user Skillo Cloud
       }
     }),
     {
       name: 'hours-master-storage',
+      version: STORAGE_VERSION,
+      // Saat versi berubah, migrate data lama
+      migrate: (persistedState: any, version: number) => {
+        if (version < 2) {
+          // Migrasi v1 → v2: hapus projects hardcoded dari localStorage
+          // Projects sekarang disimpan di IndexedDB via ProjectDB
+          return { ...persistedState, projects: [] };
+        }
+        return persistedState;
+      },
       partialize: (state) => ({
         isAuthenticated: state.isAuthenticated,
         biometricVerified: state.biometricVerified,
         userId: state.userId,
         username: state.username,
         userEmail: state.userEmail,
-        friends: state.friends,
         theme: state.theme,
         soundEnabled: state.soundEnabled,
         clashPinned: state.clashPinned,
@@ -1213,7 +1279,8 @@ export const useStore = create<AppState>()(
         title: state.title,
         bio: state.bio,
         unlockedAchievements: state.unlockedAchievements,
-        projects: state.projects,
+        // Projects TIDAK di-persist di localStorage lagi
+        // Disimpan di IndexedDB via ProjectDB (per-user, lebih aman)
         activeProjectId: state.activeProjectId,
         activeTimer: state.activeTimer,
         timerStartedAt: state.timerStartedAt,

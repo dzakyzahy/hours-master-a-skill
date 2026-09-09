@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useStore } from '../store';
+import { supabase } from '../supabaseClient';
 import { SkilloLogo } from '../components/SkilloLogo';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
@@ -37,8 +38,7 @@ export function Login() {
   const [isBiometricModalOpen, setIsBiometricModalOpen] = useState(false);
   const [biometricStatus, setBiometricStatus] = useState<'idle' | 'scanning' | 'success' | 'failed'>('idle');
   const [biometricMessage, setBiometricMessage] = useState('');
-
-  const { login, register, resetPassword, setBiometricVerified } = useStore();
+  const { login, register, resetPassword, setBiometricVerified, loadUserProjects } = useStore();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -57,6 +57,7 @@ export function Login() {
         setError('Kredensial tidak cocok. Silakan periksa email/username dan kata sandi Anda.');
       } else {
         setBiometricVerified(true);
+        if (loadUserProjects) await loadUserProjects();
         const fromState = (location.state as any)?.from;
         const destination = fromState?.pathname ? (fromState.pathname + (fromState.search || '')) : '/';
         navigate(destination);
@@ -123,9 +124,7 @@ export function Login() {
     setIsBiometricModalOpen(true);
     setBiometricStatus('scanning');
     setBiometricMessage('Menghubungkan ke sensor sidik jari perangkat...');
-
     const isEnabled = localStorage.getItem('biometric_enabled') === 'true';
-    const targetUser = localStorage.getItem('biometric_user') || identifier.trim() || localStorage.getItem('last_user') || 'diky';
 
     if (!isEnabled) {
       setBiometricStatus('failed');
@@ -134,11 +133,23 @@ export function Login() {
     }
 
     try {
+      // Cek apakah ada sesi Supabase yang masih aktif
+      const { data: sessionData } = await supabase.auth.getSession();
+      const session = sessionData?.session;
+
+      if (!session) {
+        // Tidak ada sesi aktif — user harus login manual dulu
+        setBiometricStatus('failed');
+        setBiometricMessage('Sesi tidak ditemukan. Silakan login dengan email dan password terlebih dahulu untuk mendaftarkan biometrik.');
+        return;
+      }
+
       const challenge = new Uint8Array(32);
       window.crypto.getRandomValues(challenge);
       const savedCredId = localStorage.getItem('biometric_id');
+      const targetUser = session.user.email?.split('@')[0] || 'user';
 
-      if (window.PublicKeyCredential && savedCredId) {
+      if (savedCredId) {
         try {
           const binaryString = atob(savedCredId);
           const credIdUint8 = new Uint8Array(binaryString.length);
@@ -152,9 +163,32 @@ export function Login() {
             publicKey: {
               challenge,
               allowCredentials: [{ id: credIdUint8, type: 'public-key' }],
-              userVerification: "required"
-            }
+              userVerification: 'required',
+            },
           });
+
+          // WebAuthn berhasil — set state dari session Supabase yang sudah ada
+          const { data: profile } = await supabase
+            .from('profiles').select('username').eq('id', session.user.id).single();
+
+          const username = profile?.username || targetUser;
+          useStore.setState({
+            isAuthenticated: true,
+            biometricVerified: true,
+            userId: session.user.id,
+            username,
+            userEmail: session.user.email || '',
+            friends: [],
+          });
+
+          setBiometricStatus('success');
+          setBiometricMessage('Sidik jari terverifikasi! Membuka workspace...');
+          if (loadUserProjects) await loadUserProjects();
+          setTimeout(() => {
+            setIsBiometricModalOpen(false);
+            navigate('/');
+          }, 800);
+          return;
         } catch (credErr: any) {
           if (credErr.name === 'NotAllowedError') {
             setBiometricStatus('failed');
@@ -163,18 +197,63 @@ export function Login() {
           }
           console.info('Biometric credential check:', credErr);
         }
-      }
+      } else if (window.PublicKeyCredential) {
+        // Daftarkan biometrik baru
+        const userId = new Uint8Array(16);
+        window.crypto.getRandomValues(userId);
 
-      setBiometricStatus('success');
-      setBiometricMessage(`Sidik jari terverifikasi! Membuka workspace ${targetUser}...`);
-      await login(targetUser, '123');
-      setBiometricVerified(true);
-      setTimeout(() => {
-        setIsBiometricModalOpen(false);
-        navigate('/');
-      }, 700);
+        setBiometricMessage('Pendaftaran sidik jari perangkat. Tempelkan jari Anda pada sensor...');
+
+        const cred = await navigator.credentials.create({
+          publicKey: {
+            challenge,
+            rp: { name: 'Skillo Workspace' },
+            user: { id: userId, name: targetUser, displayName: targetUser.toUpperCase() },
+            pubKeyCredParams: [
+              { type: 'public-key', alg: -7 },
+              { type: 'public-key', alg: -257 },
+            ],
+            authenticatorSelection: {
+              authenticatorAttachment: 'platform',
+              userVerification: 'required',
+            },
+            timeout: 60000,
+          },
+        }) as PublicKeyCredential;
+
+        if (cred) {
+          const bytes = new Uint8Array(cred.rawId);
+          let binary = '';
+          for (let i = 0; i < bytes.byteLength; i++) {
+            binary += String.fromCharCode(bytes[i]);
+          }
+          localStorage.setItem('biometric_id', btoa(binary));
+
+          // Set state dari session yang ada
+          const { data: profile } = await supabase
+            .from('profiles').select('username').eq('id', session.user.id).single();
+
+          const username = profile?.username || targetUser;
+          useStore.setState({
+            isAuthenticated: true,
+            biometricVerified: true,
+            userId: session.user.id,
+            username,
+            userEmail: session.user.email || '',
+            friends: [],
+          });
+
+          setBiometricStatus('success');
+          setBiometricMessage('Sidik jari berhasil diverifikasi & didaftarkan!');
+          if (loadUserProjects) await loadUserProjects();
+          setTimeout(() => {
+            setIsBiometricModalOpen(false);
+            navigate('/');
+          }, 800);
+        }
+      }
     } catch (err: any) {
-      console.warn("Biometric verification info:", err);
+      console.warn('Biometric verification info:', err);
       setBiometricStatus('failed');
       if (err.name === 'NotAllowedError') {
         setBiometricMessage('Autentikasi sidik jari dibatalkan oleh pengguna.');

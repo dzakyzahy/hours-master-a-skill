@@ -15,19 +15,40 @@ Pastikan lingkungan lokal sudah memiliki:
 
 ---
 
-## 2. Kredensial & Mode Development (Offline / Online)
+## 2. Membuat Akun Developer & Mode Development
 
-Aplikasi memiliki built-in offline fallback untuk kemudahan Diky saat mendesain UI tanpa perlu koneksi database live:
-- **Username**: `diky`
-- **Password**: `123` atau `diky123hours`
-- **Email**: `dikydwi442@gmail.com`
+### A. Setup Akun Baru (Wajib, sekali saja)
+Gunakan script `setup-users.mjs` untuk membuat akun developer Anda sendiri:
 
-Jika ingin koneksi live ke backend Supabase dan fitur AI Gemini, pastikan file `.env` di root sudah berisi:
+```bash
+# Opsi 1 — CLI langsung:
+node setup-users.mjs --email=akun_kamu@email.com --password=password_kamu --name=namauser
+
+# Opsi 2 — Interaktif (ikuti petunjuk di terminal):
+node setup-users.mjs
+```
+
+> ⚠️ **Catatan Keamanan**: JANGAN gunakan password yang sama dengan akun lain. Gunakan password unik minimal 8 karakter.
+
+### B. Mode Offline / Dev Tanpa Supabase
+Jika ingin bekerja offline (tanpa koneksi database), tambahkan ke `.env`:
+
+```env
+# Hanya untuk development lokal — HAPUS sebelum build production!
+VITE_DEV_EMAIL=akun_dev_kamu@email.com
+VITE_DEV_PASSWORD=password_dev_kamu
+```
+
+Kemudian login dengan email dan password yang sama persis dengan env di atas.
+
+### C. Konfigurasi Backend (Wajib untuk fitur online)
+Pastikan file `.env` di root sudah berisi:
 ```env
 VITE_SUPABASE_URL=https://<project-ref>.supabase.co
 VITE_SUPABASE_ANON_KEY=<anon-key>
-VITE_GEMINI_API_KEY=<gemini-key>
 ```
+
+Lihat panduan lengkap di [`docs/env_setup_guide.md`](./env_setup_guide.md)
 
 ---
 
