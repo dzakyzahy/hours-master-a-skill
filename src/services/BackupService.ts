@@ -3,7 +3,7 @@ import { exportChatToJSON, importChatFromJSON } from './ChatDB';
 
 export const initGoogleAuth = () => {
   GoogleAuth.initialize({
-    clientId: 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com',
+    clientId: import.meta.env.VITE_GOOGLE_CLIENT_ID,
     scopes: ['profile', 'email', 'https://www.googleapis.com/auth/drive.file'],
     grantOfflineAccess: true,
   });
