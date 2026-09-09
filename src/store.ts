@@ -1,6 +1,12 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { supabase } from './supabaseClient';
+import {
+  saveProject,
+  getProjects,
+  removeProject,
+  cleanupLegacyDefaultProject,
+} from './services/ProjectDB';
 
 export interface SkillPhase {
   title: string;
@@ -99,49 +105,17 @@ interface AppState {
   activeTimer: boolean;
   toggleTimer: () => void;
   setRemoteTimerState: (isActive: boolean) => void;
+  loadUserProjects: () => Promise<void>;
   syncToSupabase: () => Promise<void>;
   loadFromSupabase: () => Promise<void>;
   syncTotalHoursToSupabase: () => Promise<void>;
 }
 
-const DEFAULT_TEAM_MEMBERS: Record<string, FriendUser[]> = {
-  diky: [
-    {
-      id: 'usr-zahy',
-      username: 'zahy',
-      name: 'Zahy (Dzaky)',
-      email: 'dzakyzr3@gmail.com',
-      role: 'Tech Lead / Full-Stack',
-      isOnline: false,
-    },
-    {
-      id: 'usr-sarah',
-      username: 'sarah',
-      name: 'Sarah Chen',
-      email: 'sarah@skillo.internal',
-      role: 'Product Designer',
-      isOnline: false,
-    }
-  ],
-  zahy: [
-    {
-      id: 'usr-diky',
-      username: 'diky',
-      name: 'Diky Dwi',
-      email: 'dikydwi442@gmail.com',
-      role: 'UI/UX & Mobile Lead',
-      isOnline: false,
-    },
-    {
-      id: 'usr-sarah',
-      username: 'sarah',
-      name: 'Sarah Chen',
-      email: 'sarah@skillo.internal',
-      role: 'Product Designer',
-      isOnline: false,
-    }
-  ]
-};
+// ================================================================
+// STORAGE VERSION — digunakan untuk migrasi data lama
+// Naikkan versi ini jika ada perubahan schema pada persisted state
+// ================================================================
+const STORAGE_VERSION = 2;
 
 export const useStore = create<AppState>()(
   persist(
@@ -151,43 +125,47 @@ export const useStore = create<AppState>()(
       username: '',
       userEmail: '',
       biometricVerified: false,
-      friends: DEFAULT_TEAM_MEMBERS.diky,
+      friends: [],
 
       
       login: async (u, p) => {
-        const trimmed = (u || '').trim().toLowerCase();
-        let emailToUse = trimmed;
-        
-        // Identify which user is attempting to log in
-        const isDiky = trimmed === 'diky' || trimmed === 'dikydwi442@gmail.com';
-        const isZahy = trimmed === 'zahy' || trimmed === 'dzaky' || trimmed === 'dzakyzr3@gmail.com';
+        const trimmed = (u || '').trim();
+        // Tentukan apakah input adalah email atau username
+        const isEmail = trimmed.includes('@');
+        const emailToUse = isEmail ? trimmed : null;
+        const usernameInput = isEmail ? null : trimmed.toLowerCase();
 
-        if (isDiky) emailToUse = 'dikydwi442@gmail.com';
-        if (isZahy) emailToUse = 'dzakyzr3@gmail.com';
-
-        // Normalize password for dev/offline or transition
-        let passwordToUse = p;
-        if (p === '123') {
-          if (isZahy) passwordToUse = 'zahy123hours';
-          if (isDiky) passwordToUse = 'diky123hours';
-        }
-
-        const resolvedUsername = isDiky ? 'diky' : isZahy ? 'zahy' : (trimmed.includes('@') ? trimmed.split('@')[0] : trimmed);
-        const resolvedEmail = emailToUse;
-
-        // Check if Supabase is actually configured with real URL
+        // Supabase membutuhkan email untuk signIn
+        // Jika user input username, kita lookup email dari profiles
         const isSupabaseConfigured = Boolean(
-          import.meta.env.VITE_SUPABASE_URL && 
+          import.meta.env.VITE_SUPABASE_URL &&
           !import.meta.env.VITE_SUPABASE_URL.includes('your-project')
         );
 
         if (isSupabaseConfigured) {
           try {
-            const { data: authData, error } = await supabase.auth.signInWithPassword({ 
-              email: emailToUse, 
-              password: passwordToUse 
+            let resolvedEmail = emailToUse;
+
+            // Jika input adalah username, cari email dari tabel profiles
+            if (!resolvedEmail && usernameInput) {
+              const { data: profileData } = await supabase
+                .from('profiles')
+                .select('email')
+                .eq('username', usernameInput)
+                .single();
+              resolvedEmail = profileData?.email || null;
+            }
+
+            if (!resolvedEmail) {
+              // Username tidak ditemukan di database
+              return false;
+            }
+
+            const { data: authData, error } = await supabase.auth.signInWithPassword({
+              email: resolvedEmail,
+              password: p,
             });
-            
+
             if (!error && authData?.user) {
               const { data: profile } = await supabase
                 .from('profiles')
@@ -195,16 +173,16 @@ export const useStore = create<AppState>()(
                 .eq('id', authData.user.id)
                 .single();
 
-              const finalUser = profile?.username || resolvedUsername;
-              const finalEmail = authData.user.email || profile?.email || resolvedEmail;
-              
-              set({ 
-                isAuthenticated: true, 
+              const finalUser = profile?.username || resolvedEmail.split('@')[0];
+              const finalEmail = authData.user.email || resolvedEmail;
+
+              set({
+                isAuthenticated: true,
                 biometricVerified: true,
                 userId: authData.user.id,
                 username: finalUser,
                 userEmail: finalEmail,
-                friends: [] 
+                friends: [],
               });
               try {
                 localStorage.setItem('last_user', finalUser);
@@ -213,28 +191,26 @@ export const useStore = create<AppState>()(
               return true;
             }
           } catch (netErr) {
-            console.warn("Supabase network error, checking local fallback:", netErr);
+            console.warn('Supabase network error:', netErr);
           }
         }
 
-        // Offline / Dev fallback
-        if (p && p.length >= 1) {
-          const finalUser = isDiky ? 'diky' : isZahy ? 'zahy' : resolvedUsername;
-          const finalEmail = isDiky ? 'dikydwi442@gmail.com' : isZahy ? 'dzakyzr3@gmail.com' : resolvedEmail || `${resolvedUsername}@skillo.team`;
-          const fallbackUserId = isDiky ? 'usr-diky' : isZahy ? 'usr-zahy' : `usr-${resolvedUsername}`;
-          
-          set({ 
-            isAuthenticated: true, 
+        // ================================================================
+        // Dev-only offline fallback — hanya aktif jika VITE_DEV_EMAIL diset
+        // JANGAN digunakan di production build
+        // ================================================================
+        const devEmail = import.meta.env.VITE_DEV_EMAIL;
+        const devPassword = import.meta.env.VITE_DEV_PASSWORD;
+        if (devEmail && devPassword && trimmed === devEmail && p === devPassword) {
+          const devUsername = devEmail.split('@')[0];
+          set({
+            isAuthenticated: true,
             biometricVerified: true,
-            userId: fallbackUserId,
-            username: finalUser,
-            userEmail: finalEmail,
-            friends: DEFAULT_TEAM_MEMBERS[finalUser] || DEFAULT_TEAM_MEMBERS.diky
+            userId: `dev-${devUsername}`,
+            username: devUsername,
+            userEmail: devEmail,
+            friends: [],
           });
-          try {
-            localStorage.setItem('last_user', finalUser);
-            localStorage.setItem(`presence_${finalUser}`, Date.now().toString());
-          } catch {}
           return true;
         }
 
@@ -481,29 +457,16 @@ export const useStore = create<AppState>()(
         return key || '';
       },
 
-      projects: [
-        {
-          id: 'default-1',
-          name: 'Ethical Hacking',
-          totalHours: 120,
-          dailyGoal: 2,
-          hoursToday: 0.5,
-          lastUpdated: Date.now(),
-          phases: [
-            { title: "Core Foundations & Low-Level Mechanics", hoursStart: 1, hoursEnd: 150, desc: "Networking, OS, Programming for Security." },
-            { title: "Web App Security & Vulnerability Analysis", hoursStart: 151, hoursEnd: 300, desc: "OWASP Top 10, Web Fundamentals." },
-            { title: "Infrastructure, Network Pentesting & AD", hoursStart: 301, hoursEnd: 480, desc: "Recon, AD Security, Host Exploitation." },
-            { title: "Defensive Engineering & Remediation", hoursStart: 481, hoursEnd: 600, desc: "Blue Team, Secure Coding, Reporting." },
-            { title: "Real-World App & Public Good", hoursStart: 601, hoursEnd: 750, desc: "Bug Bounty, CVD, Threat Intelligence." },
-          ]
-        }
-      ],
+      // Projects awalnya kosong — di-load dari ProjectDB (LocalForage) setelah login
+      // Ini mencegah data hardcoded muncul untuk semua user baru
+      projects: [],
       activeProjectId: null,
 
       setActiveProject: (id) => set({ activeProjectId: id }),
-      
-      addProject: (name, phases) => set((state) => ({
-        projects: [...state.projects, {
+
+      addProject: (name, phases) => {
+        const state = get();
+        const newProject: Project = {
           id: Date.now().toString(),
           userId: state.userId,
           name,
@@ -511,38 +474,62 @@ export const useStore = create<AppState>()(
           dailyGoal: 2,
           hoursToday: 0,
           phases,
-          lastUpdated: Date.now()
-        }]
-      })),
+          lastUpdated: Date.now(),
+        };
+        set((s) => ({ projects: [...s.projects, newProject] }));
+        // Simpan ke LocalForage juga
+        if (state.userId) {
+          saveProject(state.userId, newProject).catch(console.error);
+        }
+      },
 
-      updateProject: (id, name, phases) => set((state) => ({
-        projects: state.projects.map(p => 
-          p.id === id 
-            ? { ...p, name, phases, lastUpdated: Date.now() }
-            : p
-        )
-      })),
+      updateProject: (id, name, phases) => {
+        const state = get();
+        const updated = state.projects.map((p) =>
+          p.id === id ? { ...p, name, phases, lastUpdated: Date.now() } : p
+        );
+        set({ projects: updated });
+        const updatedProject = updated.find((p) => p.id === id);
+        if (updatedProject && state.userId) {
+          saveProject(state.userId, updatedProject).catch(console.error);
+        }
+      },
 
       deleteProject: (id) => {
-        set((state) => ({
-          projects: state.projects.map(p => p.id === id ? { ...p, deletedAt: Date.now() } : p),
-          activeProjectId: state.activeProjectId === id ? null : state.activeProjectId
-        }));
+        const state = get();
+        const updated = state.projects.map((p) =>
+          p.id === id ? { ...p, deletedAt: Date.now() } : p
+        );
+        set({ projects: updated, activeProjectId: state.activeProjectId === id ? null : state.activeProjectId });
+        const softDeleted = updated.find((p) => p.id === id);
+        if (softDeleted && state.userId) {
+          saveProject(state.userId, softDeleted).catch(console.error);
+        }
         get().syncTotalHoursToSupabase();
       },
 
       restoreProject: (id) => {
-        set((state) => ({
-          projects: state.projects.map(p => p.id === id ? { ...p, deletedAt: undefined } : p)
-        }));
+        const state = get();
+        const updated = state.projects.map((p) =>
+          p.id === id ? { ...p, deletedAt: undefined } : p
+        );
+        set({ projects: updated });
+        const restored = updated.find((p) => p.id === id);
+        if (restored && state.userId) {
+          saveProject(state.userId, restored).catch(console.error);
+        }
         get().syncTotalHoursToSupabase();
       },
 
       hardDeleteProject: (id) => {
-        set((state) => ({
-          projects: state.projects.filter(p => p.id !== id),
-          activeProjectId: state.activeProjectId === id ? null : state.activeProjectId
-        }));
+        const state = get();
+        set({
+          projects: state.projects.filter((p) => p.id !== id),
+          activeProjectId: state.activeProjectId === id ? null : state.activeProjectId,
+        });
+        if (state.userId) {
+          removeProject(state.userId, id).catch(console.error);
+        }
         get().syncTotalHoursToSupabase();
       },
 
@@ -623,46 +610,68 @@ export const useStore = create<AppState>()(
       },
       setRemoteTimerState: (isActive) => set({ activeTimer: isActive }),
       
-      syncToSupabase: async () => {
+      // Load projects dari LocalForage untuk user yang sedang login
+      loadUserProjects: async () => {
         const state = get();
-        // Only sync if supabase is actually configured (not placeholder)
-        if (import.meta.env.VITE_SUPABASE_URL && !import.meta.env.VITE_SUPABASE_URL.includes('your-project')) {
-          try {
-            // Simplified sync: just an example of pushing the current state
-            // In a real app, you'd iterate over projects and upsert to public.projects
-            // For now, this is a stub that won't crash the app if keys are missing.
-            console.log("Syncing to Supabase...", state, supabase);
-          } catch (e) {
-            console.error("Supabase sync error:", e);
-          }
+        if (!state.userId) return;
+        try {
+          // Bersihkan project lama yang hardcoded (fix bug 120 jam)
+          await cleanupLegacyDefaultProject();
+          const projects = await getProjects(state.userId);
+          set({ projects });
+        } catch (e) {
+          console.error('Gagal load projects dari local storage:', e);
         }
       },
-      
+
+      syncToSupabase: async () => {
+        // TODO Sprint 3: Sync ke Supabase untuk user dengan Skillo Cloud subscription
+        // const state = get();
+        // if (state.cloudSyncEnabled && state.userId) { ... upsert projects ... }
+      },
+
       syncTotalHoursToSupabase: async () => {
         const state = get();
         if (!state.userId) return;
         const total = state.projects.reduce((acc, p) => acc + (p.deletedAt ? 0 : p.totalHours), 0);
-        await supabase.from('profiles').update({ total_hours: total }).eq('id', state.userId);
+        try {
+          await supabase.from('profiles').update({ total_hours: total }).eq('id', state.userId);
+        } catch (e) {
+          // Tidak kritis jika gagal — data tetap aman di local
+          console.warn('syncTotalHours gagal:', e);
+        }
       },
 
       loadFromSupabase: async () => {
-        if (import.meta.env.VITE_SUPABASE_URL && !import.meta.env.VITE_SUPABASE_URL.includes('your-project')) {
-           // Fetch from Supabase and set() here
-           console.log("Loading from Supabase...");
-        }
+        // TODO Sprint 3: Load dari Supabase untuk user Skillo Cloud
+        // const state = get();
+        // if (!state.userId || !state.cloudSyncEnabled) return;
+        // const { data } = await supabase.from('projects').select('*').eq('user_id', state.userId);
+        // if (data) set({ projects: data });
       }
     }),
     {
       name: 'hours-master-storage',
+      version: STORAGE_VERSION,
+      // Saat versi berubah, migrate data lama
+      migrate: (persistedState: any, version: number) => {
+        if (version < 2) {
+          // Migrasi v1 → v2: hapus projects hardcoded dari localStorage
+          // Projects sekarang disimpan di IndexedDB via ProjectDB
+          return { ...persistedState, projects: [] };
+        }
+        return persistedState;
+      },
       partialize: (state) => ({
         isAuthenticated: state.isAuthenticated,
         biometricVerified: state.biometricVerified,
+        userId: state.userId,
         username: state.username,
         userEmail: state.userEmail,
-        friends: state.friends,
         theme: state.theme,
         clockEnabled: state.clockEnabled,
-        projects: state.projects,
+        // Projects TIDAK di-persist di localStorage lagi
+        // Disimpan di IndexedDB via ProjectDB (per-user, lebih aman)
         activeProjectId: state.activeProjectId,
         geminiApiKey: state.geminiApiKey,
       }),

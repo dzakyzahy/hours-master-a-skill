@@ -7,18 +7,20 @@ Dokumen ini memetakan pembagian tanggung jawab antara **Tim Inti (Zahy & AI)** d
 ## 1. Tim Inti (Zahy & AI)
 Fokus pada infrastruktur *backend*, integritas data, keamanan, dan protokol komunikasi real-time.
 
-1. **Sistem Database & Keamanan (Supabase)**
-   - Perancangan skema SQL (User Profiles, Projects, Tasks, Messages, Friends, Recycle Bin).
-   - Penegakan kebijakan *Row Level Security* (RLS) di seluruh tabel.
-   - Migrasi dan *edge functions* jika diperlukan.
+1. **Sistem Database, Keamanan & Monetisasi**
+   - Perancangan skema SQL (User Profiles, Projects, Tasks, Messages, Friends).
+   - Integrasi **RevenueCat** In-App Purchases (Token AI) dengan webhook verifikasi backend.
+   - Penegakan kebijakan *Row Level Security* (RLS) di seluruh tabel Supabase.
 2. **Real-time Sync & WebRTC (Meeting Engine)**
    - Arsitektur peer-to-peer WebRTC untuk video/audio dan *Screen Sharing*.
    - Integrasi *Supabase Realtime channels* sebagai *signaling layer*.
-   - Penanganan *lifecycle* media stream (mencegah *hardware camera lock* dan kebocoran memori).
-3. **Core State & Logic**
+3. **Core State, Offline Support & OTA**
    - Manajemen *global state* (Zustand: Auth, Timer, Projects, Chat, Settings).
+   - **Local Storage & Backup**: Penyimpanan chat offline via LocalForage & Sinkronisasi ke Google Drive.
+   - **Autentikasi Native**: Implementasi Google Auth untuk Capacitor Android.
+   - **Over-The-Air (OTA) Updates**: Konfigurasi `@capgo/capacitor-updater` untuk pembaruan instan tanpa Play Store.
    - Sinkronisasi timer presisi (mencegah *drift* interval).
-   - Integrasi AI Task Generation (Google Gemini 2.5 Flash).
+   - Integrasi AI Task Generation (Google Gemini).
 
 ---
 
