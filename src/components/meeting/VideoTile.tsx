@@ -11,8 +11,23 @@ export function VideoTile({ participant, isDominant = false }: VideoTileProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
-    if (videoRef.current && participant.stream) {
-      videoRef.current.srcObject = participant.stream;
+    const video = videoRef.current;
+    if (!video) return;
+
+    if (participant.stream) {
+      // Hanya set ulang jika stream benar-benar berbeda (hindari flicker)
+      if (video.srcObject !== participant.stream) {
+        video.srcObject = participant.stream;
+        // Autoplay bisa diblok di Android — tangani dengan silent catch
+        video.play().catch(e => {
+          if (e.name !== 'AbortError') {
+            console.warn('[VideoTile] Autoplay blocked, waiting for user interaction:', e.message);
+          }
+        });
+      }
+    } else {
+      // Detach stream agar tidak ada kamera zombie
+      video.srcObject = null;
     }
   }, [participant.stream]);
 

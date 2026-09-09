@@ -53,8 +53,6 @@ export function MeetingRoom() {
 
         localStreamRef.current = stream;
         setLocalStream(stream);
-
-        setLocalStream(stream);
       } catch (err) {
         console.warn('Camera/mic access unavailable or denied (using avatar fallback):', err);
         setIsVideoOff(true);
@@ -134,11 +132,15 @@ export function MeetingRoom() {
     }
   }, [isScreenSharing, screenStream]);
 
-  // Leave Room
+  // Leave Room — stream cleanup cukup di sini
+  // useWebRTC cleanup (peer connections) akan handle di unmount-nya sendiri
   const handleLeave = () => {
     if (localStreamRef.current) {
       localStreamRef.current.getTracks().forEach(t => t.stop());
       localStreamRef.current = null;
+    }
+    if (screenStream) {
+      screenStream.getTracks().forEach(t => t.stop());
     }
     navigate('/');
   };
@@ -312,10 +314,16 @@ export function MeetingRoom() {
                   ? '1fr'
                   : participantCount === 2
                   ? 'repeat(2, 1fr)'
-                  : 'repeat(2, 1fr)',
+                  : participantCount <= 4
+                  ? 'repeat(2, 1fr)'
+                  : 'repeat(3, 1fr)',
               gridTemplateRows:
-                participantCount <= 2 ? '1fr' : 'repeat(2, 1fr)',
-              maxWidth: participantCount === 1 ? '900px' : '1400px',
+                participantCount <= 2
+                  ? '1fr'
+                  : participantCount <= 4
+                  ? 'repeat(2, 1fr)'
+                  : 'repeat(2, 1fr)',
+              maxWidth: participantCount === 1 ? '700px' : participantCount <= 4 ? '1100px' : '1400px',
               maxHeight: '800px',
             }}
           >
@@ -345,7 +353,7 @@ export function MeetingRoom() {
             }}
           >
             <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--accent-cyan)' }} />
-            Waiting for peers to join (Room link is ready)
+            Menunggu peserta lain bergabung... (salin link untuk mengundang)
           </div>
         )}
       </main>
