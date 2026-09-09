@@ -1,6 +1,5 @@
 import { Purchases } from '@revenuecat/purchases-capacitor';
 import { Capacitor } from '@capacitor/core';
-import { supabase } from '../supabaseClient';
 import { useStore } from '../store';
 
 export const initRevenueCat = async () => {

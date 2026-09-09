@@ -1,5 +1,5 @@
 import { GoogleAuth } from '@codetrix-studio/capacitor-google-auth';
-import { exportChatToJSON, importChatFromJSON } from './ChatDB';
+import { exportChatToJSON } from './ChatDB';
 
 export const initGoogleAuth = () => {
   GoogleAuth.initialize({

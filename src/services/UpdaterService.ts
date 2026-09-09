@@ -20,7 +20,7 @@ export const initUpdater = async () => {
     } catch (e) {
       console.log('No update available or updater error', e);
     }
-  } else if (window.process && window.process.type) {
+  } else if ((window as any).process && (window as any).process.type) {
     // Electron environment
     // Assume ipcRenderer sends 'update-downloaded'
     // window.require('electron').ipcRenderer.on('update-downloaded', () => {
