@@ -81,31 +81,37 @@ export function usePresence() {
 
     // 3. Optional Supabase Presence (if Supabase is configured)
     let supabaseChannel: any = null;
+    let supabaseOnlineUsers: Set<string> = new Set();
+    let supabaseInterval: any = null;
     if (isSupabaseConfigured) {
       try {
         supabaseChannel = supabase.channel('global_presence', {
           config: { presence: { key: currentUsername } },
         });
 
+        const syncSupabasePresence = () => {
+          const state = supabaseChannel.presenceState();
+          const currentlyOnline = new Set<string>();
+          Object.keys(state).forEach((usr) => {
+            if (usr.toLowerCase() !== currentUsername) {
+              currentlyOnline.add(usr.toLowerCase());
+              updateFriendStatus(usr, true, Date.now());
+            }
+          });
+          
+          // Mark users offline if they are in our previous set but not in the new state
+          supabaseOnlineUsers.forEach(usr => {
+            if (!currentlyOnline.has(usr)) {
+              updateFriendStatus(usr, false, Date.now());
+            }
+          });
+          supabaseOnlineUsers = currentlyOnline;
+        };
+
         supabaseChannel
-          .on('presence', { event: 'sync' }, () => {
-            const state = supabaseChannel.presenceState();
-            Object.keys(state).forEach((usr) => {
-              if (usr.toLowerCase() !== currentUsername) {
-                updateFriendStatus(usr, true, Date.now());
-              }
-            });
-          })
-          .on('presence', { event: 'join' }, ({ key }: { key: string }) => {
-            if (key.toLowerCase() !== currentUsername) {
-              updateFriendStatus(key, true, Date.now());
-            }
-          })
-          .on('presence', { event: 'leave' }, ({ key }: { key: string }) => {
-            if (key.toLowerCase() !== currentUsername) {
-              updateFriendStatus(key, false, Date.now());
-            }
-          })
+          .on('presence', { event: 'sync' }, syncSupabasePresence)
+          .on('presence', { event: 'join' }, syncSupabasePresence)
+          .on('presence', { event: 'leave' }, syncSupabasePresence)
           .subscribe(async (status: string) => {
             if (status === 'SUBSCRIBED') {
               await supabaseChannel.track({
@@ -114,6 +120,14 @@ export function usePresence() {
               });
             }
           });
+          
+        // Override local check for Supabase users periodically
+        supabaseInterval = setInterval(() => {
+          supabaseOnlineUsers.forEach(usr => {
+            updateFriendStatus(usr, true, Date.now());
+          });
+        }, 3000);
+        
       } catch (err) {
         console.warn('Supabase presence error:', err);
       }
@@ -135,6 +149,7 @@ export function usePresence() {
 
     return () => {
       clearInterval(interval);
+      if (supabaseInterval) clearInterval(supabaseInterval);
       handleUnload();
       window.removeEventListener('beforeunload', handleUnload);
       if (broadcastChannel) {

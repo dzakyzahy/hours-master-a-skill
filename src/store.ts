@@ -959,29 +959,38 @@ export const useStore = create<AppState>()(
         return { projects: newProjects };
       }),
 
-      deleteProject: (id) => set((state) => {
-        const newProjects = state.projects.map(p => p.id === id ? { ...p, deletedAt: Date.now() } : p);
-        saveUserProjects(state.userId, newProjects);
-        return {
-          projects: newProjects,
-          activeProjectId: state.activeProjectId === id ? null : state.activeProjectId
-        };
-      }),
+      deleteProject: (id) => {
+        set((state) => {
+          const newProjects = state.projects.map(p => p.id === id ? { ...p, deletedAt: Date.now() } : p);
+          saveUserProjects(state.userId, newProjects);
+          return {
+            projects: newProjects,
+            activeProjectId: state.activeProjectId === id ? null : state.activeProjectId
+          };
+        });
+        get().syncTotalHoursToSupabase();
+      },
 
-      restoreProject: (id) => set((state) => {
-        const newProjects = state.projects.map(p => p.id === id ? { ...p, deletedAt: undefined } : p);
-        saveUserProjects(state.userId, newProjects);
-        return { projects: newProjects };
-      }),
+      restoreProject: (id) => {
+        set((state) => {
+          const newProjects = state.projects.map(p => p.id === id ? { ...p, deletedAt: undefined } : p);
+          saveUserProjects(state.userId, newProjects);
+          return { projects: newProjects };
+        });
+        get().syncTotalHoursToSupabase();
+      },
 
-      hardDeleteProject: (id) => set((state) => {
-        const newProjects = state.projects.filter(p => p.id !== id);
-        saveUserProjects(state.userId, newProjects);
-        return {
-          projects: newProjects,
-          activeProjectId: state.activeProjectId === id ? null : state.activeProjectId
-        };
-      }),
+      hardDeleteProject: (id) => {
+        set((state) => {
+          const newProjects = state.projects.filter(p => p.id !== id);
+          saveUserProjects(state.userId, newProjects);
+          return {
+            projects: newProjects,
+            activeProjectId: state.activeProjectId === id ? null : state.activeProjectId
+          };
+        });
+        get().syncTotalHoursToSupabase();
+      },
 
       addManualTime: (id, minutes) => {
         const hoursToAdd = minutes / 60;
