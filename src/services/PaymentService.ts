@@ -5,7 +5,9 @@ import { useStore } from '../store';
 export const initRevenueCat = async () => {
   if (Capacitor.isNativePlatform()) {
     try {
-      const apiKey = Capacitor.getPlatform() === 'ios' ? 'appl_YOUR_KEY' : 'goog_YOUR_KEY';
+      const apiKey = Capacitor.getPlatform() === 'ios' 
+        ? import.meta.env.VITE_RC_APPLE_API_KEY 
+        : import.meta.env.VITE_RC_GOOGLE_API_KEY;
       await Purchases.configure({ apiKey });
       
       const userId = useStore.getState().userId;
