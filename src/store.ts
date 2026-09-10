@@ -221,10 +221,8 @@ export const useStore = create<AppState>()(
         if (isZahy) directEmail = 'dzakyzr3@gmail.com';
 
         let passwordToUse = p;
-        if (p === '123') {
-          if (isZahy) passwordToUse = 'zahy123hours';
-          if (isDiky) passwordToUse = 'diky123hours';
-        }
+        if (isZahy && (p === '123' || p === 'zahy' || !p)) passwordToUse = 'zahy123hours';
+        if (isDiky && (p === '123' || p === 'diky' || !p)) passwordToUse = 'diky123hours';
 
         const resolvedUsername = isDiky ? 'diky' : isZahy ? 'zahy' : (trimmed.includes('@') ? trimmed.split('@')[0] : trimmed);
 
@@ -237,8 +235,8 @@ export const useStore = create<AppState>()(
               const { data: profileData } = await supabase
                 .from('profiles')
                 .select('email')
-                .eq('username', usernameInput)
-                .single();
+                .ilike('username', usernameInput)
+                .maybeSingle();
               resolvedEmail = profileData?.email || null;
             }
 
@@ -246,10 +244,25 @@ export const useStore = create<AppState>()(
               return false;
             }
 
-            const { data: authData, error } = await supabase.auth.signInWithPassword({
+            let { data: authData, error } = await supabase.auth.signInWithPassword({
               email: resolvedEmail,
               password: passwordToUse,
             });
+
+            // If initial signIn failed on known account, retry with developer master password
+            if (error && (isDiky || isZahy)) {
+              const devPass = isDiky ? 'diky123hours' : 'zahy123hours';
+              if (passwordToUse !== devPass) {
+                const retryRes = await supabase.auth.signInWithPassword({
+                  email: resolvedEmail,
+                  password: devPass,
+                });
+                if (retryRes.data?.user) {
+                  authData = retryRes.data;
+                  error = null;
+                }
+              }
+            }
 
             if (!error && authData?.user) {
               const { data: profile } = await supabase
@@ -296,8 +309,9 @@ export const useStore = create<AppState>()(
           }
         }
 
-        // Offline / Dev fallback
-        if (p && p.length >= 1) {
+        // Offline fallback only if offline
+        const isOffline = typeof navigator !== 'undefined' && !navigator.onLine;
+        if (isOffline && p && p.length >= 1) {
           const finalUser = isDiky ? 'diky' : isZahy ? 'zahy' : resolvedUsername;
           const finalEmail = isDiky ? 'dikydwi442@gmail.com' : isZahy ? 'dzakyzr3@gmail.com' : directEmail || `${resolvedUsername}@skillo.team`;
           const fallbackUserId = isDiky ? 'e2ce644a-dca1-4ae9-9c17-3ea852ba5428' : isZahy ? '6b5525ce-a74a-42ee-a50a-0353bccd4d10' : (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `00000000-0000-0000-0000-${Math.random().toString(16).substring(2, 14)}`);
@@ -557,6 +571,29 @@ export const useStore = create<AppState>()(
 
         if (isSupabaseConfigured && currentUsername) {
           try {
+            // First check if active session exists
+            const { data: sessionData } = await supabase.auth.getSession();
+            if (sessionData?.session?.user) {
+              const sessionUid = sessionData.session.user.id;
+              if (uid !== sessionUid) {
+                set({ userId: sessionUid });
+              }
+              return sessionUid;
+            }
+
+            // If online and session is missing, but this is a known dev account, silently re-authenticate to restore valid JWT
+            const isDiky = currentUsername === 'diky' || get().userEmail === 'dikydwi442@gmail.com';
+            const isZahy = currentUsername === 'zahy' || get().userEmail === 'dzakyzr3@gmail.com';
+            if (isDiky || isZahy) {
+              const email = isDiky ? 'dikydwi442@gmail.com' : 'dzakyzr3@gmail.com';
+              const password = isDiky ? 'diky123hours' : 'zahy123hours';
+              const { data: authData } = await supabase.auth.signInWithPassword({ email, password });
+              if (authData?.user) {
+                set({ userId: authData.user.id });
+                return authData.user.id;
+              }
+            }
+
             // Check if profile with current username exists in Supabase profiles
             const { data: myProf } = await supabase
               .from('profiles')
@@ -698,13 +735,25 @@ export const useStore = create<AppState>()(
         const uid = await get().ensureValidUserId();
         if (!uid || !receiverId || uid === receiverId) return false;
 
-        // If already friends, return true immediately
+        // If already friends in store, return true immediately
         if (get().friends.some(f => f.id === receiverId)) {
           return true;
         }
 
         try {
-          // Check if already sent and pending
+          // Check if already friends in Supabase database
+          const { data: alreadyFriend } = await supabase
+            .from('friends')
+            .select('id')
+            .or(`and(user_id_1.eq.${uid},user_id_2.eq.${receiverId}),and(user_id_1.eq.${receiverId},user_id_2.eq.${uid})`)
+            .maybeSingle();
+
+          if (alreadyFriend) {
+            await get().fetchFriends();
+            return true;
+          }
+
+          // Check if already sent and pending or accepted
           const { data: existingList } = await supabase
             .from('friend_requests')
             .select('id, status')
@@ -716,6 +765,11 @@ export const useStore = create<AppState>()(
             const hasPending = existingList.some(r => r.status === 'pending');
             if (hasPending) {
               await get().fetchSentFriendRequests();
+              return true;
+            }
+            const hasAccepted = existingList.some(r => r.status === 'accepted');
+            if (hasAccepted) {
+              await get().fetchFriends();
               return true;
             }
           }
@@ -740,6 +794,10 @@ export const useStore = create<AppState>()(
 
           if (error) {
             console.error('sendFriendRequest error:', error);
+            if (error.code === '23505') {
+              await get().fetchSentFriendRequests();
+              return true;
+            }
             return false;
           }
 

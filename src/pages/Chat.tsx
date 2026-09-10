@@ -106,6 +106,7 @@ export function Chat() {
   const [searchResults, setSearchResults] = useState<UserProfileSearchResult[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
   const [communityUsers, setCommunityUsers] = useState<UserProfileSearchResult[]>([]);
+  const [submittingReqIds, setSubmittingReqIds] = useState<Set<string>>(new Set());
 
   // Friend-request rows carry only ids and usernames, so borrow the photo from the
   // lists already loaded rather than firing another query per card.
@@ -472,15 +473,29 @@ export function Chat() {
   }, [searchQuery, handleSearchUsers]);
 
   const handleSendRequest = async (receiverId: string, receiverUsername: string) => {
-    const success = await sendFriendRequest(receiverId);
-    if (success) {
-      toast.success(`Permintaan pertemanan terkirim ke ${receiverUsername}`);
-      setSearchResults(prev => prev.map(item => item.id === receiverId ? { ...item, isPending: true } : item));
-      setCommunityUsers(prev => prev.map(item => item.id === receiverId ? { ...item, isPending: true } : item));
-      await fetchSentFriendRequests();
-      await loadCommunityUsers();
-    } else {
-      toast.error('Gagal mengirim permintaan pertemanan');
+    if (submittingReqIds.has(receiverId)) return;
+    setSubmittingReqIds(prev => new Set(prev).add(receiverId));
+
+    try {
+      const success = await sendFriendRequest(receiverId);
+      if (success) {
+        toast.success(`Permintaan pertemanan terkirim ke ${receiverUsername}`);
+        setSearchResults(prev => prev.map(item => item.id === receiverId ? { ...item, isPending: true } : item));
+        setCommunityUsers(prev => prev.map(item => item.id === receiverId ? { ...item, isPending: true } : item));
+        await fetchSentFriendRequests();
+        await fetchFriends();
+        await loadCommunityUsers();
+      } else {
+        toast.error('Gagal mengirim permintaan pertemanan. Pastikan sesi akun aktif.');
+      }
+    } catch {
+      toast.error('Terjadi kesalahan saat mengirim permintaan pertemanan.');
+    } finally {
+      setSubmittingReqIds(prev => {
+        const next = new Set(prev);
+        next.delete(receiverId);
+        return next;
+      });
     }
   };
 
@@ -709,14 +724,18 @@ export function Chat() {
                         <button 
                           className={u.isPending ? "btn" : "btn-primary"} 
                           style={{ height: '34px', padding: '0 14px', fontSize: '12px', flexShrink: 0 }}
-                          disabled={u.isPending}
+                          disabled={u.isPending || submittingReqIds.has(u.id)}
                           onClick={() => {
-                            if (!u.isPending) {
+                            if (!u.isPending && !submittingReqIds.has(u.id)) {
                               handleSendRequest(u.id, u.username);
                             }
                           }}
                         >
-                          {u.isPending ? (
+                          {submittingReqIds.has(u.id) ? (
+                            <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                              Mengirim...
+                            </span>
+                          ) : u.isPending ? (
                             <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                               <FontAwesomeIcon icon={faClock} style={{ fontSize: '10px' }} /> Menunggu Persetujuan
                             </span>
@@ -781,14 +800,18 @@ export function Chat() {
                         <button 
                           className={u.isPending ? "btn" : "btn-primary"} 
                           style={{ height: '34px', padding: '0 14px', fontSize: '12px', flexShrink: 0 }}
-                          disabled={u.isPending}
+                          disabled={u.isPending || submittingReqIds.has(u.id)}
                           onClick={() => {
-                            if (!u.isPending) {
+                            if (!u.isPending && !submittingReqIds.has(u.id)) {
                               handleSendRequest(u.id, u.username);
                             }
                           }}
                         >
-                          {u.isPending ? (
+                          {submittingReqIds.has(u.id) ? (
+                            <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                              Mengirim...
+                            </span>
+                          ) : u.isPending ? (
                             <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                               <FontAwesomeIcon icon={faClock} style={{ fontSize: '10px' }} /> Menunggu Persetujuan
                             </span>

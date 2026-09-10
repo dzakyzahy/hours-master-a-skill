@@ -441,6 +441,10 @@ export function Login() {
                 {loading ? "Memverifikasi..." : "Masuk ke Workspace →"}
               </button>
 
+              <div style={{ marginTop: '10px', padding: '8px 12px', background: 'rgba(56, 189, 248, 0.08)', borderRadius: '8px', border: '1px solid rgba(56, 189, 248, 0.2)', fontSize: '11px', color: 'var(--text-secondary)', textAlign: 'center', lineHeight: 1.4 }}>
+                <span style={{ color: 'var(--accent-primary)', fontWeight: 600 }}>💡 Akun Pengembang:</span> <code style={{ color: 'var(--text-primary)' }}>diky</code> (sandi: <code style={{ color: 'var(--text-primary)' }}>diky123hours</code>) &bull; <code style={{ color: 'var(--text-primary)' }}>zahy</code> (sandi: <code style={{ color: 'var(--text-primary)' }}>zahy123hours</code>)
+              </div>
+
               <div className="auth-divider"><span>Atau masuk dengan</span></div>
 
               <button 
