@@ -5,8 +5,9 @@ const DEFAULT_SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzd
 
 export const isSupabaseConfigured = true;
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || DEFAULT_SUPABASE_URL;
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || DEFAULT_SUPABASE_KEY;
+const env = (typeof import.meta !== 'undefined' && (import.meta as any).env) || {};
+const supabaseUrl = env.VITE_SUPABASE_URL || DEFAULT_SUPABASE_URL;
+const supabaseKey = env.VITE_SUPABASE_ANON_KEY || DEFAULT_SUPABASE_KEY;
 
 export const supabase = createClient(supabaseUrl, supabaseKey);
 

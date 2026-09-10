@@ -9,6 +9,7 @@ import {
   removeProject,
   cleanupLegacyDefaultProject,
 } from './services/ProjectDB';
+import { sanitizeOrderedFriendIds } from './services/FriendDB';
 
 export interface SkillPhase {
   title: string;
@@ -759,13 +760,17 @@ export const useStore = create<AppState>()(
           .or(`and(sender_id.eq.${senderId},receiver_id.eq.${uid}),and(sender_id.eq.${uid},receiver_id.eq.${senderId})`)
           .eq('status', 'pending');
 
-        const { error } = await supabase.from('friends').insert({ user_id_1: senderId, user_id_2: uid });
+        // Order user IDs to strictly fulfill DB constraint: CHECK (user_id_1 < user_id_2)
+        const ordered = sanitizeOrderedFriendIds(senderId, uid);
+        const { error } = await supabase.from('friends').insert(ordered);
         
         if (!error || (error as any)?.code === '23505') {
           await get().fetchFriends();
           await get().fetchFriendRequests();
           await get().fetchSentFriendRequests();
           return true;
+        } else {
+          console.error('[store] acceptFriendRequest insert friends failed:', error);
         }
         return false;
       },

@@ -20,6 +20,8 @@ import { playMessageSent, playMessageReceived } from '../utils/audio';
 import { useCallSignaling } from '../hooks/useCallSignaling';
 import { showChatMessageNotification, requestCallNotificationPermissions } from '../utils/callNotifications';
 import { saveChatMessage, getChatHistory } from '../services/ChatDB';
+import { searchRegisteredUsers, loadCommunityProfiles } from '../services/FriendDB';
+import type { UserProfileSearchResult } from '../types/friends';
 import { Avatar } from '../components/Avatar';
 
 interface LocalChatMessage {
@@ -100,9 +102,9 @@ export function Chat() {
   
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
-  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searchResults, setSearchResults] = useState<UserProfileSearchResult[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
-  const [communityUsers, setCommunityUsers] = useState<any[]>([]);
+  const [communityUsers, setCommunityUsers] = useState<UserProfileSearchResult[]>([]);
 
   // Friend-request rows carry only ids and usernames, so borrow the photo from the
   // lists already loaded rather than firing another query per card.
@@ -388,51 +390,33 @@ export function Chat() {
 
   const loadCommunityUsers = useCallback(async () => {
     try {
-      const { data } = await supabase
-        .from('profiles')
-        .select('id, username, email, total_hours, avatar_url')
-        .order('username', { ascending: true });
-
-      if (data) {
-        const friendIds = new Set(friends.map(f => f.id));
-        const myName = currentUsername.toLowerCase();
-        const pendingReceiverIds = new Set(sentFriendRequests.map(r => r.receiver_id));
-
-        const available = data
-          .filter(u => (u.username || '').toLowerCase() !== myName && !friendIds.has(u.id))
-          .map(u => ({
-            ...u,
-            isPending: pendingReceiverIds.has(u.id)
-          }));
-
-        setCommunityUsers(available);
-      }
+      const friendIds = friends.map(f => f.id);
+      const pendingReceiverIds = sentFriendRequests.map(r => r.receiver_id);
+      const available = await loadCommunityProfiles(
+        userId || '',
+        currentUsername,
+        friendIds,
+        pendingReceiverIds
+      );
+      setCommunityUsers(available);
     } catch (err) {
       console.warn('Failed to load community users:', err);
     }
-  }, [friends, currentUsername, sentFriendRequests]);
+  }, [friends, currentUsername, sentFriendRequests, userId]);
 
   useEffect(() => {
     let active = true;
     (async () => {
       try {
-        const { data } = await supabase
-          .from('profiles')
-          .select('id, username, email, total_hours, avatar_url')
-          .order('username', { ascending: true });
-
-        if (data && active) {
-          const friendIds = new Set(friends.map(f => f.id));
-          const myName = currentUsername.toLowerCase();
-          const pendingReceiverIds = new Set(sentFriendRequests.map(r => r.receiver_id));
-
-          const available = data
-            .filter(u => (u.username || '').toLowerCase() !== myName && !friendIds.has(u.id))
-            .map(u => ({
-              ...u,
-              isPending: pendingReceiverIds.has(u.id)
-            }));
-
+        const friendIds = friends.map(f => f.id);
+        const pendingReceiverIds = sentFriendRequests.map(r => r.receiver_id);
+        const available = await loadCommunityProfiles(
+          userId || '',
+          currentUsername,
+          friendIds,
+          pendingReceiverIds
+        );
+        if (active) {
           setCommunityUsers(available);
         }
       } catch (err) {
@@ -440,11 +424,11 @@ export function Chat() {
       }
     })();
     return () => { active = false; };
-  }, [friends, currentUsername, sentFriendRequests]);
+  }, [friends, currentUsername, sentFriendRequests, userId]);
 
   const handleSearchUsers = useCallback(async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    const query = searchQuery.trim().toLowerCase().replace(/^@/, '');
+    const query = searchQuery.trim().replace(/^@+/, '');
     if (!query) {
       setSearchResults([]);
       setHasSearched(false);
@@ -454,38 +438,25 @@ export function Chat() {
     setHasSearched(true);
     
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('id, username, email, total_hours, avatar_url')
-        .ilike('username', `%${query}%`)
-        .limit(10);
-        
-      if (error) {
-        console.warn("Supabase profile search warning:", error);
-      }
-        
-      if (data) {
-        const friendIds = new Set(friends.map(f => f.id));
-        const myName = currentUsername.toLowerCase();
-        const pendingReceiverIds = new Set(sentFriendRequests.map(r => r.receiver_id));
+      const friendIds = friends.map(f => f.id);
+      const pendingReceiverIds = sentFriendRequests.map(r => r.receiver_id);
 
-        const filtered = data
-          .filter(u => !friendIds.has(u.id) && (u.username || '').toLowerCase() !== myName)
-          .map(u => ({
-            ...u,
-            isPending: pendingReceiverIds.has(u.id)
-          }));
+      const results = await searchRegisteredUsers(
+        query,
+        userId || '',
+        currentUsername,
+        friendIds,
+        pendingReceiverIds
+      );
 
-        setSearchResults(filtered);
-      } else {
-        setSearchResults([]);
-      }
-    } catch(err) {
-      console.error(err);
+      setSearchResults(results);
+    } catch (err) {
+      console.error('[Chat] Exception searching users:', err);
+      setSearchResults([]);
     } finally {
       setIsSearching(false);
     }
-  }, [searchQuery, friends, currentUsername, sentFriendRequests]);
+  }, [searchQuery, friends, currentUsername, sentFriendRequests, userId]);
 
   useEffect(() => {
     const delay = setTimeout(() => {
@@ -495,7 +466,7 @@ export function Chat() {
         setSearchResults([]);
         setHasSearched(false);
       }
-    }, 350);
+    }, 300);
     return () => clearTimeout(delay);
   }, [searchQuery, handleSearchUsers]);
 
@@ -659,27 +630,26 @@ export function Chat() {
                 Cari & Tambah Teman Baru
               </label>
 
-              {/* Quick Suggestions Chips */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px', flexWrap: 'wrap' }}>
-                <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Pengguna di Sistem:</span>
-                {['diky', 'zahy', 'gg442'].filter(u => u !== currentUsername).map(suggestedName => (
-                  <button
-                    key={suggestedName}
-                    type="button"
-                    className="quick-chip"
-                    onClick={() => {
-                      setSearchQuery(suggestedName);
-                      const filtered = communityUsers.filter(u => (u.username || '').toLowerCase() === suggestedName);
-                      if (filtered.length > 0) {
-                        setSearchResults(filtered);
+              {/* Quick Suggestions Chips (dynamically populated from community) */}
+              {communityUsers.length > 0 && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px', flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Saran Teman:</span>
+                  {communityUsers.slice(0, 5).map(u => (
+                    <button
+                      key={u.id}
+                      type="button"
+                      className="quick-chip"
+                      onClick={() => {
+                        setSearchQuery(u.username);
+                        setSearchResults([u]);
                         setHasSearched(true);
-                      }
-                    }}
-                  >
-                    {suggestedName}
-                  </button>
-                ))}
-              </div>
+                      }}
+                    >
+                      @{u.username.replace(/^@+/, '')}
+                    </button>
+                  ))}
+                </div>
+              )}
 
               <form onSubmit={handleSearchUsers} style={{ display: 'flex', gap: '8px', marginBottom: '18px' }}>
                 <input 
@@ -763,11 +733,15 @@ export function Chat() {
                   color: 'var(--text-secondary)',
                   lineHeight: 1.5
                 }}>
-                  Tidak ditemukan pengguna dengan nama "{searchQuery.replace(/^@/, '')}". 
-                  Pengguna lain yang terdaftar di database saat ini: 
-                  <strong style={{ color: 'var(--accent-primary)', marginLeft: '4px' }}>
-                    {['diky', 'zahy', 'gg442'].filter(u => u !== currentUsername).join(', ')}
-                  </strong>
+                  Tidak ditemukan pengguna dengan nama "{searchQuery.replace(/^@+/, '')}".
+                  {communityUsers.length > 0 && (
+                    <div style={{ marginTop: '6px' }}>
+                      Pengguna lain di komunitas:{' '}
+                      <strong style={{ color: 'var(--accent-primary)' }}>
+                        {communityUsers.slice(0, 4).map(u => `@${u.username.replace(/^@+/, '')}`).join(', ')}
+                      </strong>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -1023,8 +997,19 @@ export function Chat() {
                     </button>
                   </div>
                 ) : filteredLobbyFriends.length === 0 ? (
-                  <div style={{ padding: '24px 12px', textAlign: 'center', color: 'var(--text-placeholder)', fontSize: '12px' }}>
-                    Kontak "{lobbySearch}" tidak ditemukan.
+                  <div style={{ padding: '24px 12px', textAlign: 'center', color: 'var(--text-placeholder)', fontSize: '12px', lineHeight: 1.5 }}>
+                    Kontak "{lobbySearch}" tidak ditemukan di daftar teman.<br/>
+                    <button
+                      type="button"
+                      className="btn-primary"
+                      style={{ marginTop: '10px', height: '30px', padding: '0 12px', fontSize: '11.5px' }}
+                      onClick={() => {
+                        setSearchQuery(lobbySearch);
+                        setActiveTab('friends');
+                      }}
+                    >
+                      Cari "{lobbySearch}" di Komunitas
+                    </button>
                   </div>
                 ) : (
                   filteredLobbyFriends.map(f => {
