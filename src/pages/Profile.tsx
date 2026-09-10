@@ -132,8 +132,8 @@ export function Profile() {
       if (window.electronAPI) {
         window.electronAPI.checkForUpdates();
       } else {
-        setUpdateStatus("Aplikasi Skillo v1.1.0 sudah menggunakan versi build terbaru.");
-        toast.success("Skillo v1.1.0 sudah versi terbaru!");
+        setUpdateStatus("Aplikasi Skillo v0.1.0 sudah menggunakan versi build terbaru.");
+        toast.success("Skillo v0.1.0 sudah versi terbaru!");
       }
     }, 850);
   };
@@ -512,7 +512,7 @@ export function Profile() {
               </h2>
             </div>
             <span style={{ fontSize: '10.5px', fontFamily: 'Geist Mono, monospace', color: 'var(--text-secondary)', background: 'var(--surface-input)', padding: '3px 9px', borderRadius: 'var(--radius-pill, 9999px)', border: '1px solid var(--border-hairline)' }}>
-              v1.1.0
+              v0.1.0
             </span>
           </div>
           
@@ -631,7 +631,7 @@ export function Profile() {
                   Pembaruan Sistem
                 </h3>
                 <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
-                  Versi Build: <strong style={{ color: 'var(--accent-primary)', fontFamily: 'Geist Mono, monospace' }}>v1.1.0</strong>
+                  Versi Build: <strong style={{ color: 'var(--accent-primary)', fontFamily: 'Geist Mono, monospace' }}>v0.1.0</strong>
                 </span>
               </div>
               <button 
@@ -660,7 +660,7 @@ export function Profile() {
                 <div>
                   <div>{updateStatus}</div>
                   <div style={{ fontSize: '10.5px', color: 'var(--text-placeholder)', marginTop: '2px', fontFamily: 'Geist Mono, monospace' }}>
-                    Sumber: GitHub Releases & APK Build v1.1.0 (Stabil)
+                    Sumber: GitHub Releases & APK Build v0.1.0 (Early Production)
                   </div>
                 </div>
               </div>
