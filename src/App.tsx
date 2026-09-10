@@ -364,6 +364,42 @@ export default function App() {
     document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
 
+  // Verify Supabase Auth session on startup. If no active session exists while online,
+  // ensure the user is directed to /login instead of holding stale persisted state.
+  useEffect(() => {
+    if (typeof navigator === 'undefined' || navigator.onLine) {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (!session) {
+          useStore.setState({
+            isAuthenticated: false,
+            userId: '',
+            username: '',
+            userEmail: '',
+            biometricVerified: false,
+            friends: []
+          });
+        }
+      });
+    }
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT' || (!session && (typeof navigator === 'undefined' || navigator.onLine))) {
+        useStore.setState({
+          isAuthenticated: false,
+          userId: '',
+          username: '',
+          userEmail: '',
+          biometricVerified: false,
+          friends: []
+        });
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
   // Auto-repair total hours bug and load offline projects on startup
   const { isAuthenticated, userId, loadUserProjects, syncTotalHoursToSupabase } = useStore();
   useEffect(() => {

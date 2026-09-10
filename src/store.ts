@@ -254,9 +254,9 @@ export const useStore = create<AppState>()(
             if (!error && authData?.user) {
               const { data: profile } = await supabase
                 .from('profiles')
-                .select('username, email, avatar_url, title, bio')
+                .select('id, username, email, total_hours')
                 .eq('id', authData.user.id)
-                .single();
+                .maybeSingle();
 
               const finalUser = profile?.username || resolvedUsername || resolvedEmail.split('@')[0];
               const finalEmail = authData.user.email || profile?.email || resolvedEmail;
@@ -281,9 +281,9 @@ export const useStore = create<AppState>()(
                 timerProjectId: null,
                 lastTimerTick: null,
                 friends: [],
-                ...(profile?.avatar_url ? { avatar: profile.avatar_url } : {}),
-                ...(profile?.title ? { title: profile.title } : {}),
-                ...(profile?.bio ? { bio: profile.bio } : {})
+                ...((profile as any)?.avatar_url ? { avatar: (profile as any).avatar_url } : {}),
+                ...((profile as any)?.title ? { title: (profile as any).title } : {}),
+                ...((profile as any)?.bio ? { bio: (profile as any).bio } : {})
               });
               try {
                 localStorage.setItem('last_user', finalUser);
@@ -615,7 +615,7 @@ export const useStore = create<AppState>()(
           const friendIds = data.map(r => r.user_id_1 === uid ? r.user_id_2 : r.user_id_1);
           const { data: profiles } = await supabase
             .from('profiles')
-            .select('id, username, email, total_hours, avatar_url')
+            .select('id, username, email, total_hours')
             .in('id', friendIds);
             
           if (profiles) {
@@ -627,7 +627,7 @@ export const useStore = create<AppState>()(
               role: 'User',
               isOnline: false,
               totalHours: p.total_hours || 0,
-              avatar: p.avatar_url || undefined
+              avatar: (p as any).avatar_url || undefined
             }));
             set({ friends: mapped });
           }

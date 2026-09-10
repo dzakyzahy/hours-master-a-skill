@@ -27,6 +27,7 @@ export function Login() {
   const [regEmail, setRegEmail] = useState('');
   const [regUsername, setRegUsername] = useState('');
   const [regPassword, setRegPassword] = useState('');
+  const [showRegPassword, setShowRegPassword] = useState(false);
 
   // Password reset modal state
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
@@ -504,7 +505,7 @@ export function Login() {
                 </div>
                 <div className="auth-input-wrap">
                   <input 
-                    type={showPassword ? "text" : "password"} 
+                    type={showRegPassword ? "text" : "password"} 
                     id="regPassword" 
                     name="password"
                     className="auth-input" 
@@ -514,6 +515,26 @@ export function Login() {
                     autoComplete="new-password"
                     required
                   />
+                  <button 
+                    type="button" 
+                    className="auth-toggle-visibility" 
+                    aria-label={showRegPassword ? "Sembunyikan kata sandi" : "Tampilkan kata sandi"}
+                    onClick={() => setShowRegPassword(!showRegPassword)}
+                  >
+                    {showRegPassword ? (
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <path d="M1 1L15 15" stroke="currentColor" strokeWidth="1.3"/>
+                        <path d="M4.5 4.8C2.7 5.9 1 8 1 8C1 8 3.5 13 8 13C9.4 13 10.6 12.5 11.6 11.8" stroke="currentColor" strokeWidth="1.3"/>
+                        <path d="M6.5 3.2C7 3.1 7.5 3 8 3C12.5 3 15 8 15 8C15 8 14.4 9.1 13.3 10.2" stroke="currentColor" strokeWidth="1.3"/>
+                        <path d="M9.4 9.4C9.1 9.7 8.6 10 8 10C6.9 10 6 9.1 6 8C6 7.4 6.3 6.9 6.6 6.6" stroke="currentColor" strokeWidth="1.3"/>
+                      </svg>
+                    ) : (
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <path d="M1 8C1 8 3.5 3 8 3C12.5 3 15 8 15 8C15 8 12.5 13 8 13C3.5 13 1 8 1 8Z" stroke="currentColor" strokeWidth="1.3"/>
+                        <circle cx="8" cy="8" r="2" stroke="currentColor" strokeWidth="1.3"/>
+                      </svg>
+                    )}
+                  </button>
                 </div>
               </div>
 

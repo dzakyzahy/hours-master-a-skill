@@ -38,8 +38,8 @@ export async function searchRegisteredUsers(
   try {
     const { data, error } = await supabase
       .from('profiles')
-      .select('id, username, email, total_hours, avatar_url, title, bio')
-      .ilike('username', `%${query}%`)
+      .select('id, username, email, total_hours')
+      .or(`username.ilike.%${query}%,email.ilike.%${query}%`)
       .limit(15);
 
     if (error) {
@@ -56,9 +56,9 @@ export async function searchRegisteredUsers(
     return data
       .filter(profile => {
         if (!profile.id) return false;
-        if (profile.id === currentUserId) return false;
+        if (currentUserId && profile.id === currentUserId) return false;
         const profName = (profile.username || '').toLowerCase().replace(/^@+/, '');
-        if (profName === myName) return false;
+        if (myName && profName === myName) return false;
         return true;
       })
       .map(profile => ({
@@ -66,9 +66,9 @@ export async function searchRegisteredUsers(
         username: profile.username || 'Pengguna Skillo',
         email: profile.email,
         total_hours: profile.total_hours || 0,
-        avatar_url: profile.avatar_url,
-        title: profile.title,
-        bio: profile.bio,
+        avatar_url: (profile as any).avatar_url || undefined,
+        title: (profile as any).title || undefined,
+        bio: (profile as any).bio || undefined,
         isFriend: friendIdSet.has(profile.id),
         isPending: pendingSet.has(profile.id)
       }));
@@ -91,7 +91,7 @@ export async function loadCommunityProfiles(
   try {
     const { data, error } = await supabase
       .from('profiles')
-      .select('id, username, email, total_hours, avatar_url, title, bio')
+      .select('id, username, email, total_hours')
       .order('username', { ascending: true })
       .limit(30);
 
@@ -109,9 +109,9 @@ export async function loadCommunityProfiles(
     return data
       .filter(profile => {
         if (!profile.id) return false;
-        if (profile.id === currentUserId) return false;
+        if (currentUserId && profile.id === currentUserId) return false;
         const profName = (profile.username || '').toLowerCase().replace(/^@+/, '');
-        if (profName === myName) return false;
+        if (myName && profName === myName) return false;
         if (friendIdSet.has(profile.id)) return false;
         return true;
       })
@@ -120,9 +120,9 @@ export async function loadCommunityProfiles(
         username: profile.username || 'Pengguna Skillo',
         email: profile.email,
         total_hours: profile.total_hours || 0,
-        avatar_url: profile.avatar_url,
-        title: profile.title,
-        bio: profile.bio,
+        avatar_url: (profile as any).avatar_url || undefined,
+        title: (profile as any).title || undefined,
+        bio: (profile as any).bio || undefined,
         isFriend: false,
         isPending: pendingSet.has(profile.id)
       }));
