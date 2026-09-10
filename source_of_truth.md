@@ -1,9 +1,9 @@
-# Hours Master - Source of Truth
+# Skillo - Source of Truth
 
-This document serves as the central source of truth for AI agents and developers working on the Hours Master project. Please read this entirely before making modifications.
+This document serves as the central source of truth for AI agents and developers working on the Skillo project. Please read this entirely before making modifications.
 
 ## 1. Project Overview
-**Hours Master** is a cross-platform time tracking and mastery app (Web, Desktop via Electron, Mobile via Capacitor). 
+**Skillo** is a cross-platform time tracking and mastery app (Web, Desktop via Electron, Mobile via Capacitor). 
 - **Tech Stack**: React 18, TypeScript, Vite, Zustand (State Management), Tailwind CSS, Supabase (PostgreSQL, Realtime, Auth), WebRTC (for meetings), Electron, Capacitor (Android).
 
 ## 2. Completed Milestones (Tahap 1-7)

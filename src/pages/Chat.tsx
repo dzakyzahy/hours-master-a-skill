@@ -294,7 +294,7 @@ export function Chat() {
         bc.close();
       }
     };
-  }, [currentUsername]);
+  }, [currentUsername, userId]);
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();

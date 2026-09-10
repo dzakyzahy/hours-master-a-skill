@@ -193,6 +193,16 @@ interface AppState {
 // ================================================================
 const STORAGE_VERSION = 2;
 
+// Migrasi legacy storage key jika ada ('hours-master-storage' -> 'skillo-storage')
+if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+  try {
+    const legacy = localStorage.getItem('hours-master-storage');
+    if (legacy && !localStorage.getItem('skillo-storage')) {
+      localStorage.setItem('skillo-storage', legacy);
+    }
+  } catch {}
+}
+
 export const useStore = create<AppState>()(
   persist(
     (set, get) => ({
@@ -1323,7 +1333,7 @@ export const useStore = create<AppState>()(
       }
     }),
     {
-      name: 'hours-master-storage',
+      name: 'skillo-storage',
       version: STORAGE_VERSION,
       // Saat versi berubah, migrate data lama
       migrate: (persistedState: any, version: number) => {

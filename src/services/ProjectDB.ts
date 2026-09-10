@@ -84,18 +84,21 @@ export const cleanupLegacyDefaultProject = async (): Promise<void> => {
   // Project 'default-1' adalah project hardcoded lama yang menyebabkan bug 120 jam
   // Ini akan membersihkan dari zustand localStorage jika masih ada
   try {
-    const rawStorage = localStorage.getItem('hours-master-storage');
-    if (!rawStorage) return;
-    const parsed = JSON.parse(rawStorage);
-    const state = parsed?.state;
-    if (state?.projects) {
-      const cleanedProjects = state.projects.filter(
-        (p: Project) => p.id !== 'default-1'
-      );
-      if (cleanedProjects.length !== state.projects.length) {
-        parsed.state.projects = cleanedProjects;
-        localStorage.setItem('hours-master-storage', JSON.stringify(parsed));
-        console.info('[ProjectDB] Legacy default project "Ethical Hacking" dihapus dari storage lama.');
+    const keys = ['skillo-storage', 'hours-master-storage'];
+    for (const key of keys) {
+      const rawStorage = localStorage.getItem(key);
+      if (!rawStorage) continue;
+      const parsed = JSON.parse(rawStorage);
+      const state = parsed?.state;
+      if (state?.projects) {
+        const cleanedProjects = state.projects.filter(
+          (p: Project) => p.id !== 'default-1'
+        );
+        if (cleanedProjects.length !== state.projects.length) {
+          parsed.state.projects = cleanedProjects;
+          localStorage.setItem(key, JSON.stringify(parsed));
+          console.info(`[ProjectDB] Legacy default project "Ethical Hacking" dihapus dari ${key}.`);
+        }
       }
     }
   } catch {

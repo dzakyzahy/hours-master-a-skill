@@ -127,6 +127,6 @@ Keluar URL `https://xxx.trycloudflare.com` — publik, HTTPS, tanpa akun. HTTPS-
 
 ### Perbaikan sebenarnya
 
-1. **Aktifkan GitHub Pages:** repo → Settings → Pages → Source: **GitHub Actions**. Lalu jalankan ulang workflow `deploy-web.yml`. URL-nya nanti `https://dzakyzahy.github.io/hours-master-a-skill/`.
+1. **Aktifkan GitHub Pages:** repo → Settings → Pages → Source: **GitHub Actions**. Lalu jalankan ulang workflow `deploy-web.yml`. URL-nya nanti `https://dzakyzahy.github.io/skillo/`.
 2. **Perbaiki `VITE_APP_URL`** agar menunjuk ke URL itu, bukan `skillo.app`. Nilai sekarang membuat tautan undangan mengarah ke situs orang lain.
 3. **Periksa `AndroidManifest.xml`** — masih ada App Link `android:host="skillo.app"`. Ganti dengan domain yang benar-benar kamu miliki, atau hapus.

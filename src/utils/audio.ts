@@ -27,7 +27,7 @@ function getAudioContext(): AudioContext | null {
 function isAudioEnabled(): boolean {
   try {
     if (typeof localStorage !== 'undefined') {
-      const raw = localStorage.getItem('hours-master-storage');
+      const raw = localStorage.getItem('skillo-storage') || localStorage.getItem('hours-master-storage');
       if (raw) {
         const parsed = JSON.parse(raw);
         if (parsed?.state?.soundEnabled !== undefined) {
