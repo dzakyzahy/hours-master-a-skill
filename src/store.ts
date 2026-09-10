@@ -631,6 +631,8 @@ export const useStore = create<AppState>()(
             }));
             set({ friends: mapped });
           }
+        } else {
+          set({ friends: [] });
         }
       },
       

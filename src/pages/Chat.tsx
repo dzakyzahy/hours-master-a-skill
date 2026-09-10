@@ -9,7 +9,8 @@ import {
   faPaperPlane, 
   faVideo,
   faHandFist,
-  faClock
+  faClock,
+  faRightFromBracket
 } from '@fortawesome/free-solid-svg-icons';
 import { useStore, type FriendUser } from '../store';
 import { ClashArena } from '../components/ClashArena';
@@ -82,7 +83,7 @@ const saveMessagesToStorage = (msgs: LocalChatMessage[]) => {
 export function Chat() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { username, userId, friends, friendRequests, sentFriendRequests, sendFriendRequest, acceptFriendRequest, rejectFriendRequest, checkFriendsOnlineStatus, projects, fetchFriendRequests, fetchSentFriendRequests, fetchFriends } = useStore();
+  const { username, userId, friends, friendRequests, sentFriendRequests, sendFriendRequest, acceptFriendRequest, rejectFriendRequest, checkFriendsOnlineStatus, projects, fetchFriendRequests, fetchSentFriendRequests, fetchFriends, logout } = useStore();
   const initialTab = (location.state as any)?.tab;
   const [activeTab, setActiveTab] = useState<'friends' | 'requests' | 'chat' | 'clash'>(() => {
     if (initialTab === 'clash' || initialTab === 'chat' || initialTab === 'requests' || initialTab === 'friends') {
@@ -577,6 +578,16 @@ export function Chat() {
               />
             </button>
           )}
+
+          <button 
+            type="button" 
+            className="btn-icon" 
+            onClick={logout} 
+            title="Keluar dari Akun (Logout)"
+            style={{ width: '34px', height: '34px', borderRadius: '7px' }}
+          >
+            <FontAwesomeIcon icon={faRightFromBracket} style={{ fontSize: '13px' }} />
+          </button>
 
           <div className="header-divider" aria-hidden="true" />
           <ThemeSwitcher compact={true} />
