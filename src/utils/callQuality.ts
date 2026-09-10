@@ -55,36 +55,3 @@ export function enhanceOpusSdp(sdp: string): string {
   const rtpmapStr = opusMatch[0];
   return sdp.replace(rtpmapStr, `${rtpmapStr}\r\na=fmtp:${pt} ${opusParams}`);
 }
-
-export function enhanceVideoSdp(sdp: string, bitrateKbps = 1500): string {
-  if (!sdp || !sdp.includes('m=video')) return sdp;
-
-  // Check if bandwidth line already exists in video section
-  const lines = sdp.split(/\r?\n/);
-  const result: string[] = [];
-  let inVideoSection = false;
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-
-    if (line.startsWith('m=video')) {
-      inVideoSection = true;
-      result.push(line);
-      result.push(`b=AS:${bitrateKbps}`);
-      continue;
-    }
-
-    if (inVideoSection && line.startsWith('m=')) {
-      inVideoSection = false;
-    }
-
-    if (inVideoSection && line.startsWith('b=AS:')) {
-      // Replace existing bandwidth
-      continue;
-    }
-
-    result.push(line);
-  }
-
-  return result.join('\r\n');
-}

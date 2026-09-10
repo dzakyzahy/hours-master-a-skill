@@ -2,11 +2,20 @@ import { useEffect, useRef } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faMicrophoneSlash, faDesktop, faVolumeHigh } from '@fortawesome/free-solid-svg-icons';
 import type { Participant } from '../../types/meeting';
+import { getAvatarDisplay } from '../../utils/profilePresets';
 
 interface VideoTileProps {
   participant: Participant;
   isDominant?: boolean;
 }
+
+const QUALITY_BARS = { good: 3, fair: 2, poor: 1 } as const;
+const QUALITY_COLOR = { good: '#34d399', fair: '#fbbf24', poor: '#f87171' } as const;
+const QUALITY_LABEL = {
+  good: 'Koneksi stabil',
+  fair: 'Koneksi sedang',
+  poor: 'Koneksi buruk'
+} as const;
 
 export function VideoTile({ participant, isDominant = false }: VideoTileProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -52,6 +61,8 @@ export function VideoTile({ participant, isDominant = false }: VideoTileProps) {
     .join('')
     .substring(0, 2)
     .toUpperCase();
+
+  const avatarDisplay = getAvatarDisplay(participant.avatar, initials);
 
   return (
     <div
@@ -127,9 +138,18 @@ export function VideoTile({ participant, isDominant = false }: VideoTileProps) {
               fontWeight: 700,
               color: 'var(--text-primary)',
               letterSpacing: '0.05em',
+              overflow: 'hidden',
             }}
           >
-            {initials}
+            {avatarDisplay.isCustomImage ? (
+              <img
+                src={avatarDisplay.imageUrl}
+                alt={participant.name}
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              />
+            ) : (
+              initials
+            )}
           </div>
           {participant.isSpeaking && (
             <div
@@ -149,6 +169,42 @@ export function VideoTile({ participant, isDominant = false }: VideoTileProps) {
               <FontAwesomeIcon icon={faVolumeHigh} style={{ fontSize: '11px' }} /> Speaking
             </div>
           )}
+        </div>
+      )}
+
+      {/* Connection Quality Meter — remote peers only; we have no stats about ourselves. */}
+      {!participant.isLocal && participant.quality && (
+        <div
+          title={QUALITY_LABEL[participant.quality]}
+          aria-label={QUALITY_LABEL[participant.quality]}
+          style={{
+            position: 'absolute',
+            top: 14,
+            right: 14,
+            display: 'flex',
+            alignItems: 'flex-end',
+            gap: '2px',
+            height: '14px',
+            padding: '4px 6px',
+            borderRadius: '9999px',
+            backgroundColor: 'rgba(10, 14, 23, 0.65)',
+            backdropFilter: 'blur(12px)',
+            boxSizing: 'content-box',
+          }}
+        >
+          {[5, 9, 13].map((barHeight, index) => (
+            <span
+              key={barHeight}
+              style={{
+                width: '3px',
+                height: `${barHeight}px`,
+                borderRadius: '1px',
+                backgroundColor: index < QUALITY_BARS[participant.quality!]
+                  ? QUALITY_COLOR[participant.quality!]
+                  : 'rgba(255,255,255,0.25)',
+              }}
+            />
+          ))}
         </div>
       )}
 

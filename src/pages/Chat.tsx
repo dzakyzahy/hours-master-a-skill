@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
@@ -20,6 +20,7 @@ import { playMessageSent, playMessageReceived } from '../utils/audio';
 import { useCallSignaling } from '../hooks/useCallSignaling';
 import { showChatMessageNotification, requestCallNotificationPermissions } from '../utils/callNotifications';
 import { saveChatMessage, getChatHistory } from '../services/ChatDB';
+import { Avatar } from '../components/Avatar';
 
 interface LocalChatMessage {
   id: string;
@@ -102,6 +103,17 @@ export function Chat() {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
   const [communityUsers, setCommunityUsers] = useState<any[]>([]);
+
+  // Friend-request rows carry only ids and usernames, so borrow the photo from the
+  // lists already loaded rather than firing another query per card.
+  const avatarById = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const u of [...friends, ...communityUsers, ...searchResults]) {
+      const value = (u as any).avatar || (u as any).avatar_url;
+      if (u?.id && value) map.set(u.id, value);
+    }
+    return map;
+  }, [friends, communityUsers, searchResults]);
   const [selectedFriend, setSelectedFriend] = useState<FriendUser | null>(null);
   const [lobbySearch, setLobbySearch] = useState('');
   const effectiveSelectedFriend = selectedFriend || (typeof window !== 'undefined' && window.innerWidth > 720 && friends.length > 0 ? friends[0] : null);
@@ -378,7 +390,7 @@ export function Chat() {
     try {
       const { data } = await supabase
         .from('profiles')
-        .select('id, username, email, total_hours')
+        .select('id, username, email, total_hours, avatar_url')
         .order('username', { ascending: true });
 
       if (data) {
@@ -406,7 +418,7 @@ export function Chat() {
       try {
         const { data } = await supabase
           .from('profiles')
-          .select('id, username, email, total_hours')
+          .select('id, username, email, total_hours, avatar_url')
           .order('username', { ascending: true });
 
         if (data && active) {
@@ -444,7 +456,7 @@ export function Chat() {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, username, email, total_hours')
+        .select('id, username, email, total_hours, avatar_url')
         .ilike('username', `%${query}%`)
         .limit(10);
         
@@ -707,9 +719,7 @@ export function Chat() {
                     {searchResults.map(u => (
                       <div key={u.id} className="community-card">
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0, flex: 1 }}>
-                          <div className="community-avatar">
-                            {(u.username || 'U').substring(0, 2).toUpperCase()}
-                          </div>
+                          <Avatar className="community-avatar" avatar={u.avatar_url} name={u.username} />
                           <div className="community-info">
                             <span className="community-name">{u.username.replace(/^@+/, '')}</span>
                             {u.email && <span className="community-meta">{u.email}</span>}
@@ -777,9 +787,7 @@ export function Chat() {
                     {communityUsers.map(u => (
                       <div key={u.id} className="community-card">
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0, flex: 1 }}>
-                          <div className="community-avatar">
-                            {(u.username || 'U').substring(0, 2).toUpperCase()}
-                          </div>
+                          <Avatar className="community-avatar" avatar={u.avatar_url} name={u.username} />
                           <div className="community-info">
                             <span className="community-name">{u.username.replace(/^@+/, '')}</span>
                             {u.email && <span className="community-meta">{u.email}</span>}
@@ -830,7 +838,6 @@ export function Chat() {
                   </p>
                 )}
                 {friends.map(f => {
-                  const initials = (f.name || f.username || 'U').substring(0, 2).toUpperCase();
                   const displayName = f.name || f.username || 'User';
                   const showHandle = f.username && f.name && f.name.toLowerCase() !== f.username.toLowerCase();
 
@@ -838,9 +845,7 @@ export function Chat() {
                     <div key={f.id} className="friend-card">
                       <div className="friend-card-left">
                         <div style={{ position: 'relative', flexShrink: 0 }}>
-                          <div className="friend-avatar">
-                            {initials}
-                          </div>
+                          <Avatar className="friend-avatar" avatar={f.avatar} name={f.username} />
                           <span 
                             style={{
                               position: 'absolute',
@@ -894,13 +899,15 @@ export function Chat() {
                 })}
 
                 {sentFriendRequests.map(req => {
-                  const initials = (req.receiver_username || '?').substring(0, 2).toUpperCase();
                   return (
                     <div key={`sent-${req.id}`} className="friend-card" style={{ opacity: 0.75 }}>
                       <div className="friend-card-left">
-                        <div className="friend-avatar" style={{ color: 'var(--text-secondary)' }}>
-                          {initials}
-                        </div>
+                        <Avatar
+                          className="friend-avatar"
+                          style={{ color: 'var(--text-secondary)' }}
+                          avatar={avatarById.get(req.receiver_id)}
+                          name={req.receiver_username}
+                        />
                         <div className="friend-card-info">
                           <span className="friend-name">{(req.receiver_username || '').replace(/^@+/, '')}</span>
                           <span className="friend-meta" style={{ color: 'var(--accent-primary)' }}>
@@ -936,13 +943,14 @@ export function Chat() {
 
             <div className="community-list">
               {friendRequests.map(req => {
-                const initials = (req.sender_username || 'U').substring(0, 2).toUpperCase();
                 return (
                   <div key={req.id} className="community-card">
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0, flex: 1 }}>
-                      <div className="community-avatar">
-                        {initials}
-                      </div>
+                      <Avatar
+                        className="community-avatar"
+                        avatar={avatarById.get(req.sender_id)}
+                        name={req.sender_username}
+                      />
                       <div className="community-info">
                         <span className="community-name">{(req.sender_username || '').replace(/^@+/, '')}</span>
                         <span className="community-meta">Mengirim permintaan pertemanan</span>
@@ -1020,7 +1028,6 @@ export function Chat() {
                   </div>
                 ) : (
                   filteredLobbyFriends.map(f => {
-                    const initials = (f.name || f.username || 'U').substring(0, 2).toUpperCase();
                     const isSelected = effectiveSelectedFriend?.id === f.id;
                     const lastMsg = getLastMessageWith(f.username);
                     const timeStr = lastMsg ? new Date(lastMsg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
@@ -1032,10 +1039,9 @@ export function Chat() {
                         className={`chat-lobby-item ${isSelected ? 'active' : ''}`}
                         onClick={() => setSelectedFriend(f)}
                       >
-                        <div className="chat-lobby-avatar">
-                          {initials}
+                        <Avatar className="chat-lobby-avatar" avatar={f.avatar} name={f.username}>
                           <span className={`chat-lobby-dot ${f.isOnline ? 'online' : 'offline'}`} />
-                        </div>
+                        </Avatar>
                         <div className="chat-lobby-info">
                           <div className="chat-lobby-name-row">
                             <span className="chat-lobby-name">{f.name || f.username}</span>
@@ -1071,9 +1077,12 @@ export function Chat() {
                       </button>
 
                       <div style={{ position: 'relative', flexShrink: 0 }}>
-                        <div className="chat-lobby-avatar" style={{ width: '36px', height: '36px', fontSize: '12px' }}>
-                          {(currentFriendInChat.name || currentFriendInChat.username || 'U').substring(0, 2).toUpperCase()}
-                        </div>
+                        <Avatar
+                          className="chat-lobby-avatar"
+                          style={{ width: '36px', height: '36px', fontSize: '12px' }}
+                          avatar={currentFriendInChat.avatar}
+                          name={currentFriendInChat.name || currentFriendInChat.username}
+                        />
                         <span className={`chat-lobby-dot ${currentFriendInChat.isOnline ? 'online' : 'offline'}`} />
                       </div>
 

@@ -1,3 +1,5 @@
+import type { CallQualityLevel } from '../utils/callStats';
+
 export type CallType = 'direct' | 'focus';
 
 export interface CallSignal {
@@ -21,6 +23,7 @@ export interface Participant {
   isScreenSharing: boolean;
   isSpeaking: boolean;
   isLocal: boolean;
+  quality?: CallQualityLevel;
 }
 
 export interface MeetingRoomConfig {

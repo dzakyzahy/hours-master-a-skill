@@ -26,11 +26,28 @@ import { useCallSessionStore } from '../utils/callSession';
 import { AUDIO_CONSTRAINTS, VIDEO_CONSTRAINTS } from '../utils/callQuality';
 import type { Participant } from '../types/meeting';
 
+/** A silent black tile is the worst failure mode; say exactly what to do instead. */
+function mediaErrorMessage(err: unknown): string {
+  const name = (err as { name?: string } | null)?.name;
+  switch (name) {
+    case 'NotAllowedError':
+    case 'SecurityError':
+      return 'Izin kamera/mikrofon ditolak. Buka Pengaturan > Aplikasi > Skillo > Izin, aktifkan Kamera dan Mikrofon, lalu masuk ulang ke room.';
+    case 'NotFoundError':
+    case 'OverconstrainedError':
+      return 'Kamera atau mikrofon tidak ditemukan di perangkat ini. Panggilan tetap bisa lanjut tanpa video.';
+    case 'NotReadableError':
+      return 'Kamera sedang dipakai aplikasi lain. Tutup aplikasi tersebut lalu coba lagi.';
+    default:
+      return 'Tidak bisa mengakses kamera/mikrofon. Panggilan lanjut dengan avatar.';
+  }
+}
+
 export function MeetingRoom() {
   const navigate = useNavigate();
   const location = useLocation();
   const { roomId } = useParams<{ roomId?: string }>();
-  const { username, userId } = useStore();
+  const { username, userId, avatar: userAvatar } = useStore();
   const { cancelOutgoingCall } = useCallSignaling();
   const { session, startSession, endSession, setActiveStream } = useCallSessionStore();
 
@@ -60,7 +77,7 @@ export function MeetingRoom() {
   const previewVideoRef = useRef<HTMLVideoElement>(null);
 
   // WebRTC Hook - only connects when user has actually joined
-  const { remoteParticipants } = useWebRTC(
+  const { remoteParticipants, roomFull, maxParticipants, videoDegraded } = useWebRTC(
     effectiveRoomId,
     userId || 'guest',
     username || 'Guest',
@@ -68,6 +85,26 @@ export function MeetingRoom() {
     { isAudioMuted: isMuted, isVideoOff, isScreenSharing },
     { enabled: hasJoined }
   );
+
+  // Tell the user why their video vanished; the per-tile meter shows the ongoing state.
+  const degradeNotifiedRef = useRef(false);
+  useEffect(() => {
+    if (videoDegraded === degradeNotifiedRef.current) return;
+    degradeNotifiedRef.current = videoDegraded;
+    toast(
+      videoDegraded
+        ? 'Koneksi tidak stabil. Video dimatikan sementara agar suara tetap jernih.'
+        : 'Koneksi membaik. Video dinyalakan kembali.',
+      { duration: 5000 }
+    );
+  }, [videoDegraded]);
+
+  // Room is at capacity (mesh topology limit) — bounce out instead of showing an empty grid.
+  useEffect(() => {
+    if (!roomFull) return;
+    toast.error(`Room penuh (maksimal ${maxParticipants} peserta).`);
+    navigate('/chat');
+  }, [roomFull, maxParticipants, navigate]);
 
   // Sync active call session for Floating Call Bar
   useEffect(() => {
@@ -145,6 +182,7 @@ export function MeetingRoom() {
       } catch (err) {
         console.warn('Camera/mic access unavailable or denied (using avatar fallback):', err);
         setIsVideoOff(true);
+        toast.error(mediaErrorMessage(err), { duration: 6000 });
       }
     }
 
@@ -239,6 +277,10 @@ export function MeetingRoom() {
 
   // Leave Room / Explicitly End Call
   const handleEndCall = () => {
+    // Must come first. effectiveRoomId and targetFriend are derived from `session`, so
+    // clearing it changes the sync effect's deps and re-runs it — which called
+    // startSession() again and resurrected the call a moment after ending it.
+    setHasJoined(false);
     endSession();
     if (localStreamRef.current) {
       localStreamRef.current.getTracks().forEach(t => t.stop());
@@ -354,6 +396,7 @@ _Ketuk tautan di atas untuk langsung masuk ke sesi._`;
     isScreenSharing: isScreenSharing,
     isSpeaking: false,
     isLocal: true,
+    avatar: userAvatar,
     stream: (isScreenSharing && screenStream) ? screenStream : localStream || undefined,
   };
 

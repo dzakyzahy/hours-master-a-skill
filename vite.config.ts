@@ -7,7 +7,10 @@ export default defineConfig({
   plugins: [react()],
   server: {
     host: '0.0.0.0',
-    port: 5173
+    port: 5173,
+    // Vite blocks unknown Host headers. Tunnels give the dev server a public HTTPS URL,
+    // which getUserMedia requires and which a phone on cellular can actually reach.
+    allowedHosts: ['.trycloudflare.com', '.loca.lt', '.ngrok-free.app']
   },
   build: {
     chunkSizeWarningLimit: 600,

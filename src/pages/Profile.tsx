@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
@@ -17,6 +17,7 @@ import { useStore } from '../store';
 import { ApiKeyModal } from '../components/ApiKeyModal';
 import { ThemeSwitcher } from '../components/ThemeSwitcher';
 import { AVATAR_PRESETS, getAvatarDisplay } from '../utils/profilePresets';
+import { fileToAvatarDataUrl } from '../utils/avatarUpload';
 import { AchievementsSection } from '../components/AchievementsSection';
 import toast from 'react-hot-toast';
 
@@ -53,6 +54,8 @@ export function Profile() {
   const [selectedAvatar, setSelectedAvatar] = useState(storeAvatar || 'cyber-neon');
   const [customTitle, setCustomTitle] = useState(storeTitle || defaultRoleTitle);
   const [customBio, setCustomBio] = useState(storeBio || 'Belajar dan bertumbuh di Skillo');
+  const [photoBusy, setPhotoBusy] = useState(false);
+  const photoInputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState('');
   const [updateStatus, setUpdateStatus] = useState('');
@@ -163,6 +166,23 @@ export function Profile() {
     loadGeminiApiKey();
   }, [loadGeminiApiKey]);
 
+  const handlePickPhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = ''; // let the same file be picked again after a failure
+    if (!file) return;
+
+    setPhotoBusy(true);
+    setMsg('');
+    try {
+      setSelectedAvatar(await fileToAvatarDataUrl(file));
+      setMsg('Foto siap. Tekan Simpan untuk menerapkannya.');
+    } catch (err: any) {
+      setMsg(err?.message || 'Gagal memproses foto.');
+    } finally {
+      setPhotoBusy(false);
+    }
+  };
+
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -189,15 +209,20 @@ export function Profile() {
             await supabase.auth.updateUser(updates);
           }
 
-          try {
-            await supabase.from('profiles').update({
-              username: newUsername,
-              avatar_url: selectedAvatar,
-              title: customTitle,
-              bio: customBio
-            }).eq('id', authData.user.id);
-          } catch {
+          // supabase-js returns { error }, it does not throw — a try/catch here hides
+          // a missing column and the profile silently stays device-only.
+          const { error: profileError } = await supabase.from('profiles').update({
+            username: newUsername,
+            avatar_url: selectedAvatar,
+            title: customTitle,
+            bio: customBio
+          }).eq('id', authData.user.id);
+
+          if (profileError) {
             await supabase.from('profiles').update({ username: newUsername }).eq('id', authData.user.id);
+            setMsg(`Tersimpan di perangkat ini saja. Server menolak: ${profileError.message}`);
+            setLoading(false);
+            return;
           }
         }
       }
@@ -305,6 +330,32 @@ export function Profile() {
           </div>
 
           <form onSubmit={handleUpdate} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            {/* Photo Upload */}
+            <div>
+              <label style={{ fontSize: '12.5px', fontWeight: 500, color: 'var(--text-secondary)', marginBottom: '10px', display: 'block' }}>
+                Foto Profil
+              </label>
+              <input
+                ref={photoInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handlePickPhoto}
+                style={{ display: 'none' }}
+              />
+              <button
+                type="button"
+                className="btn"
+                disabled={photoBusy}
+                onClick={() => photoInputRef.current?.click()}
+                style={{ width: '100%', justifyContent: 'center' }}
+              >
+                {photoBusy ? 'Memproses foto...' : 'Unggah Foto dari Galeri'}
+              </button>
+              <p style={{ fontSize: '11.5px', color: 'var(--text-secondary)', margin: '8px 0 0' }}>
+                Foto dikecilkan otomatis ke 256px. Memilih tema di bawah akan menggantikan foto.
+              </p>
+            </div>
+
             {/* Avatar Preset Picker */}
             <div>
               <label style={{ fontSize: '12.5px', fontWeight: 500, color: 'var(--text-secondary)', marginBottom: '10px', display: 'block' }}>

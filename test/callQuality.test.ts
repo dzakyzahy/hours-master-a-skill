@@ -4,8 +4,7 @@ import {
   formatCallDuration,
   AUDIO_CONSTRAINTS,
   VIDEO_CONSTRAINTS,
-  enhanceOpusSdp,
-  enhanceVideoSdp
+  enhanceOpusSdp
 } from '../src/utils/callQuality.ts';
 
 describe('callQuality & formatCallDuration', () => {
@@ -42,12 +41,4 @@ m=video 9 UDP/TLS/RTP/SAVPF 96`;
     assert.ok(enhanced.includes('maxaveragebitrate=64000'));
   });
 
-  it('enhances video SDP with target bitrate', () => {
-    const rawSdp = `v=0
-m=video 9 UDP/TLS/RTP/SAVPF 96
-a=rtpmap:96 VP8/90000`;
-
-    const enhanced = enhanceVideoSdp(rawSdp, 1500);
-    assert.ok(enhanced.includes('b=AS:1500'));
-  });
 });

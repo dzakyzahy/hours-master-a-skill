@@ -25,6 +25,10 @@ CREATE TABLE IF NOT EXISTS profiles (
   ai_tokens               INTEGER DEFAULT 10,
   subscription_status     TEXT DEFAULT 'free' CHECK (subscription_status IN ('free', 'active', 'cancelled', 'expired')),
   subscription_expires_at TIMESTAMPTZ,
+  -- Personalisasi profil (avatar_url = id preset, data URL, atau http(s) URL)
+  avatar_url              TEXT,
+  title                   TEXT,
+  bio                     TEXT,
   -- Kolom untuk Cloud Storage Skillo (Sprint 2)
   cloud_storage_enabled   BOOLEAN DEFAULT FALSE,
   created_at              TIMESTAMPTZ DEFAULT NOW(),

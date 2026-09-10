@@ -9,6 +9,7 @@ import {
   faUsers, 
   faGear 
 } from '@fortawesome/free-solid-svg-icons';
+import { canScreenShare } from '../../utils/native';
 
 interface MeetingControlsProps {
   isMuted: boolean;
@@ -109,30 +110,32 @@ export function MeetingControls({
         <FontAwesomeIcon icon={isVideoOff ? faVideoSlash : faVideo} style={{ fontSize: '15px' }} />
       </button>
 
-      {/* Screen Share Toggle (Desktop only) */}
-      <button
-        type="button"
-        className="btn meeting-control-desktop-only"
-        onClick={onToggleScreenShare}
-        title={isScreenSharing ? 'Stop sharing screen' : 'Share screen'}
-        style={{
-          width: '44px',
-          height: '44px',
-          minWidth: '44px',
-          padding: 0,
-          borderRadius: '50%',
-          backgroundColor: isScreenSharing ? 'rgba(14, 165, 233, 0.18)' : 'var(--surface-input)',
-          border: isScreenSharing ? '1px solid var(--accent-primary)' : '1px solid var(--border-hairline-strong)',
-          color: isScreenSharing ? 'var(--accent-primary)' : 'var(--text-primary)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          transition: 'all 0.2s ease',
-          flexShrink: 0,
-        }}
-      >
-        <FontAwesomeIcon icon={faDesktop} style={{ fontSize: '15px' }} />
-      </button>
+      {/* Screen Share Toggle — web only; Android WebView has no getDisplayMedia */}
+      {canScreenShare && (
+        <button
+          type="button"
+          className="btn meeting-control-desktop-only"
+          onClick={onToggleScreenShare}
+          title={isScreenSharing ? 'Stop sharing screen' : 'Share screen'}
+          style={{
+            width: '44px',
+            height: '44px',
+            minWidth: '44px',
+            padding: 0,
+            borderRadius: '50%',
+            backgroundColor: isScreenSharing ? 'rgba(14, 165, 233, 0.18)' : 'var(--surface-input)',
+            border: isScreenSharing ? '1px solid var(--accent-primary)' : '1px solid var(--border-hairline-strong)',
+            color: isScreenSharing ? 'var(--accent-primary)' : 'var(--text-primary)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'all 0.2s ease',
+            flexShrink: 0,
+          }}
+        >
+          <FontAwesomeIcon icon={faDesktop} style={{ fontSize: '15px' }} />
+        </button>
+      )}
 
       {onToggleDevTools && (
         <button

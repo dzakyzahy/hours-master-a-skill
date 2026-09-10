@@ -253,7 +253,7 @@ export const useStore = create<AppState>()(
             if (!error && authData?.user) {
               const { data: profile } = await supabase
                 .from('profiles')
-                .select('username, email')
+                .select('username, email, avatar_url, title, bio')
                 .eq('id', authData.user.id)
                 .single();
 
@@ -279,7 +279,10 @@ export const useStore = create<AppState>()(
                 timerStartedAt: null,
                 timerProjectId: null,
                 lastTimerTick: null,
-                friends: [] 
+                friends: [],
+                ...(profile?.avatar_url ? { avatar: profile.avatar_url } : {}),
+                ...(profile?.title ? { title: profile.title } : {}),
+                ...(profile?.bio ? { bio: profile.bio } : {})
               });
               try {
                 localStorage.setItem('last_user', finalUser);
@@ -611,7 +614,7 @@ export const useStore = create<AppState>()(
           const friendIds = data.map(r => r.user_id_1 === uid ? r.user_id_2 : r.user_id_1);
           const { data: profiles } = await supabase
             .from('profiles')
-            .select('id, username, email, total_hours')
+            .select('id, username, email, total_hours, avatar_url')
             .in('id', friendIds);
             
           if (profiles) {
@@ -622,7 +625,8 @@ export const useStore = create<AppState>()(
               email: p.email,
               role: 'User',
               isOnline: false,
-              totalHours: p.total_hours || 0
+              totalHours: p.total_hours || 0,
+              avatar: p.avatar_url || undefined
             }));
             set({ friends: mapped });
           }
