@@ -244,6 +244,9 @@ export function MeetingRoom() {
       localStreamRef.current.getTracks().forEach(t => t.stop());
       localStreamRef.current = null;
     }
+    if (screenStream) {
+      screenStream.getTracks().forEach(t => t.stop());
+    }
 
     if (callType === 'direct') {
       if (isCaller && remoteParticipants.length === 0) {
@@ -942,6 +945,30 @@ _Ketuk tautan di atas untuk langsung masuk ke sesi._`;
             {displayParticipants.map(p => (
               <VideoTile key={p.id} participant={p} />
             ))}
+          </div>
+        )}
+
+        {/* Solo Waiting Badge */}
+        {participantCount === 1 && !sharingParticipant && (
+          <div
+            style={{
+              position: 'absolute',
+              top: '40px',
+              backgroundColor: 'rgba(9, 13, 22, 0.85)',
+              backdropFilter: 'var(--glass-blur)',
+              padding: '8px 18px',
+              borderRadius: 'var(--radius-pill)',
+              border: '1px solid var(--border-color)',
+              fontSize: '0.875rem',
+              color: 'var(--text-muted)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              zIndex: 10,
+            }}
+          >
+            <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--accent-cyan)' }} />
+            Menunggu peserta lain bergabung... (salin link untuk mengundang)
           </div>
         )}
       </main>

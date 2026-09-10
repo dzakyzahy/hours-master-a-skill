@@ -15,21 +15,34 @@ export function VideoTile({ participant, isDominant = false }: VideoTileProps) {
   // Bind audio stream to dedicated persistent audio element for remote participants
   useEffect(() => {
     if (audioRef.current && participant.stream && !participant.isLocal) {
-      audioRef.current.srcObject = participant.stream;
+      if (audioRef.current.srcObject !== participant.stream) {
+        audioRef.current.srcObject = participant.stream;
+      }
       audioRef.current.muted = participant.isAudioMuted;
       audioRef.current.play().catch(err => {
-        console.warn('[VideoTile] Remote audio play caught:', err);
+        if (err.name !== 'AbortError') {
+          console.warn('[VideoTile] Remote audio play caught:', err);
+        }
       });
     }
   }, [participant.stream, participant.isLocal, participant.isAudioMuted]);
 
   // Bind video stream to video element when video is on
   useEffect(() => {
-    if (videoRef.current && participant.stream && !participant.isVideoOff) {
-      videoRef.current.srcObject = participant.stream;
-      videoRef.current.play().catch(err => {
-        console.warn('[VideoTile] Video play caught:', err);
-      });
+    const video = videoRef.current;
+    if (!video) return;
+
+    if (participant.stream && !participant.isVideoOff) {
+      if (video.srcObject !== participant.stream) {
+        video.srcObject = participant.stream;
+        video.play().catch(e => {
+          if (e.name !== 'AbortError') {
+            console.warn('[VideoTile] Video play caught:', e);
+          }
+        });
+      }
+    } else {
+      video.srcObject = null;
     }
   }, [participant.stream, participant.isVideoOff, participant.isLocal]);
 
