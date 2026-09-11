@@ -2559,3 +2559,37 @@ button, a {
   }
 }
 
+/* ==============================================================================
+   Picture-in-Picture (PiP) Mobile Call Styles
+   ============================================================================== */
+body.pip-mode header,
+body.pip-mode footer,
+body.pip-mode .mobile-bottom-nav,
+body.pip-mode .desktop-sidebar,
+body.pip-mode .offline-banner,
+body.pip-mode .active-call-bar {
+  display: none !important;
+}
+
+body.pip-mode {
+  background-color: #000 !important;
+  overflow: hidden !important;
+}
+
+body.pip-mode main {
+  padding: 0 !important;
+  margin: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  max-width: 100vw !important;
+  max-height: 100vh !important;
+  overflow: hidden !important;
+}
+
+body.pip-mode video {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+}
+
+

@@ -7,6 +7,7 @@ import { getAvatarDisplay } from '../../utils/profilePresets';
 interface VideoTileProps {
   participant: Participant;
   isDominant?: boolean;
+  isPiP?: boolean;
 }
 
 const QUALITY_BARS = { good: 3, fair: 2, poor: 1 } as const;
@@ -17,7 +18,7 @@ const QUALITY_LABEL = {
   poor: 'Koneksi buruk'
 } as const;
 
-export function VideoTile({ participant, isDominant = false }: VideoTileProps) {
+export function VideoTile({ participant, isDominant = false, isPiP = false }: VideoTileProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
 
@@ -66,19 +67,23 @@ export function VideoTile({ participant, isDominant = false }: VideoTileProps) {
 
   return (
     <div
-      className={participant.isSpeaking ? 'speaking-pulse' : ''}
+      className={participant.isSpeaking && !isPiP ? 'speaking-pulse' : ''}
       style={{
         position: 'relative',
         width: '100%',
         height: '100%',
-        minHeight: isDominant ? '240px' : 0,
-        backgroundColor: 'var(--surface-card)',
-        borderRadius: '16px',
+        minHeight: isPiP ? 0 : isDominant ? '240px' : 0,
+        backgroundColor: isPiP ? '#000' : 'var(--surface-card)',
+        borderRadius: isPiP ? 0 : '16px',
         overflow: 'hidden',
-        border: participant.isSpeaking
+        border: isPiP
+          ? 'none'
+          : participant.isSpeaking
           ? '2px solid var(--accent-primary)'
           : '1px solid var(--border-hairline-strong)',
-        boxShadow: participant.isSpeaking
+        boxShadow: isPiP
+          ? 'none'
+          : participant.isSpeaking
           ? '0 0 0 3px rgba(14, 165, 233, 0.25), var(--shadow-md)'
           : 'var(--shadow-md)',
         transition: 'border-color 0.25s ease, box-shadow 0.25s ease',
@@ -173,7 +178,7 @@ export function VideoTile({ participant, isDominant = false }: VideoTileProps) {
       )}
 
       {/* Connection Quality Meter — remote peers only; we have no stats about ourselves. */}
-      {!participant.isLocal && participant.quality && (
+      {!isPiP && !participant.isLocal && participant.quality && (
         <div
           title={QUALITY_LABEL[participant.quality]}
           aria-label={QUALITY_LABEL[participant.quality]}
@@ -209,7 +214,7 @@ export function VideoTile({ participant, isDominant = false }: VideoTileProps) {
       )}
 
       {/* Screen Sharing Indicator Badge */}
-      {participant.isScreenSharing && (
+      {!isPiP && participant.isScreenSharing && (
         <div
           style={{
             position: 'absolute',
@@ -234,69 +239,71 @@ export function VideoTile({ participant, isDominant = false }: VideoTileProps) {
       )}
 
       {/* Participant Name Tag & Audio Status */}
-      <div
-        style={{
-          position: 'absolute',
-          bottom: 14,
-          left: 14,
-          right: 14,
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          pointerEvents: 'none',
-        }}
-      >
+      {!isPiP && (
         <div
           style={{
-            backgroundColor: 'rgba(10, 14, 23, 0.85)',
-            backdropFilter: 'blur(12px)',
-            padding: '5px 14px',
-            borderRadius: '9999px',
-            border: participant.isSpeaking ? '1px solid var(--accent-primary)' : '1px solid rgba(255, 255, 255, 0.15)',
-            fontSize: '0.8125rem',
-            fontWeight: 600,
-            color: '#ffffff',
-            maxWidth: '85%',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
+            position: 'absolute',
+            bottom: 14,
+            left: 14,
+            right: 14,
             display: 'flex',
+            justifyContent: 'space-between',
             alignItems: 'center',
-            gap: '6px',
-            boxShadow: '0 4px 14px rgba(0,0,0,0.4)',
+            pointerEvents: 'none',
           }}
         >
-          <span style={{ color: '#ffffff' }}>{participant.name} {participant.isLocal ? '(You)' : ''}</span>
-          {participant.isSpeaking && (
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '2px', marginLeft: '4px' }}>
-              <span className="sound-bar" style={{ animationDelay: '0ms' }} />
-              <span className="sound-bar" style={{ animationDelay: '180ms' }} />
-              <span className="sound-bar" style={{ animationDelay: '360ms' }} />
-            </span>
-          )}
-        </div>
-
-        {/* Audio Muted Indicator */}
-        {participant.isAudioMuted && (
           <div
             style={{
-              backgroundColor: 'rgba(239, 68, 68, 0.25)',
-              border: '1px solid rgba(239, 68, 68, 0.5)',
-              color: '#fca5a5',
-              padding: '6px 10px',
+              backgroundColor: 'rgba(10, 14, 23, 0.85)',
+              backdropFilter: 'blur(12px)',
+              padding: '5px 14px',
               borderRadius: '9999px',
+              border: participant.isSpeaking ? '1px solid var(--accent-primary)' : '1px solid rgba(255, 255, 255, 0.15)',
+              fontSize: '0.8125rem',
+              fontWeight: 600,
+              color: '#ffffff',
+              maxWidth: '85%',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
-              backdropFilter: 'blur(10px)',
+              gap: '6px',
               boxShadow: '0 4px 14px rgba(0,0,0,0.4)',
             }}
-            title="Microphone muted"
           >
-            <FontAwesomeIcon icon={faMicrophoneSlash} style={{ fontSize: '12px' }} />
+            <span style={{ color: '#ffffff' }}>{participant.name} {participant.isLocal ? '(You)' : ''}</span>
+            {participant.isSpeaking && (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '2px', marginLeft: '4px' }}>
+                <span className="sound-bar" style={{ animationDelay: '0ms' }} />
+                <span className="sound-bar" style={{ animationDelay: '180ms' }} />
+                <span className="sound-bar" style={{ animationDelay: '360ms' }} />
+              </span>
+            )}
           </div>
-        )}
-      </div>
+
+          {/* Audio Muted Indicator */}
+          {participant.isAudioMuted && (
+            <div
+              style={{
+                backgroundColor: 'rgba(239, 68, 68, 0.25)',
+                border: '1px solid rgba(239, 68, 68, 0.5)',
+                color: '#fca5a5',
+                padding: '6px 10px',
+                borderRadius: '9999px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                backdropFilter: 'blur(10px)',
+                boxShadow: '0 4px 14px rgba(0,0,0,0.4)',
+              }}
+              title="Microphone muted"
+            >
+              <FontAwesomeIcon icon={faMicrophoneSlash} style={{ fontSize: '12px' }} />
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

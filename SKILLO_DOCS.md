@@ -72,3 +72,40 @@ Untuk saat ini, kode `App.tsx` sudah siap 100% mendengarkan (`appUrlOpen`) baik 
 
 ## 3. Kompatibilitas Build Web
 Semua plugin *Native* yang dipasang untuk mobile (Capacitor) sudah dilindungi oleh fungsi pendeteksi bawaan `Capacitor.isNativePlatform()`. Jika Anda menjalankan `npm run build` untuk mendeploy versi web murni, fungsi biometrik sidik jari HP tidak akan menyebabkan *crash*, dan akan dialihkan ke metode standar *WebAuthn* untuk PC/Laptop. Web dan aplikasi berjalan sejalan pada satu basis kode (Codebase).
+
+---
+
+## 4. Picture-in-Picture (PiP) Mobile Call — Masalah Tampilan Zoom & Solusinya
+
+### Gejala Masalah / Error:
+Saat masuk ke mode PiP (layar mengambang / floating window) di HP:
+1. Layar PiP bukannya menampilkan wajah peserta secara penuh, melainkan tombol **Exit** merah di header, judul room, dan tombol-tombol kontrol bawah tampak berantakan, menumpuk, dan ter-zoom memenuhi jendela kecil.
+2. Ketika tombol *Minimize* ditekan, tampilan video malah hilang atau berganti ke halaman Dashboard.
+
+### Akar Masalah (Root Cause):
+1. **Activity-wide WebView Scaling:**
+   Pada Android, saat aplikasi masuk mode PiP (`enterPictureInPictureMode`), sistem mengecilkan seluruh Activity beserta WebView menjadi jendela kecil berasio 9:16 (sekitar 150px × 266px). 
+   Karena WebView sebelumnya tidak memiliki deteksi khusus mode PiP, halaman `MeetingRoom` tetap merender seluruh elemen web desktop/mobile:
+   - Header atas (tombol `Exit`, `Minimize`, `P2P Live`, `24ms`).
+   - Banner teks (*"Menunggu peserta lain bergabung..."*).
+   - Footer kontrol panggilan (*mic, camera, hang up*).
+   Elemen-elemen ini memiliki ukuran font dan padding tetap, sehingga mengambil lebih dari 70% area jendela kecil, mengaburkan dan menjepit video kamera.
+2. **Navigasi Ganda (`navigate('/')`):**
+   Tombol *Minimize* sebelumnya mengeksekusi `enterCallPiP()` sekaligus `navigate('/')`. Hal ini menyebabkan React berpindah halaman ke rute utama/dashboard sehingga tampilan panggilan video tertutup oleh halaman dashboard.
+
+### Solusi & Implementasi:
+1. **Android Lifecycle Callback (`MainActivity.java` & `CallPlugin.java`):**
+   - Meng-override method `onPictureInPictureModeChanged(boolean isInPictureInPictureMode, Configuration newConfig)` di `MainActivity.java`.
+   - Mengirim event `pipModeChanged` secara real-time ke JavaScript WebView serta otomatis menambah/menghapus class CSS `document.body.classList.add('pip-mode')`.
+   - Menambahkan dukungan `setAutoEnterEnabled(true)` untuk Android 12+ (API 31+).
+2. **Dedicated Video-Only Arena (`MeetingRoom.tsx`):**
+   - Mendeteksi state `isInPiP` melalui `addPiPListener`.
+   - Ketika `isInPiP === true`, aplikasi tidak lagi merender `<header>`, `<footer>`, maupun banner teks.
+   - Mengaktifkan tampilan video bersih (*pure video*):
+     - Jika sedang melakukan panggilan (2 orang), video peserta remote tampil 100% penuh dengan `object-fit: cover` dan inset kamera lokal kecil di sudut kanan bawah.
+     - Jika sedang sendirian di room, kamera lokal tampil 100% penuh.
+3. **Pembersihan Badges pada Video (`VideoTile.tsx`):**
+   - Menambahkan prop `isPiP={true}` yang secara otomatis menghilangkan *quality meter*, *screen share badge*, *speaking pulse*, dan *name tag* agar fokus visual 100% pada wajah tanpa terganggu teks/badge.
+4. **Perbaikan Tombol Minimize:**
+   - Pada aplikasi native, tombol PiP hanya memanggil `enterCallPiP()` agar jendela langsung mengecil tanpa meninggalkan room panggilan. Navigasi ke `'/'` hanya dijalankan pada platform web browser biasa.
+

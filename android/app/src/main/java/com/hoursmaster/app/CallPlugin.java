@@ -12,6 +12,21 @@ import com.getcapacitor.annotation.CapacitorPlugin;
 @CapacitorPlugin(name = "CallService")
 public class CallPlugin extends Plugin {
     public static boolean isCallActive = false;
+    private static CallPlugin instance;
+
+    @Override
+    public void load() {
+        super.load();
+        instance = this;
+    }
+
+    public static void notifyPipMode(boolean isInPiP) {
+        if (instance != null) {
+            com.getcapacitor.JSObject data = new com.getcapacitor.JSObject();
+            data.put("isInPiP", isInPiP);
+            instance.notifyListeners("pipModeChanged", data);
+        }
+    }
 
     @PluginMethod
     public void start(PluginCall call) {
@@ -44,20 +59,24 @@ public class CallPlugin extends Plugin {
     @PluginMethod
     public void enterPiP(PluginCall call) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            try {
-                android.util.Rational aspectRatio = new android.util.Rational(9, 16);
-                android.app.PictureInPictureParams params = new android.app.PictureInPictureParams.Builder()
-                        .setAspectRatio(aspectRatio)
-                        .build();
-                boolean entered = getActivity().enterPictureInPictureMode(params);
-                if (entered) {
-                    call.resolve();
-                } else {
-                    call.reject("Activity failed to enter PiP mode");
+            getActivity().runOnUiThread(() -> {
+                try {
+                    android.util.Rational aspectRatio = new android.util.Rational(9, 16);
+                    android.app.PictureInPictureParams.Builder builder = new android.app.PictureInPictureParams.Builder()
+                            .setAspectRatio(aspectRatio);
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                        builder.setAutoEnterEnabled(true);
+                    }
+                    boolean entered = getActivity().enterPictureInPictureMode(builder.build());
+                    if (entered) {
+                        call.resolve();
+                    } else {
+                        call.reject("Activity failed to enter PiP mode");
+                    }
+                } catch (Exception e) {
+                    call.reject("Failed to enter PiP: " + e.getMessage(), e);
                 }
-            } catch (Exception e) {
-                call.reject("Failed to enter PiP: " + e.getMessage(), e);
-            }
+            });
         } else {
             call.reject("PiP not supported on this Android version");
         }

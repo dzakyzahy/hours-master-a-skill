@@ -1,12 +1,12 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
-import { ArrowLeft, Wifi, ShieldCheck, Copy } from 'lucide-react';
+import { ArrowLeft, Wifi, ShieldCheck, Copy, Minimize2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useStore } from '../store';
 import { VideoTile } from '../components/meeting/VideoTile';
 import { MeetingControls } from '../components/meeting/MeetingControls';
 import { useWebRTC } from '../hooks/useWebRTC';
-import { startCallForeground, stopCallForeground, enterCallPiP } from '../utils/native';
+import { startCallForeground, stopCallForeground, enterCallPiP, addPiPListener } from '../utils/native';
 import { Capacitor } from '@capacitor/core';
 import type { Participant } from '../types/meeting';
 
@@ -46,6 +46,24 @@ function MeetingRoomInner({ isMeetingRoute }: { isMeetingRoute: boolean }) {
       });
     }
   }, [roomId, location.search, startSession]);
+
+  const [isInPiP, setIsInPiP] = useState(false);
+
+  useEffect(() => {
+    const removePiPListener = addPiPListener((inPip) => {
+      setIsInPiP(inPip);
+      if (inPip) {
+        document.body.classList.add('pip-mode');
+      } else {
+        document.body.classList.remove('pip-mode');
+      }
+    });
+
+    return () => {
+      removePiPListener();
+      document.body.classList.remove('pip-mode');
+    };
+  }, []);
 
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const [isMuted, setIsMuted] = useState(false);
@@ -223,6 +241,55 @@ function MeetingRoomInner({ isMeetingRoute }: { isMeetingRoute: boolean }) {
   const sharingParticipant = displayParticipants.find(p => p.isScreenSharing);
   const participantCount = displayParticipants.length;
 
+  const primaryParticipant = useMemo(() => {
+    if (sharingParticipant) return sharingParticipant;
+    const remoteWithStream = remoteParticipants.find(p => !p.isLocal && p.stream);
+    if (remoteWithStream) return remoteWithStream;
+    if (remoteParticipants.length > 0) return remoteParticipants[0];
+    return localParticipant;
+  }, [sharingParticipant, remoteParticipants, localParticipant]);
+
+  // Clean, Fullscreen Video-Only Arena for Android Picture-in-Picture Mode
+  if (isInPiP && primaryParticipant) {
+    return (
+      <div 
+        className="pip-fullscreen-arena"
+        style={{
+          position: 'fixed',
+          inset: 0,
+          width: '100vw',
+          height: '100vh',
+          zIndex: 99999,
+          backgroundColor: '#000',
+          overflow: 'hidden',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <VideoTile participant={primaryParticipant} isPiP={true} />
+        {remoteParticipants.length > 0 && localParticipant && !primaryParticipant.isLocal && (
+          <div 
+            style={{
+              position: 'absolute',
+              bottom: '12px',
+              right: '12px',
+              width: '26%',
+              aspectRatio: '9/16',
+              borderRadius: '8px',
+              overflow: 'hidden',
+              border: '1px solid rgba(255,255,255,0.4)',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.6)',
+              zIndex: 10,
+            }}
+          >
+            <VideoTile participant={localParticipant} isPiP={true} />
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div
       style={{
@@ -259,16 +326,16 @@ function MeetingRoomInner({ isMeetingRoute }: { isMeetingRoute: boolean }) {
             <button 
               className="btn btn-secondary" 
               onClick={() => {
-                // If native, trigger PiP mode and navigate back, or just PiP
                 if (Capacitor.isNativePlatform()) {
                   enterCallPiP();
+                } else {
+                  navigate('/');
                 }
-                navigate('/');
               }} 
-              title="Kecilkan Layar" 
-              style={{ padding: '8px 12px' }}
+              title="Layar Mengambang (PiP)" 
+              style={{ padding: '8px 12px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
             >
-              Minimize
+              <Minimize2 size={16} /> PiP
             </button>
           </div>
           <div>

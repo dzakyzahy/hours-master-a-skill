@@ -48,6 +48,10 @@ interface CallServicePlugin {
   start(options: { video: boolean }): Promise<void>;
   stop(): Promise<void>;
   enterPiP(): Promise<void>;
+  addListener(
+    eventName: 'pipModeChanged',
+    listenerFunc: (data: { isInPiP: boolean }) => void
+  ): Promise<any>;
 }
 
 const CallService = registerPlugin<CallServicePlugin>('CallService');
@@ -82,8 +86,34 @@ export const canScreenShare =
 export const enterCallPiP = async () => {
   if (!isNative) return;
   try {
+    document.body.classList.add('pip-mode');
     await CallService.enterPiP();
   } catch (err) {
+    document.body.classList.remove('pip-mode');
     console.warn('[native] failed to enter PiP:', err);
   }
+};
+
+/**
+ * Listen to PiP enter/exit events from Android OS lifecycle
+ */
+export const addPiPListener = (callback: (isInPiP: boolean) => void) => {
+  const windowHandler = (e: any) => {
+    callback(!!e.detail?.isInPiP);
+  };
+  window.addEventListener('pipModeChanged', windowHandler);
+
+  let pluginListener: any = null;
+  if (isNative) {
+    try {
+      pluginListener = CallService.addListener('pipModeChanged', (data: { isInPiP: boolean }) => {
+        callback(!!data.isInPiP);
+      });
+    } catch {}
+  }
+
+  return () => {
+    window.removeEventListener('pipModeChanged', windowHandler);
+    pluginListener?.then?.((l: any) => l.remove?.()).catch?.(() => {});
+  };
 };
