@@ -6,6 +6,8 @@ import { useStore } from '../store';
 import { VideoTile } from '../components/meeting/VideoTile';
 import { MeetingControls } from '../components/meeting/MeetingControls';
 import { useWebRTC } from '../hooks/useWebRTC';
+import { startCallForeground, stopCallForeground, enterCallPiP } from '../utils/native';
+import { Capacitor } from '@capacitor/core';
 import type { Participant } from '../types/meeting';
 
 import { useCallSessionStore } from '../utils/callSession';
@@ -26,6 +28,24 @@ function MeetingRoomInner({ isMeetingRoute }: { isMeetingRoute: boolean }) {
   const navigate = useNavigate();
   const { roomId } = useParams<{ roomId?: string }>();
   const { username, userId } = useStore();
+  const location = useLocation();
+
+  const { startSession, endSession } = useCallSessionStore();
+
+  useEffect(() => {
+    if (roomId) {
+      const searchParams = new URLSearchParams(location.search);
+      const callType = (searchParams.get('type') as 'direct' | 'focus') || 'focus';
+      const withUser = searchParams.get('with') || 'Rekan';
+      
+      startSession({
+        roomId,
+        withUser,
+        callType,
+        startedAt: Date.now()
+      });
+    }
+  }, [roomId, location.search, startSession]);
 
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const [isMuted, setIsMuted] = useState(false);
@@ -88,9 +108,15 @@ function MeetingRoomInner({ isMeetingRoute }: { isMeetingRoute: boolean }) {
 
         localStreamRef.current = stream;
         setLocalStream(stream);
+        
+        // Mulai foreground service agar mikrofon/kamera tetap hidup di latar belakang
+        startCallForeground(true);
+
       } catch (err) {
         console.warn('Camera/mic access unavailable or denied (using avatar fallback):', err);
         setIsVideoOff(true);
+        // Tetap nyalakan foreground service audio-only jika fallback jalan
+        startCallForeground(false);
       }
     }
 
@@ -99,6 +125,7 @@ function MeetingRoomInner({ isMeetingRoute }: { isMeetingRoute: boolean }) {
     // Critical Cleanup Guard: Prevent memory leaks when leaving the room
     return () => {
       active = false;
+      stopCallForeground();
       if (localStreamRef.current) {
         localStreamRef.current.getTracks().forEach(t => t.stop());
         localStreamRef.current = null;
@@ -170,6 +197,7 @@ function MeetingRoomInner({ isMeetingRoute }: { isMeetingRoute: boolean }) {
   // Leave Room — stream cleanup cukup di sini
   // useWebRTC cleanup (peer connections) akan handle di unmount-nya sendiri
   const handleLeave = () => {
+    endSession();
     if (localStreamRef.current) {
       localStreamRef.current.getTracks().forEach(t => t.stop());
       localStreamRef.current = null;
@@ -216,6 +244,7 @@ function MeetingRoomInner({ isMeetingRoute }: { isMeetingRoute: boolean }) {
           justifyContent: 'space-between',
           alignItems: 'center',
           padding: '12px 16px',
+          paddingTop: 'calc(12px + env(safe-area-inset-top, 0px))',
           borderBottom: '1px solid var(--border-color)',
           backgroundColor: 'var(--bg-panel)',
           backdropFilter: 'var(--glass-blur)',
@@ -223,9 +252,25 @@ function MeetingRoomInner({ isMeetingRoute }: { isMeetingRoute: boolean }) {
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <button className="btn" onClick={handleLeave} title="Kembali ke Beranda" style={{ padding: '8px 12px' }}>
-            <ArrowLeft size={18} /> Exit
-          </button>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button className="btn" onClick={handleLeave} title="Akhiri Panggilan" style={{ padding: '8px 12px', background: '#ef4444', color: 'white', border: 'none' }}>
+              <ArrowLeft size={18} /> Exit
+            </button>
+            <button 
+              className="btn btn-secondary" 
+              onClick={() => {
+                // If native, trigger PiP mode and navigate back, or just PiP
+                if (Capacitor.isNativePlatform()) {
+                  enterCallPiP();
+                }
+                navigate('/');
+              }} 
+              title="Kecilkan Layar" 
+              style={{ padding: '8px 12px' }}
+            >
+              Minimize
+            </button>
+          </div>
           <div>
             <h2 style={{ margin: 0, fontSize: '1rem', fontWeight: 700 }}>Mastery Focus Room</h2>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.6875rem', color: 'var(--text-muted)' }}>
@@ -239,9 +284,11 @@ function MeetingRoomInner({ isMeetingRoute }: { isMeetingRoute: boolean }) {
               <span>•</span>
               <button 
                 onClick={() => {
+                  const baseUrl = 'https://hours-master-a-skill.vercel.app';
                   let shareLink = window.location.href;
-                  if (shareLink.includes('localhost')) {
-                    shareLink = shareLink.replace(/https?:\/\/localhost(:[0-9]+)?/, 'https://skillo.vercel.app');
+                  if (shareLink.includes('localhost') || shareLink.startsWith('capacitor:') || shareLink.startsWith('file:')) {
+                    const hash = window.location.hash || `#/meeting/${roomId || 'focus-community'}${location.search || ''}`;
+                    shareLink = `${baseUrl}/${hash.startsWith('#') ? hash : '#' + hash}`;
                   }
                   navigator.clipboard.writeText(shareLink);
                   toast.success('Link meeting disalin!');

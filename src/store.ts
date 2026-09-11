@@ -487,8 +487,12 @@ export const useStore = create<AppState>()(
               }
             }
 
+            const origin = (window.location.origin.includes('localhost') || window.location.origin.startsWith('capacitor:'))
+              ? 'https://hours-master-a-skill.vercel.app'
+              : window.location.origin;
+
             const { error } = await supabase.auth.resetPasswordForEmail(targetEmail, {
-              redirectTo: window.location.origin
+              redirectTo: origin
             });
 
             if (error) {

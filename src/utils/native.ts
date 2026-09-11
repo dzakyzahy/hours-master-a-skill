@@ -47,6 +47,7 @@ export const setScreenKeepAwake = async (keepAwake: boolean) => {
 interface CallServicePlugin {
   start(options: { video: boolean }): Promise<void>;
   stop(): Promise<void>;
+  enterPiP(): Promise<void>;
 }
 
 const CallService = registerPlugin<CallServicePlugin>('CallService');
@@ -77,3 +78,12 @@ export const stopCallForeground = async () => {
 /** Android WebView has no getDisplayMedia; screen share there needs a MediaProjection plugin. */
 export const canScreenShare =
   !isNative && typeof navigator !== 'undefined' && !!navigator.mediaDevices?.getDisplayMedia;
+
+export const enterCallPiP = async () => {
+  if (!isNative) return;
+  try {
+    await CallService.enterPiP();
+  } catch (err) {
+    console.warn('[native] failed to enter PiP:', err);
+  }
+};

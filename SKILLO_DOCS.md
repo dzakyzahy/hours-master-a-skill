@@ -20,7 +20,7 @@ Kredensial disimpan lokal di HP. Jika pengguna belum pernah *login manual* di pe
 
 ## 2. Deep Linking (Buka Aplikasi Langsung via Tautan WhatsApp/Web)
 
-Saat ini fitur **Salin Link** pada *Meeting Room* akan menghasilkan tautan seperti `https://skillo.vercel.app/#/meeting/focus-community?type=focus`.
+Saat ini fitur **Salin Link** pada *Meeting Room* akan menghasilkan tautan seperti `https://hours-master-a-skill.vercel.app/#/meeting/focus-community?type=focus`.
 
 Di dalam file konfigurasi Android (`AndroidManifest.xml`), kita sudah menambahkan interceptor bawaan:
 
@@ -29,6 +29,7 @@ Di dalam file konfigurasi Android (`AndroidManifest.xml`), kita sudah menambahka
     <action android:name="android.intent.action.VIEW" />
     <category android:name="android.intent.category.DEFAULT" />
     <category android:name="android.intent.category.BROWSABLE" />
+    <data android:scheme="https" android:host="hours-master-a-skill.vercel.app" />
     <data android:scheme="https" android:host="skillo.app" />
     <data android:scheme="https" android:host="*.vercel.app" />
 </intent-filter>
@@ -43,10 +44,10 @@ Serta Custom Scheme:
 ```
 
 ### Mengapa saat link diklik masih membuka Browser (Chrome) dan bukan Aplikasi?
-Agar tautan berbasis `https://` (seperti `https://skillo.vercel.app`) dapat **langsung dipaksa** membuka aplikasi Android tanpa melalui browser, Google mewajibkan Anda untuk memverifikasi kepemilikan domain web tersebut. Proses ini disebut **Android App Links**.
+Agar tautan berbasis `https://` (seperti `https://hours-master-a-skill.vercel.app`) dapat **langsung dipaksa** membuka aplikasi Android tanpa melalui browser, Google mewajibkan Anda untuk memverifikasi kepemilikan domain web tersebut. Proses ini disebut **Android App Links**.
 
 **Cara Memperbaikinya agar Link Langsung Masuk ke App:**
-1. Anda harus mempublikasikan web Skillo secara online (misal menggunakan Vercel/Netlify dengan domain `skillo.vercel.app` atau `skillo.app`).
+1. Domain web yang digunakan adalah `https://hours-master-a-skill.vercel.app`.
 2. Buat file bernama `assetlinks.json` yang berisi detail aplikasi Anda beserta *SHA256 Fingerprint* dari *Keystore* Android Anda. Formatnya:
    ```json
    [{

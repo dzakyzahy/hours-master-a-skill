@@ -16,6 +16,7 @@
             android:label="@string/title_activity_main"
             android:theme="@style/AppTheme.NoActionBarLaunch"
             android:launchMode="singleTask"
+            android:supportsPictureInPicture="true"
             android:exported="true">
 
             <intent-filter>
@@ -31,11 +32,12 @@
                 <data android:scheme="skillo" />
             </intent-filter>
 
-            <!-- App Links: https://skillo.app and *.vercel.app -->
+            <!-- App Links: https://hours-master-a-skill.vercel.app -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="hours-master-a-skill.vercel.app" />
                 <data android:scheme="https" android:host="skillo.app" />
                 <data android:scheme="https" android:host="*.vercel.app" />
             </intent-filter>
