@@ -1,71 +1,18 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { useNavigate, useParams, useLocation } from 'react-router-dom';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { 
-  faArrowLeft, 
-  faWifi, 
-  faShieldHalved, 
-  faCopy, 
-  faPhoneSlash, 
-  faVideo, 
-  faVideoSlash, 
-  faMicrophone, 
-  faMicrophoneSlash,
-  faUsers,
-  faCircleDot,
-  faShareNodes
-} from '@fortawesome/free-solid-svg-icons';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { ArrowLeft, Wifi, ShieldCheck, Copy } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useStore } from '../store';
 import { VideoTile } from '../components/meeting/VideoTile';
 import { MeetingControls } from '../components/meeting/MeetingControls';
-import { ThemeSwitcher } from '../components/ThemeSwitcher';
 import { useWebRTC } from '../hooks/useWebRTC';
-import { useCallSignaling } from '../hooks/useCallSignaling';
-import { useCallSessionStore } from '../utils/callSession';
-import { AUDIO_CONSTRAINTS, VIDEO_CONSTRAINTS } from '../utils/callQuality';
 import type { Participant } from '../types/meeting';
-
-/** A silent black tile is the worst failure mode; say exactly what to do instead. */
-function mediaErrorMessage(err: unknown): string {
-  const name = (err as { name?: string } | null)?.name;
-  switch (name) {
-    case 'NotAllowedError':
-    case 'SecurityError':
-      return 'Izin kamera/mikrofon ditolak. Buka Pengaturan > Aplikasi > Skillo > Izin, aktifkan Kamera dan Mikrofon, lalu masuk ulang ke room.';
-    case 'NotFoundError':
-    case 'OverconstrainedError':
-      return 'Kamera atau mikrofon tidak ditemukan di perangkat ini. Panggilan tetap bisa lanjut tanpa video.';
-    case 'NotReadableError':
-      return 'Kamera sedang dipakai aplikasi lain. Tutup aplikasi tersebut lalu coba lagi.';
-    default:
-      return 'Tidak bisa mengakses kamera/mikrofon. Panggilan lanjut dengan avatar.';
-  }
-}
 
 export function MeetingRoom() {
   const navigate = useNavigate();
-  const location = useLocation();
   const { roomId } = useParams<{ roomId?: string }>();
-  const { username, userId, avatar: userAvatar } = useStore();
-  const { cancelOutgoingCall } = useCallSignaling();
-  const { session, startSession, endSession, setActiveStream } = useCallSessionStore();
+  const { username, userId } = useStore();
 
-  // Parse query params (HashRouter support)
-  const searchParams = new URLSearchParams(location.search);
-  const match = location.pathname.match(/\/meeting\/([^/?]+)/);
-  const pathRoomId = match ? match[1] : undefined;
-  const effectiveRoomId = roomId || pathRoomId || session?.roomId || 'focus-community';
-  const callType: 'direct' | 'focus' = 
-    (searchParams.get('type') as 'direct' | 'focus') || 
-    session?.callType ||
-    (effectiveRoomId.startsWith('dm_') ? 'direct' : 'focus');
-  const targetFriend = searchParams.get('with') || session?.withUser || '';
-  const isCaller = searchParams.get('isCaller') === 'true';
-  const isInMeetingPath = location.pathname.startsWith('/meeting');
-
-  // State
-  const [hasJoined, setHasJoined] = useState<boolean>(callType === 'direct');
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoOff, setIsVideoOff] = useState(false);
@@ -74,51 +21,35 @@ export function MeetingRoom() {
   const [showDevTools, setShowDevTools] = useState(false);
 
   const localStreamRef = useRef<MediaStream | null>(null);
-  const previewVideoRef = useRef<HTMLVideoElement>(null);
 
-  // WebRTC Hook - only connects when user has actually joined
-  const { remoteParticipants, roomFull, maxParticipants, videoDegraded } = useWebRTC(
-    effectiveRoomId,
+  // Menggabungkan stream agar audio tetap menyala saat screen share
+  const activeStream = useMemo(() => {
+    if (!localStream) return null;
+    const stream = new MediaStream();
+    
+    // Selalu bawa track audio dari kamera
+    localStream.getAudioTracks().forEach(t => stream.addTrack(t));
+    
+    // Bawa track video dari screen share jika aktif, sebaliknya dari kamera
+    if (isScreenSharing && screenStream) {
+      screenStream.getVideoTracks().forEach(t => stream.addTrack(t));
+    } else {
+      localStream.getVideoTracks().forEach(t => stream.addTrack(t));
+    }
+    
+    return stream;
+  }, [localStream, screenStream, isScreenSharing]);
+
+  // WebRTC Hook
+  const { remoteParticipants } = useWebRTC(
+    roomId || 'skillo-global-room',
     userId || 'guest',
     username || 'Guest',
-    isScreenSharing && screenStream ? screenStream : localStream,
-    { isAudioMuted: isMuted, isVideoOff, isScreenSharing },
-    { enabled: hasJoined }
+    activeStream,
+    { isAudioMuted: isMuted, isVideoOff, isScreenSharing }
   );
 
-  // Tell the user why their video vanished; the per-tile meter shows the ongoing state.
-  const degradeNotifiedRef = useRef(false);
-  useEffect(() => {
-    if (videoDegraded === degradeNotifiedRef.current) return;
-    degradeNotifiedRef.current = videoDegraded;
-    toast(
-      videoDegraded
-        ? 'Koneksi tidak stabil. Video dimatikan sementara agar suara tetap jernih.'
-        : 'Koneksi membaik. Video dinyalakan kembali.',
-      { duration: 5000 }
-    );
-  }, [videoDegraded]);
-
-  // Room is at capacity (mesh topology limit) — bounce out instead of showing an empty grid.
-  useEffect(() => {
-    if (!roomFull) return;
-    toast.error(`Room penuh (maksimal ${maxParticipants} peserta).`);
-    navigate('/chat');
-  }, [roomFull, maxParticipants, navigate]);
-
-  // Sync active call session for Floating Call Bar
-  useEffect(() => {
-    if (hasJoined) {
-      startSession({
-        roomId: effectiveRoomId,
-        withUser: (targetFriend || 'Rekan').replace(/^@+/, ''),
-        callType,
-        startedAt: Date.now()
-      });
-    }
-  }, [hasJoined, effectiveRoomId, targetFriend, callType, startSession]);
-
-  // Request camera & mic on mount
+  // Request camera and microphone on mount with proper memory leak cleanup
   useEffect(() => {
     let active = true;
 
@@ -128,39 +59,14 @@ export function MeetingRoom() {
           throw new Error('getUserMedia not supported');
         }
 
-        let stream: MediaStream | null = null;
-
-        // Tier 1: Try optimal video + audio constraints
-        try {
-          stream = await navigator.mediaDevices.getUserMedia({
-            video: VIDEO_CONSTRAINTS,
-            audio: AUDIO_CONSTRAINTS,
-          });
-        } catch (tier1Err) {
-          console.warn('[setupCamera] Optimal constraints failed, attempting standard constraints:', tier1Err);
-          
-          // Tier 2: Try basic video + audio
-          try {
-            stream = await navigator.mediaDevices.getUserMedia({
-              video: true,
-              audio: true,
-            });
-          } catch (tier2Err) {
-            console.warn('[setupCamera] Video+audio failed, falling back to audio-only stream:', tier2Err);
-            
-            // Tier 3: Audio only fallback (guarantees voice mic works even if camera fails/denied)
-            try {
-              stream = await navigator.mediaDevices.getUserMedia({
-                video: false,
-                audio: true,
-              });
-              setIsVideoOff(true);
-            } catch (tier3Err) {
-              console.warn('[setupCamera] Audio-only also failed:', tier3Err);
-              throw tier3Err;
-            }
-          }
-        }
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { 
+            width: { ideal: 1280 }, 
+            height: { ideal: 720 },
+            facingMode: 'user'
+          },
+          audio: true,
+        });
 
         if (!active || !stream) {
           stream?.getTracks().forEach(t => t.stop());
@@ -169,41 +75,23 @@ export function MeetingRoom() {
 
         localStreamRef.current = stream;
         setLocalStream(stream);
-        setActiveStream(stream);
-
-        // If audio-only, ensure isVideoOff is true
-        if (stream.getVideoTracks().length === 0) {
-          setIsVideoOff(true);
-        }
-
-        if (previewVideoRef.current && stream.getVideoTracks().length > 0) {
-          previewVideoRef.current.srcObject = stream;
-        }
       } catch (err) {
         console.warn('Camera/mic access unavailable or denied (using avatar fallback):', err);
         setIsVideoOff(true);
-        toast.error(mediaErrorMessage(err), { duration: 6000 });
       }
     }
 
     setupCamera();
 
+    // Critical Cleanup Guard: Prevent memory leaks when leaving the room
     return () => {
       active = false;
-      // Only stop local tracks if no call session is active
-      if (!useCallSessionStore.getState().session && localStreamRef.current) {
+      if (localStreamRef.current) {
         localStreamRef.current.getTracks().forEach(t => t.stop());
         localStreamRef.current = null;
       }
     };
   }, []);
-
-  // Update preview video srcObject if localStream changes
-  useEffect(() => {
-    if (previewVideoRef.current && localStream && !isVideoOff) {
-      previewVideoRef.current.srcObject = localStream;
-    }
-  }, [localStream, isVideoOff, hasJoined]);
 
   // Toggle Mic
   const handleToggleMic = useCallback(() => {
@@ -235,7 +123,7 @@ export function MeetingRoom() {
   const handleToggleScreenShare = useCallback(async () => {
     if (!isScreenSharing) {
       if (!navigator.mediaDevices?.getDisplayMedia) {
-        toast.error("Screen sharing tidak didukung di perangkat ini.");
+        alert("Screen sharing is not supported on this device/browser.");
         return;
       }
 
@@ -266,22 +154,9 @@ export function MeetingRoom() {
     }
   }, [isScreenSharing, screenStream]);
 
-  // Minimize Call (keeps call and audio running in background with floating bar)
-  const handleMinimize = () => {
-    if (callType === 'direct') {
-      navigate('/chat');
-    } else {
-      navigate('/');
-    }
-  };
-
-  // Leave Room / Explicitly End Call
-  const handleEndCall = () => {
-    // Must come first. effectiveRoomId and targetFriend are derived from `session`, so
-    // clearing it changes the sync effect's deps and re-runs it — which called
-    // startSession() again and resurrected the call a moment after ending it.
-    setHasJoined(false);
-    endSession();
+  // Leave Room — stream cleanup cukup di sini
+  // useWebRTC cleanup (peer connections) akan handle di unmount-nya sendiri
+  const handleLeave = () => {
     if (localStreamRef.current) {
       localStreamRef.current.getTracks().forEach(t => t.stop());
       localStreamRef.current = null;
@@ -289,103 +164,7 @@ export function MeetingRoom() {
     if (screenStream) {
       screenStream.getTracks().forEach(t => t.stop());
     }
-
-    if (callType === 'direct') {
-      if (isCaller && remoteParticipants.length === 0) {
-        cancelOutgoingCall(effectiveRoomId);
-      }
-      navigate('/chat');
-    } else {
-      navigate('/');
-    }
-  };
-
-  // Resolves production base URL (never returns localhost inside Capacitor mobile)
-  const getProductionBaseUrl = (): string => {
-    if (typeof window !== 'undefined' && window.location.origin) {
-      const origin = window.location.origin;
-      if (
-        !origin.includes('localhost') && 
-        !origin.includes('127.0.0.1') && 
-        !origin.startsWith('file:') && 
-        !origin.startsWith('capacitor:')
-      ) {
-        const pathname = window.location.pathname.replace(/\/$/, '');
-        return `${origin}${pathname}`;
-      }
-    }
-    const envUrl = import.meta.env.VITE_APP_URL as string | undefined;
-    if (envUrl && envUrl.trim()) {
-      return envUrl.trim().replace(/\/$/, '');
-    }
-    return 'https://skillo.app';
-  };
-
-  // Copy shareable link helper with robust fallback
-  const handleCopyLink = () => {
-    const baseUrl = getProductionBaseUrl();
-    const query = callType === 'direct' && targetFriend ? `?type=direct&with=${encodeURIComponent(targetFriend)}` : '';
-    const fullUrl = `${baseUrl}/#/meeting/${effectiveRoomId}${query}`;
-
-    const fallbackCopy = () => {
-      try {
-        const tempInput = document.createElement('input');
-        tempInput.value = fullUrl;
-        document.body.appendChild(tempInput);
-        tempInput.select();
-        document.execCommand('copy');
-        document.body.removeChild(tempInput);
-        toast.success('Tautan undangan disalin!');
-      } catch {
-        toast.success(`Tautan: ${fullUrl}`);
-      }
-    };
-
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(fullUrl)
-        .then(() => toast.success('Tautan undangan disalin!'))
-        .catch(() => fallbackCopy());
-    } else {
-      fallbackCopy();
-    }
-  };
-
-  // Direct share to WhatsApp / Native Share Sheet with polished professional wording
-  const handleShareWhatsApp = async () => {
-    const baseUrl = getProductionBaseUrl();
-    const query = callType === 'direct' && targetFriend ? `?type=direct&with=${encodeURIComponent(targetFriend)}` : '';
-    const fullUrl = `${baseUrl}/#/meeting/${effectiveRoomId}${query}`;
-    const deepLink = `skillo://meeting/${effectiveRoomId}${query}`;
-    const roomTitle = effectiveRoomId.replace(/^focus-|^dm_/, '');
-
-    const textMsg = `🎓 *Undangan Sesi Belajar Skillo*
-
-Halo! Saya mengundang Anda untuk bergabung ke ruang kolaborasi di *Skillo*:
-👉 *Ruang:* ${roomTitle}
-
-*Buka langsung di Aplikasi Skillo:*
-${deepLink}
-
-*Atau buka via Web Browser:*
-${fullUrl}
-
-_Ketuk tautan di atas untuk langsung masuk ke sesi._`;
-
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: 'Ruang Kolaborasi Skillo',
-          text: textMsg,
-          url: fullUrl
-        });
-        return;
-      } catch (err: any) {
-        if (err?.name === 'AbortError') return;
-      }
-    }
-
-    const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(textMsg)}`;
-    window.open(waUrl, '_blank');
+    navigate('/');
   };
 
   const localParticipant: Participant = {
@@ -396,7 +175,6 @@ _Ketuk tautan di atas untuk langsung masuk ke sesi._`;
     isScreenSharing: isScreenSharing,
     isSpeaking: false,
     isLocal: true,
-    avatar: userAvatar,
     stream: (isScreenSharing && screenStream) ? screenStream : localStream || undefined,
   };
 
@@ -404,526 +182,96 @@ _Ketuk tautan di atas untuk langsung masuk ke sesi._`;
   const sharingParticipant = displayParticipants.find(p => p.isScreenSharing);
   const participantCount = displayParticipants.length;
 
-  // ==========================================
-  // BACKGROUND / MINIMIZED MODE
-  // (Navigated away from /meeting, but call session is alive)
-  // ==========================================
-  if (!isInMeetingPath && session) {
-    return (
-      <div 
-        style={{
-          position: 'fixed',
-          top: -9999,
-          left: -9999,
-          width: 1,
-          height: 1,
-          opacity: 0.001,
-          pointerEvents: 'none',
-          zIndex: -999
-        }}
-        aria-hidden="true"
-      >
-        {remoteParticipants.map(p => (
-          !p.isLocal && p.stream ? (
-            <audio
-              key={p.id}
-              ref={el => {
-                if (el && p.stream) {
-                  el.srcObject = p.stream;
-                  el.muted = p.isAudioMuted;
-                  el.play().catch(() => {});
-                }
-              }}
-              autoPlay
-              playsInline
-              muted={p.isAudioMuted}
-            />
-          ) : null
-        ))}
-      </div>
-    );
-  }
-
-  // Not on meeting path and no active call -> render nothing
-  if (!isInMeetingPath) {
-    return null;
-  }
-
-  // ==========================================
-  // VIEW 1: PRE-JOIN SCREEN (LOBBY FOCUS ROOM)
-  // ==========================================
-  if (!hasJoined && callType === 'focus') {
-    const userInitials = (username || 'U').substring(0, 2).toUpperCase();
-
-    return (
-      <div className="meeting-lobby-container no-drag">
-        {/* Top Header Navigation */}
-        <div
-          style={{
-            width: '100%',
-            maxWidth: '480px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            marginBottom: '16px',
-            flexShrink: 0,
-          }}
-        >
-          <button
-            type="button"
-            className="header-back-btn"
-            onClick={() => navigate('/')}
-            title="Kembali ke Beranda"
-            aria-label="Kembali ke Beranda"
-          >
-            <FontAwesomeIcon icon={faArrowLeft} style={{ fontSize: '11px' }} />
-            <span className="header-back-label">Kembali</span>
-          </button>
-          <ThemeSwitcher compact={true} />
-        </div>
-
-        {/* Center Lobby Card */}
-        <div className="meeting-lobby-card">
-          {/* Room Header Info */}
-          <div style={{ textAlign: 'center', marginBottom: '18px' }}>
-            <span
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '5px',
-                fontSize: '11px',
-                fontWeight: 700,
-                textTransform: 'uppercase',
-                letterSpacing: '0.08em',
-                color: 'var(--accent-primary)',
-                background: 'var(--surface-input)',
-                padding: '4px 12px',
-                borderRadius: '9999px',
-                marginBottom: '10px',
-                border: '1px solid var(--border-hairline-strong)',
-              }}
-            >
-              <FontAwesomeIcon icon={faUsers} style={{ fontSize: '10px' }} />
-              Mastery Focus Room
-            </span>
-            <h2 style={{ margin: '0 0 6px 0', fontSize: '19px', fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--text-primary)' }}>
-              {roomId ? `Ruang: ${roomId}` : 'Ruang Kolaborasi Belajar'}
-            </h2>
-            <p style={{ margin: 0, fontSize: '12.5px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-              Periksa pratinjau kamera & mikrofon Anda sebelum bergabung dengan rekan tim.
-            </p>
-          </div>
-
-          {/* Camera Preview Box */}
-          <div
-            style={{
-              position: 'relative',
-              width: '100%',
-              aspectRatio: '16/9',
-              borderRadius: '14px',
-              backgroundColor: 'var(--surface-input)',
-              border: '1px solid var(--border-hairline-strong)',
-              overflow: 'hidden',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginBottom: '14px',
-            }}
-          >
-            {localStream && !isVideoOff ? (
-              <video
-                ref={previewVideoRef}
-                autoPlay
-                playsInline
-                muted
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover',
-                  transform: 'scaleX(-1)',
-                }}
-              />
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-                <div
-                  style={{
-                    width: '56px',
-                    height: '56px',
-                    borderRadius: '50%',
-                    backgroundColor: 'var(--surface-card)',
-                    border: '1.5px solid var(--border-hairline-strong)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '18px',
-                    fontWeight: 700,
-                    fontFamily: 'Geist Mono, monospace',
-                    color: 'var(--text-primary)',
-                  }}
-                >
-                  {userInitials}
-                </div>
-                <span style={{ fontSize: '11px', color: 'var(--text-placeholder)', fontWeight: 500 }}>
-                  Kamera Dinonaktifkan
-                </span>
-              </div>
-            )}
-          </div>
-
-          {/* Dedicated Non-Colliding Media Toggles */}
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '10px',
-              width: '100%',
-              marginBottom: '20px',
-            }}
-          >
-            <button
-              type="button"
-              className="btn"
-              onClick={handleToggleMic}
-              style={{
-                flex: 1,
-                height: '42px',
-                borderRadius: '10px',
-                fontSize: '12px',
-                fontWeight: 500,
-                gap: '8px',
-                backgroundColor: isMuted ? 'rgba(239, 68, 68, 0.12)' : 'var(--surface-input)',
-                borderColor: isMuted ? 'var(--color-danger)' : 'var(--border-hairline-strong)',
-                color: isMuted ? 'var(--color-danger)' : 'var(--text-primary)',
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-              title={isMuted ? 'Aktifkan Mikrofon' : 'Bisukan Mikrofon'}
-            >
-              <FontAwesomeIcon icon={isMuted ? faMicrophoneSlash : faMicrophone} style={{ fontSize: '13px' }} />
-              <span>{isMuted ? 'Mikrofon Bisu' : 'Mikrofon Nyala'}</span>
-            </button>
-
-            <button
-              type="button"
-              className="btn"
-              onClick={handleToggleVideo}
-              style={{
-                flex: 1,
-                height: '42px',
-                borderRadius: '10px',
-                fontSize: '12px',
-                fontWeight: 500,
-                gap: '8px',
-                backgroundColor: isVideoOff ? 'rgba(239, 68, 68, 0.12)' : 'var(--surface-input)',
-                borderColor: isVideoOff ? 'var(--color-danger)' : 'var(--border-hairline-strong)',
-                color: isVideoOff ? 'var(--color-danger)' : 'var(--text-primary)',
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-              title={isVideoOff ? 'Nyalakan Kamera' : 'Matikan Kamera'}
-            >
-              <FontAwesomeIcon icon={isVideoOff ? faVideoSlash : faVideo} style={{ fontSize: '13px' }} />
-              <span>{isVideoOff ? 'Kamera Mati' : 'Kamera Nyala'}</span>
-            </button>
-          </div>
-
-          {/* Action Buttons */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%' }}>
-            <button
-              type="button"
-              className="btn-primary"
-              onClick={() => setHasJoined(true)}
-              style={{
-                height: '46px',
-                fontSize: '14px',
-                fontWeight: 600,
-                borderRadius: '10px',
-                width: '100%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
-              }}
-            >
-              <FontAwesomeIcon icon={faVideo} style={{ fontSize: '14px' }} />
-              <span>Gabung Sekarang</span>
-            </button>
-
-            <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
-              <button
-                type="button"
-                className="btn"
-                onClick={handleShareWhatsApp}
-                style={{
-                  flex: 1,
-                  height: '42px',
-                  fontSize: '12px',
-                  borderRadius: '10px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '6px',
-                  background: 'rgba(34, 197, 94, 0.08)',
-                  borderColor: 'rgba(34, 197, 94, 0.3)',
-                  color: '#22c55e',
-                  fontWeight: 600
-                }}
-                title="Kirim tautan undangan langsung ke WhatsApp"
-              >
-                <FontAwesomeIcon icon={faShareNodes} style={{ fontSize: '11px' }} />
-                <span>Kirim ke WhatsApp</span>
-              </button>
-
-              <button
-                type="button"
-                className="btn"
-                onClick={handleCopyLink}
-                style={{
-                  height: '42px',
-                  padding: '0 16px',
-                  fontSize: '12px',
-                  borderRadius: '10px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '6px',
-                  color: 'var(--text-secondary)',
-                }}
-                title="Salin Link Undangan Ruang"
-              >
-                <FontAwesomeIcon icon={faCopy} style={{ fontSize: '11px' }} />
-                <span>Salin</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // =========================================================
-  // VIEW 2: OUTGOING CALL SCREEN (1-on-1 DIRECT CALL WAITING)
-  // =========================================================
-  if (callType === 'direct' && remoteParticipants.length === 0 && isCaller) {
-    const friendInitials = (targetFriend || 'U').substring(0, 2).toUpperCase();
-
-    return (
-      <div 
-        className="no-drag"
-        style={{
-          height: '100dvh',
-          width: '100vw',
-          backgroundColor: 'var(--bg-canvas)',
-          color: 'var(--text-primary)',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: 'max(24px, env(safe-area-inset-top, 0px)) 20px max(24px, env(safe-area-inset-bottom, 0px)) 20px',
-          boxSizing: 'border-box',
-        }}
-      >
-        {/* Top bar info */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: 'var(--text-secondary)' }}>
-          <FontAwesomeIcon icon={faShieldHalved} style={{ color: 'var(--accent-primary)', fontSize: '12px' }} />
-          <span>Panggilan Video Privat 1-on-1 (Terenkripsi E2E)</span>
-        </div>
-
-        {/* Center Calling Avatar */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
-          <div style={{ position: 'relative', marginBottom: '24px' }}>
-            <div
-              className="call-waiting-avatar"
-              style={{
-                width: '100px',
-                height: '100px',
-                borderRadius: '50%',
-                backgroundColor: 'var(--surface-input)',
-                border: '3px solid var(--accent-primary)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '32px',
-                fontWeight: 700,
-                fontFamily: 'Geist Mono, monospace',
-                color: 'var(--text-primary)',
-                boxShadow: '0 0 32px rgba(14, 165, 233, 0.35)',
-              }}
-            >
-              {friendInitials}
-            </div>
-            <span
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                borderRadius: '50%',
-                border: '2px solid var(--accent-primary)',
-                animation: 'ping 2s cubic-bezier(0, 0, 0.2, 1) infinite',
-                opacity: 0.75,
-              }}
-            />
-          </div>
-
-          <h2 style={{ margin: '0 0 6px 0', fontSize: '22px', fontWeight: 700, color: 'var(--text-primary)' }}>
-            {(targetFriend || 'Rekan').replace(/^@+/, '')}
-          </h2>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--accent-primary)', fontSize: '13px', fontWeight: 500 }}>
-            <FontAwesomeIcon icon={faCircleDot} style={{ fontSize: '10px' }} />
-            <span>Memanggil... Menunggu jawaban</span>
-          </div>
-
-          <button
-            type="button"
-            className="btn"
-            onClick={handleShareWhatsApp}
-            style={{
-              marginTop: '20px',
-              fontSize: '11.5px',
-              padding: '8px 16px',
-              borderRadius: '8px',
-              gap: '6px',
-              background: 'rgba(34, 197, 94, 0.08)',
-              borderColor: 'rgba(34, 197, 94, 0.3)',
-              color: '#22c55e',
-              fontWeight: 600
-            }}
-            title="Kirim link panggilan ke WhatsApp rekan"
-          >
-            <FontAwesomeIcon icon={faShareNodes} style={{ fontSize: '11px' }} />
-            <span>Kirim Link ke WhatsApp Rekan</span>
-          </button>
-        </div>
-
-        {/* Cancel Call Button */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-          <button
-            type="button"
-            onClick={handleEndCall}
-            style={{
-              width: '60px',
-              height: '60px',
-              borderRadius: '50%',
-              backgroundColor: '#ef4444',
-              color: '#ffffff',
-              border: 'none',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              boxShadow: '0 8px 24px rgba(239, 68, 68, 0.45)',
-            }}
-            title="Batalkan Panggilan"
-          >
-            <FontAwesomeIcon icon={faPhoneSlash} style={{ fontSize: '20px' }} />
-          </button>
-          <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 500 }}>
-            Batalkan
-          </span>
-        </div>
-      </div>
-    );
-  }
-
-  // ==========================================
-  // VIEW 3: ACTIVE MEETING ROOM / CALL GRID
-  // ==========================================
   return (
     <div
       style={{
         position: 'relative',
         display: 'flex',
         flexDirection: 'column',
-        height: '100dvh',
+        height: '100vh',
         width: '100vw',
         backgroundColor: 'var(--bg-canvas)',
-        color: 'var(--text-primary)',
+        color: 'var(--text-main)',
         overflow: 'hidden',
       }}
       className="no-drag"
     >
       {/* Top Header Bar */}
-      <header className="meeting-header">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0, flex: 1 }}>
-          <button 
-            type="button"
-            className="btn" 
-            onClick={handleMinimize} 
-            title="Kembali (Panggilan tetap aktif di latar)" 
-            style={{ 
-              padding: '6px 10px', 
-              minWidth: '40px',
-              height: '36px',
-              borderRadius: '8px', 
-              background: 'var(--surface-input)', 
-              border: '1px solid var(--border-hairline-strong)', 
-              color: 'var(--text-primary)', 
-              fontSize: '12px',
-              fontWeight: 500,
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '6px',
-              flexShrink: 0,
-            }}
-          >
-            <FontAwesomeIcon icon={faArrowLeft} style={{ fontSize: '11px' }} />
-            <span className="meeting-btn-text">Kembali</span>
+      <header
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          padding: '12px 16px',
+          borderBottom: '1px solid var(--border-color)',
+          backgroundColor: 'var(--bg-panel)',
+          backdropFilter: 'var(--glass-blur)',
+          zIndex: 20,
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <button className="btn" onClick={handleLeave} title="Kembali ke Beranda" style={{ padding: '8px 12px' }}>
+            <ArrowLeft size={18} /> Exit
           </button>
-
-          <div style={{ minWidth: 0, flex: 1 }}>
-            <h2 style={{ margin: 0, fontSize: '13.5px', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.01em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {callType === 'direct' ? (targetFriend || 'Rekan').replace(/^@+/, '') : 'Mastery Focus Room'}
-            </h2>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.6875rem', color: 'var(--text-secondary)', marginTop: '2px', flexWrap: 'nowrap', overflow: 'hidden' }}>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: 'var(--color-success)', fontWeight: 500, whiteSpace: 'nowrap' }}>
-                <FontAwesomeIcon icon={faWifi} style={{ fontSize: '9px' }} /> Live
+          <div>
+            <h2 style={{ margin: 0, fontSize: '1rem', fontWeight: 700 }}>Mastery Focus Room</h2>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.6875rem', color: 'var(--text-muted)' }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: '#4ade80' }}>
+                <Wifi size={11} /> P2P Live
               </span>
               <span>•</span>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: 'var(--accent-primary)', fontWeight: 500, whiteSpace: 'nowrap' }}>
-                <FontAwesomeIcon icon={faShieldHalved} style={{ fontSize: '9px' }} /> E2E
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                <ShieldCheck size={11} className="text-cyan" /> E2E Encrypted
               </span>
-              {callType === 'direct' && remoteParticipants.length > 0 && (
-                <>
-                  <span>•</span>
-                  <span style={{ color: 'var(--color-success)', fontWeight: 500, whiteSpace: 'nowrap' }}>Terhubung</span>
-                </>
-              )}
+              <span>•</span>
+              <button 
+                onClick={() => {
+                  navigator.clipboard.writeText(window.location.href);
+                  toast.success('Link meeting disalin!');
+                }}
+                style={{ 
+                  background: 'var(--surface-input)', 
+                  border: '1px solid var(--border-color)', 
+                  color: 'var(--text-primary)', 
+                  cursor: 'pointer', 
+                  padding: '2px 8px', 
+                  borderRadius: '4px', 
+                  display: 'inline-flex', 
+                  alignItems: 'center', 
+                  gap: '6px',
+                  transition: 'background 0.2s',
+                  fontSize: '0.6875rem',
+                  fontFamily: 'Geist Mono, monospace'
+                }}
+                title="Salin Link"
+                onMouseOver={e => e.currentTarget.style.background = 'var(--surface-hover)'}
+                onMouseOut={e => e.currentTarget.style.background = 'var(--surface-input)'}
+              >
+                <Copy size={11} />
+                {roomId || 'skillo-global-room'}
+              </button>
             </div>
           </div>
         </div>
 
-        {/* Share Link & Theme Switcher */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-          <button 
-            type="button"
-            className="btn" 
-            style={{ 
-              height: '36px',
-              padding: '6px 10px', 
-              fontSize: '11.5px', 
-              fontWeight: 500, 
-              gap: '6px', 
-              borderRadius: '8px', 
-              background: 'var(--surface-input)', 
-              border: '1px solid var(--border-hairline-strong)', 
-              color: 'var(--text-primary)',
-              display: 'inline-flex',
+        {/* Status Indicator */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div
+            style={{
+              display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
+              gap: '8px',
+              padding: '6px 14px',
+              borderRadius: 'var(--radius-pill)',
+              backgroundColor: 'rgba(255, 255, 255, 0.05)',
+              border: '1px solid var(--border-color)',
+              fontSize: '0.8125rem',
+              fontWeight: 600,
             }}
-            onClick={handleShareWhatsApp}
-            title="Bagikan Tautan ke WhatsApp / Rekan"
           >
-            <FontAwesomeIcon icon={faShareNodes} style={{ fontSize: '11px' }} />
-            <span className="meeting-btn-text">Bagikan Link</span>
-          </button>
-          <ThemeSwitcher compact={true} />
+            <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#4ade80' }} />
+            <span className="tabular-nums">24 ms</span>
+          </div>
         </div>
       </header>
 
@@ -931,35 +279,36 @@ _Ketuk tautan di atas untuk langsung masuk ke sesi._`;
       <main
         style={{
           flex: 1,
-          padding: '12px',
+          padding: '20px',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
           overflow: 'hidden',
           position: 'relative',
-          minHeight: 0,
         }}
       >
         {sharingParticipant ? (
-          /* Screen Sharing Asymmetric Layout */
+          /* Screen Sharing Asymmetric Layout: Dominant Screen + Strip */
           <div
             style={{
               width: '100%',
               height: '100%',
               display: 'grid',
-              gridTemplateColumns: window.innerWidth > 768 ? 'minmax(0, 1fr) 260px' : '1fr',
-              gap: '12px',
+              gridTemplateColumns: 'minmax(0, 1fr) 280px',
+              gap: '16px',
             }}
           >
+            {/* Dominant Screen Share Tile */}
             <div style={{ height: '100%', minHeight: 0 }}>
               <VideoTile participant={sharingParticipant} isDominant />
             </div>
 
+            {/* Side Column of Other Participants */}
             <div
               style={{
                 display: 'flex',
-                flexDirection: window.innerWidth > 768 ? 'column' : 'row',
+                flexDirection: 'column',
                 gap: '12px',
                 overflowY: 'auto',
                 height: '100%',
@@ -968,22 +317,37 @@ _Ketuk tautan di atas untuk langsung masuk ke sesi._`;
               {displayParticipants
                 .filter(p => p.id !== sharingParticipant.id)
                 .map(p => (
-                  <div key={p.id} style={{ height: '140px', flexShrink: 0 }}>
+                  <div key={p.id} style={{ height: '160px', flexShrink: 0 }}>
                     <VideoTile participant={p} />
                   </div>
                 ))}
             </div>
           </div>
         ) : (
-          /* Adaptive Participants Grid */
+          /* Adaptive 1 - 4 Participants Grid */
           <div
-            className={`meeting-adaptive-grid ${
-              participantCount === 1
-                ? 'meeting-grid-1'
-                : participantCount === 2
-                ? 'meeting-grid-2'
-                : 'meeting-grid-multi'
-            }`}
+            style={{
+              width: '100%',
+              height: '100%',
+              display: 'grid',
+              gap: '16px',
+              gridTemplateColumns:
+                participantCount === 1
+                  ? '1fr'
+                  : participantCount === 2
+                  ? 'repeat(2, 1fr)'
+                  : participantCount <= 4
+                  ? 'repeat(2, 1fr)'
+                  : 'repeat(3, 1fr)',
+              gridTemplateRows:
+                participantCount <= 2
+                  ? '1fr'
+                  : participantCount <= 4
+                  ? 'repeat(2, 1fr)'
+                  : 'repeat(2, 1fr)',
+              maxWidth: participantCount === 1 ? '700px' : participantCount <= 4 ? '1100px' : '1400px',
+              maxHeight: '800px',
+            }}
           >
             {displayParticipants.map(p => (
               <VideoTile key={p.id} participant={p} />
@@ -1022,9 +386,8 @@ _Ketuk tautan di atas untuk langsung masuk ke sesi._`;
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
-          padding: '8px 12px max(14px, env(safe-area-inset-bottom, 0px)) 12px',
+          padding: '16px',
           zIndex: 30,
-          flexShrink: 0,
         }}
       >
         <MeetingControls
@@ -1035,11 +398,36 @@ _Ketuk tautan di atas untuk langsung masuk ke sesi._`;
           onToggleMic={handleToggleMic}
           onToggleVideo={handleToggleVideo}
           onToggleScreenShare={handleToggleScreenShare}
-          onLeave={handleEndCall}
+          onLeave={handleLeave}
           showDevTools={showDevTools}
           onToggleDevTools={() => setShowDevTools(s => !s)}
         />
       </footer>
+
+      {/* Dev Tools Drawer */}
+      {showDevTools && (
+        <div
+          style={{
+            position: 'absolute',
+            bottom: '90px',
+            backgroundColor: 'var(--bg-panel)',
+            backdropFilter: 'var(--glass-blur)',
+            border: '1px solid var(--border-color)',
+            borderRadius: 'var(--radius-md)',
+            padding: '14px 20px',
+            boxShadow: '0 16px 32px rgba(0,0,0,0.5)',
+            display: 'flex',
+            gap: '10px',
+            alignItems: 'center',
+            zIndex: 60,
+          }}
+        >
+          <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--accent-purple)' }}>
+            WEBRTC DEBUG:
+          </span>
+          <span style={{ fontSize: '0.75rem' }}>Peers connected: {remoteParticipants.length}</span>
+        </div>
+      )}
     </div>
   );
 }
