@@ -10,6 +10,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="color-scheme" content="light dark" />
     <title>Skillo</title>
+    <script>
+      if (typeof global === 'undefined') {
+        window.global = window;
+      }
+      if (typeof process === 'undefined') {
+        window.process = { env: {}, nextTick: function(cb) { setTimeout(cb, 0); } };
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>

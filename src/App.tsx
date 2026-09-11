@@ -473,7 +473,7 @@ export default function App() {
 
       const notifActionListener = LocalNotifications.addListener(
         'localNotificationActionPerformed',
-        (action) => {
+        (action: any) => {
           const extra = action.notification?.extra;
           if (extra?.roomId) {
             const caller = extra.callerUsername || 'Rekan';

@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { supabase } from '../supabaseClient';
 import type { Participant } from '../types/meeting';
-import Peer, { Instance as PeerInstance } from 'simple-peer';
+import Peer from 'simple-peer';
+import type { Instance as PeerInstance } from 'simple-peer';
 
 // Menggunakan global polyfill workaround jika Vite tidak memiliki 'process' atau 'global'
 if (typeof global === 'undefined') {
@@ -151,12 +152,12 @@ export function useWebRTC(
       });
 
       // 1. Tangkap Sinyal dari simple-peer dan kirim ke remote
-      peer.on('signal', (signalData) => {
+      peer.on('signal', (signalData: any) => {
         sendSignal('signal', peerId, signalData);
       });
 
       // 2. Tangkap Stream dari remote
-      peer.on('stream', (remoteStream) => {
+      peer.on('stream', (remoteStream: any) => {
         setRemoteParticipants(prev =>
           prev.map(p =>
             p.id === peerId ? { ...p, stream: remoteStream } : p
@@ -165,7 +166,7 @@ export function useWebRTC(
       });
 
       // 3. Handle penambahan track (terkadang stream baru tiba berupa track tambahan)
-      peer.on('track', (track, stream) => {
+      peer.on('track', (_track: any, stream: any) => {
         setRemoteParticipants(prev =>
           prev.map(p =>
             p.id === peerId ? { ...p, stream: stream } : p
@@ -179,7 +180,7 @@ export function useWebRTC(
         removePeer(peerId);
       });
 
-      peer.on('error', (err) => {
+      peer.on('error', (err: any) => {
         console.warn(`[WebRTC] Peer connection error (${peerId}):`, err);
         removePeer(peerId);
       });

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { ArrowLeft, Wifi, ShieldCheck, Copy } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useStore } from '../store';
@@ -8,7 +8,21 @@ import { MeetingControls } from '../components/meeting/MeetingControls';
 import { useWebRTC } from '../hooks/useWebRTC';
 import type { Participant } from '../types/meeting';
 
+import { useCallSessionStore } from '../utils/callSession';
+
 export function MeetingRoom() {
+  const location = useLocation();
+  const { session } = useCallSessionStore();
+  const isMeetingRoute = location.pathname.startsWith('/meeting');
+
+  if (!isMeetingRoute && !session) {
+    return null;
+  }
+
+  return <MeetingRoomInner isMeetingRoute={isMeetingRoute} />;
+}
+
+function MeetingRoomInner({ isMeetingRoute }: { isMeetingRoute: boolean }) {
   const navigate = useNavigate();
   const { roomId } = useParams<{ roomId?: string }>();
   const { username, userId } = useStore();
@@ -25,17 +39,18 @@ export function MeetingRoom() {
   // Menggabungkan stream agar audio tetap menyala saat screen share
   const activeStream = useMemo(() => {
     if (!localStream) return null;
+    
+    // Jika tidak screen share, cukup gunakan localStream aslinya (menghindari black screen di Android WebView akibat cloning track)
+    if (!isScreenSharing || !screenStream) {
+      return localStream;
+    }
+
     const stream = new MediaStream();
     
-    // Selalu bawa track audio dari kamera
+    // Bawa track audio dari kamera
     localStream.getAudioTracks().forEach(t => stream.addTrack(t));
-    
-    // Bawa track video dari screen share jika aktif, sebaliknya dari kamera
-    if (isScreenSharing && screenStream) {
-      screenStream.getVideoTracks().forEach(t => stream.addTrack(t));
-    } else {
-      localStream.getVideoTracks().forEach(t => stream.addTrack(t));
-    }
+    // Bawa track video dari screen share
+    screenStream.getVideoTracks().forEach(t => stream.addTrack(t));
     
     return stream;
   }, [localStream, screenStream, isScreenSharing]);
@@ -61,8 +76,6 @@ export function MeetingRoom() {
 
         const stream = await navigator.mediaDevices.getUserMedia({
           video: { 
-            width: { ideal: 1280 }, 
-            height: { ideal: 720 },
             facingMode: 'user'
           },
           audio: true,
@@ -185,11 +198,11 @@ export function MeetingRoom() {
   return (
     <div
       style={{
-        position: 'relative',
-        display: 'flex',
+        position: 'fixed',
+        inset: 0,
+        zIndex: 50,
+        display: isMeetingRoute ? 'flex' : 'none',
         flexDirection: 'column',
-        height: '100vh',
-        width: '100vw',
         backgroundColor: 'var(--bg-canvas)',
         color: 'var(--text-main)',
         overflow: 'hidden',
@@ -226,7 +239,11 @@ export function MeetingRoom() {
               <span>•</span>
               <button 
                 onClick={() => {
-                  navigator.clipboard.writeText(window.location.href);
+                  let shareLink = window.location.href;
+                  if (shareLink.includes('localhost')) {
+                    shareLink = shareLink.replace(/https?:\/\/localhost(:[0-9]+)?/, 'https://skillo.vercel.app');
+                  }
+                  navigator.clipboard.writeText(shareLink);
                   toast.success('Link meeting disalin!');
                 }}
                 style={{ 

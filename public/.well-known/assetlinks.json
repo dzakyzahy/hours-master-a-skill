@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.hoursmaster.app",
+      "sha256_cert_fingerprints": [
+        "86:E2:49:06:FD:FF:BD:9F:4A:D6:93:E5:FC:86:6A:58:7F:31:65:D9:BB:C7:38:AB:9C:D1:C8:C6:12:5D:61:AC"
+      ]
+    }
+  }
+]
