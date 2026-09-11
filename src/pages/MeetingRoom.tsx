@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Wifi, ShieldCheck, Copy } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -22,12 +22,30 @@ export function MeetingRoom() {
 
   const localStreamRef = useRef<MediaStream | null>(null);
 
+  // Menggabungkan stream agar audio tetap menyala saat screen share
+  const activeStream = useMemo(() => {
+    if (!localStream) return null;
+    const stream = new MediaStream();
+    
+    // Selalu bawa track audio dari kamera
+    localStream.getAudioTracks().forEach(t => stream.addTrack(t));
+    
+    // Bawa track video dari screen share jika aktif, sebaliknya dari kamera
+    if (isScreenSharing && screenStream) {
+      screenStream.getVideoTracks().forEach(t => stream.addTrack(t));
+    } else {
+      localStream.getVideoTracks().forEach(t => stream.addTrack(t));
+    }
+    
+    return stream;
+  }, [localStream, screenStream, isScreenSharing]);
+
   // WebRTC Hook
   const { remoteParticipants } = useWebRTC(
     roomId || 'skillo-global-room',
     userId || 'guest',
     username || 'Guest',
-    isScreenSharing && screenStream ? screenStream : localStream,
+    activeStream,
     { isAudioMuted: isMuted, isVideoOff, isScreenSharing }
   );
 
@@ -42,7 +60,11 @@ export function MeetingRoom() {
         }
 
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: { width: { ideal: 1280 }, height: { ideal: 720 } },
+          video: { 
+            width: { ideal: 1280 }, 
+            height: { ideal: 720 },
+            facingMode: 'user'
+          },
           audio: true,
         });
 

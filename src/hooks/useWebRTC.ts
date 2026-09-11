@@ -1,28 +1,20 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { supabase } from '../supabaseClient';
 import type { Participant } from '../types/meeting';
+import Peer, { Instance as PeerInstance } from 'simple-peer';
 
-/**
- * useWebRTC — Production-grade P2P WebRTC Hook
- *
- * Inspirasi arsitektur dari:
- * - holtwick/briefing (lightweight P2P, clean signaling)
- * - miroslavpejic85/mirotalk (robust renegotiation, STUN/TURN handling)
- *
- * Perbaikan utama vs versi sebelumnya:
- * 1. Menggunakan `onnegotiationneeded` untuk renegosiasi otomatis (fix screen share bug)
- * 2. ICE servers dengan free TURN fallback via metered.ca
- * 3. Cleanup yang lebih bersih dan aman dari memory leak
- * 4. Signaling yang lebih robust dengan queue ICE candidate sebelum remoteDesc di-set
- * 5. Heartbeat detection peer mati (via connection state, bukan hanya ICE)
- */
+// Menggunakan global polyfill workaround jika Vite tidak memiliki 'process' atau 'global'
+if (typeof global === 'undefined') {
+  window.global = window;
+}
+if (typeof process === 'undefined') {
+  window.process = { env: {} } as any;
+}
 
 type SignalType =
   | 'peer-joined'
   | 'peer-left'
-  | 'offer'
-  | 'answer'
-  | 'ice-candidate'
+  | 'signal'
   | 'status-update';
 
 interface SignalPayload {
@@ -33,44 +25,27 @@ interface SignalPayload {
   data?: any;
 }
 
-/**
- * ICE Servers Configuration (mirip MiroTalk):
- * - Primer: Google & Cloudflare STUN (gratis, latensi rendah)
- * - Fallback: TURN via metered.ca (untuk jaringan NAT ketat, misal 4G/kampus)
- *
- * Untuk production: ganti dengan kredensial TURN Anda sendiri
- * dari https://www.metered.ca/tools/openrelay/ atau Twilio
- */
-const ICE_SERVERS: RTCConfiguration = {
-  iceServers: [
-    { urls: 'stun:stun.l.google.com:19302' },
-    { urls: 'stun:stun1.l.google.com:19302' },
-    { urls: 'stun:openrelay.metered.ca:80' },
-    {
-      urls: 'turn:openrelay.metered.ca:80',
-      username: 'openrelayproject',
-      credential: 'openrelayproject',
-    },
-    {
-      urls: 'turn:openrelay.metered.ca:443',
-      username: 'openrelayproject',
-      credential: 'openrelayproject',
-    },
-    {
-      urls: 'turns:openrelay.metered.ca:443',
-      username: 'openrelayproject',
-      credential: 'openrelayproject',
-    },
-  ],
-  iceCandidatePoolSize: 10,
-};
-
 interface PeerState {
-  connection: RTCPeerConnection;
-  isNegotiating: boolean;
-  iceCandidateQueue: RTCIceCandidateInit[];
-  hasRemoteDescription: boolean;
+  peer: PeerInstance;
+  currentStream: MediaStream;
 }
+
+// STUN/TURN Servers untuk NAT Traversal
+const ICE_SERVERS = [
+  { urls: 'stun:stun.l.google.com:19302' },
+  { urls: 'stun:stun1.l.google.com:19302' },
+  { urls: 'stun:openrelay.metered.ca:80' },
+  {
+    urls: 'turn:openrelay.metered.ca:80',
+    username: 'openrelayproject',
+    credential: 'openrelayproject',
+  },
+  {
+    urls: 'turn:openrelay.metered.ca:443',
+    username: 'openrelayproject',
+    credential: 'openrelayproject',
+  },
+];
 
 export function useWebRTC(
   roomId: string,
@@ -80,19 +55,24 @@ export function useWebRTC(
   localStatus: { isAudioMuted: boolean; isVideoOff: boolean; isScreenSharing: boolean }
 ) {
   const [remoteParticipants, setRemoteParticipants] = useState<Participant[]>([]);
-
-  // Menyimpan RTCPeerConnection + metadata per peer
+  
   const peersRef = useRef<Map<string, PeerState>>(new Map());
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
-  // Ref untuk stream lokal terkini (agar closure tidak stale)
+  // Menyimpan referensi stream & status terbaru agar tidak basi di dalam callback
   const localStreamRef = useRef<MediaStream | null>(localStream);
+  const localStatusRef = useRef(localStatus);
+  
   useEffect(() => {
     localStreamRef.current = localStream;
   }, [localStream]);
 
+  useEffect(() => {
+    localStatusRef.current = localStatus;
+  }, [localStatus]);
+
   // ================================================================
-  // Helper: Kirim sinyal via Supabase Realtime Broadcast
+  // Helper: Kirim Sinyal via Supabase
   // ================================================================
   const sendSignal = useCallback(
     (type: SignalType, targetId?: string, data?: any) => {
@@ -113,147 +93,46 @@ export function useWebRTC(
   );
 
   // ================================================================
-  // Helper: Hapus peer dari state dan ref
+  // Helper: Hapus Peer
   // ================================================================
   const removePeer = useCallback((peerId: string) => {
     const peerState = peersRef.current.get(peerId);
     if (peerState) {
-      peerState.connection.close();
+      peerState.peer.destroy();
       peersRef.current.delete(peerId);
     }
     setRemoteParticipants(prev => prev.filter(p => p.id !== peerId));
   }, []);
 
   // ================================================================
-  // Helper: Flush ICE candidate queue setelah remoteDesc di-set
-  // ================================================================
-  const flushIceCandidateQueue = useCallback(async (peerId: string) => {
-    const peerState = peersRef.current.get(peerId);
-    if (!peerState || !peerState.hasRemoteDescription) return;
-
-    for (const candidate of peerState.iceCandidateQueue) {
-      try {
-        await peerState.connection.addIceCandidate(new RTCIceCandidate(candidate));
-      } catch (e) {
-        console.warn(`[WebRTC] Error adding queued ICE candidate from ${peerId}:`, e);
-      }
-    }
-    peerState.iceCandidateQueue = [];
-  }, []);
-
-  // ================================================================
-  // Core: Buat RTCPeerConnection baru untuk satu peer
+  // Core: Buat Koneksi Peer Baru Menggunakan simple-peer
   // ================================================================
   const createPeer = useCallback(
-    (peerId: string, peerName: string, _isInitiator: boolean): PeerState => {
-      // Jika sudah ada, tutup dulu yang lama
+    (peerId: string, peerName: string, isInitiator: boolean) => {
+      // Bersihkan jika sudah ada instance
       if (peersRef.current.has(peerId)) {
-        peersRef.current.get(peerId)!.connection.close();
+        peersRef.current.get(peerId)?.peer.destroy();
         peersRef.current.delete(peerId);
       }
 
-      const connection = new RTCPeerConnection(ICE_SERVERS);
+      const streamToPass = localStreamRef.current || undefined;
 
-      const peerState: PeerState = {
-        connection,
-        isNegotiating: false,
-        iceCandidateQueue: [],
-        hasRemoteDescription: false,
-      };
-      peersRef.current.set(peerId, peerState);
-
-      // --- Tambahkan track lokal ke koneksi ---
-      const currentStream = localStreamRef.current;
-      if (currentStream) {
-        currentStream.getTracks().forEach(track => {
-          connection.addTrack(track, currentStream);
-        });
-      }
-
-      // --- ICE Candidate: kirim saat kandidat tersedia ---
-      connection.onicecandidate = (event) => {
-        if (event.candidate) {
-          sendSignal('ice-candidate', peerId, event.candidate.toJSON());
+      const peer = new Peer({
+        initiator: isInitiator,
+        trickle: true,
+        stream: streamToPass,
+        config: {
+          iceServers: ICE_SERVERS
         }
-      };
+      });
 
-      // --- Renegosiasi otomatis (MiroTalk pattern) ---
-      // Event ini terpicu otomatis saat track ditambah/dihapus (misal: screen share)
-      connection.onnegotiationneeded = async () => {
-        const state = peersRef.current.get(peerId);
-        if (!state || state.isNegotiating) return;
+      // Simpan state peer
+      peersRef.current.set(peerId, {
+        peer,
+        currentStream: streamToPass as MediaStream,
+      });
 
-        try {
-          state.isNegotiating = true;
-          const offer = await connection.createOffer();
-          // Cegah race condition: cek apakah state masih stable
-          if (connection.signalingState !== 'stable') return;
-          await connection.setLocalDescription(offer);
-          sendSignal('offer', peerId, connection.localDescription?.toJSON());
-        } catch (e) {
-          console.error(`[WebRTC] onnegotiationneeded error for ${peerId}:`, e);
-        } finally {
-          const s = peersRef.current.get(peerId);
-          if (s) s.isNegotiating = false;
-        }
-      };
-
-      // --- Remote Track tiba: update state partisipan ---
-      connection.ontrack = (event) => {
-        const remoteStream = event.streams[0];
-        if (!remoteStream) return;
-
-        setRemoteParticipants(prev => {
-          const existing = prev.find(p => p.id === peerId);
-          if (existing) {
-            return prev.map(p =>
-              p.id === peerId ? { ...p, stream: remoteStream } : p
-            );
-          }
-          return [
-            ...prev,
-            {
-              id: peerId,
-              name: peerName,
-              isLocal: false,
-              isAudioMuted: false,
-              isVideoOff: false,
-              isScreenSharing: false,
-              isSpeaking: false,
-              stream: remoteStream,
-            },
-          ];
-        });
-      };
-
-      // --- Connection State: hapus peer jika terputus ---
-      connection.onconnectionstatechange = () => {
-        const state = connection.connectionState;
-        console.log(`[WebRTC] Peer ${peerId} connection state: ${state}`);
-        if (state === 'failed' || state === 'closed') {
-          removePeer(peerId);
-        }
-      };
-
-      // --- ICE Connection State fallback ---
-      connection.oniceconnectionstatechange = () => {
-        const state = connection.iceConnectionState;
-        if (state === 'failed') {
-          console.warn(`[WebRTC] ICE failed for ${peerId}, attempting restart...`);
-          connection.restartIce();
-        }
-        if (state === 'disconnected') {
-          // Beri waktu 5 detik sebelum hapus, bisa reconnect
-          setTimeout(() => {
-            if (connection.iceConnectionState === 'disconnected' ||
-                connection.iceConnectionState === 'failed') {
-              removePeer(peerId);
-            }
-          }, 5000);
-        }
-      };
-
-      // Tambahkan placeholder partisipan (nama visible walau stream belum tiba)
+      // Tambahkan placeholder partisipan
       setRemoteParticipants(prev => {
         if (prev.find(p => p.id === peerId)) return prev;
         return [
@@ -266,31 +145,58 @@ export function useWebRTC(
             isVideoOff: false,
             isScreenSharing: false,
             isSpeaking: false,
+            stream: undefined,
           },
         ];
       });
 
-      return peerState;
+      // 1. Tangkap Sinyal dari simple-peer dan kirim ke remote
+      peer.on('signal', (signalData) => {
+        sendSignal('signal', peerId, signalData);
+      });
+
+      // 2. Tangkap Stream dari remote
+      peer.on('stream', (remoteStream) => {
+        setRemoteParticipants(prev =>
+          prev.map(p =>
+            p.id === peerId ? { ...p, stream: remoteStream } : p
+          )
+        );
+      });
+
+      // 3. Handle penambahan track (terkadang stream baru tiba berupa track tambahan)
+      peer.on('track', (track, stream) => {
+        setRemoteParticipants(prev =>
+          prev.map(p =>
+            p.id === peerId ? { ...p, stream: stream } : p
+          )
+        );
+      });
+
+      // 4. Cleanup saat peer tertutup / error
+      peer.on('close', () => {
+        console.log(`[WebRTC] Peer connection closed: ${peerId}`);
+        removePeer(peerId);
+      });
+
+      peer.on('error', (err) => {
+        console.warn(`[WebRTC] Peer connection error (${peerId}):`, err);
+        removePeer(peerId);
+      });
+
+      return peer;
     },
     [sendSignal, removePeer]
   );
 
   // ================================================================
-  // Sync status mic/video/screen ke semua peer
-  // ================================================================
-  useEffect(() => {
-    if (!channelRef.current) return;
-    sendSignal('status-update', undefined, localStatus);
-  }, [localStatus.isAudioMuted, localStatus.isVideoOff, localStatus.isScreenSharing, sendSignal]);
-
-  // ================================================================
-  // Main Effect: Setup Supabase channel & signaling handler
+  // Efek Utama: Inisialisasi Supabase Channel
   // ================================================================
   useEffect(() => {
     if (!roomId || !localUserId) return;
 
-    // Reset state untuk room baru
-    peersRef.current.forEach(ps => ps.connection.close());
+    // Bersihkan room sebelumnya
+    peersRef.current.forEach(({ peer }) => peer.destroy());
     peersRef.current.clear();
     setRemoteParticipants([]);
 
@@ -302,12 +208,11 @@ export function useWebRTC(
     });
     channelRef.current = channel;
 
-    channel.on('broadcast', { event: 'webrtc_signal' }, async ({ payload }) => {
+    channel.on('broadcast', { event: 'webrtc_signal' }, ({ payload }) => {
       const signal = payload as SignalPayload;
 
-      // Abaikan sinyal yang bukan untuk kita
+      // Filter pesan untuk target tertentu (bukan untuk kita) dan abaikan dari diri sendiri
       if (signal.targetId && signal.targetId !== localUserId) return;
-      // Abaikan sinyal dari diri sendiri
       if (signal.senderId === localUserId) return;
 
       const peerId = signal.senderId;
@@ -316,10 +221,10 @@ export function useWebRTC(
       switch (signal.type) {
         case 'peer-joined': {
           console.log(`[WebRTC] Peer joined: ${peerName} (${peerId})`);
-          // Saya yang sudah ada di room: buat offer ke peer baru
+          // Kita sudah di room, maka kita yang membuat offer (initiator: true)
           createPeer(peerId, peerName, true);
-          // Kirim status saya ke peer yang baru join
-          sendSignal('status-update', peerId, localStatus);
+          // Kirim status lokal ke pendatang baru
+          sendSignal('status-update', peerId, localStatusRef.current);
           break;
         }
 
@@ -329,63 +234,18 @@ export function useWebRTC(
           break;
         }
 
-        case 'offer': {
-          console.log(`[WebRTC] Received offer from: ${peerName}`);
+        case 'signal': {
           let peerState = peersRef.current.get(peerId);
-
-          // Jika sudah ada koneksi dan sedang bernegosiasi, cek "glare condition"
-          // (kedua sisi mengirim offer bersamaan)
-          if (peerState && peerState.connection.signalingState !== 'stable') {
-            // Rollback local description dan lanjutkan dengan offer masuk
-            await peerState.connection.setLocalDescription({ type: 'rollback' });
-          }
-
+          // Jika tidak ada koneksi, ini berarti kita menerima offer sebagai penerima (initiator: false)
           if (!peerState) {
-            peerState = createPeer(peerId, peerName, false);
-          }
-
-          await peerState.connection.setRemoteDescription(
-            new RTCSessionDescription(signal.data)
-          );
-          peerState.hasRemoteDescription = true;
-          await flushIceCandidateQueue(peerId);
-
-          const answer = await peerState.connection.createAnswer();
-          await peerState.connection.setLocalDescription(answer);
-          sendSignal('answer', peerId, peerState.connection.localDescription?.toJSON());
-          break;
-        }
-
-        case 'answer': {
-          console.log(`[WebRTC] Received answer from: ${peerName}`);
-          const peerState = peersRef.current.get(peerId);
-          if (peerState) {
-            if (peerState.connection.signalingState === 'have-local-offer') {
-              await peerState.connection.setRemoteDescription(
-                new RTCSessionDescription(signal.data)
-              );
-              peerState.hasRemoteDescription = true;
-              await flushIceCandidateQueue(peerId);
-            }
-            peerState.isNegotiating = false;
-          }
-          break;
-        }
-
-        case 'ice-candidate': {
-          const peerState = peersRef.current.get(peerId);
-          if (!peerState || !signal.data) return;
-
-          if (!peerState.hasRemoteDescription) {
-            // Queue sampai remote description di-set
-            peerState.iceCandidateQueue.push(signal.data);
+            const peer = createPeer(peerId, peerName, false);
+            peer.signal(signal.data);
           } else {
+            // Lanjutkan negosiasi
             try {
-              await peerState.connection.addIceCandidate(
-                new RTCIceCandidate(signal.data)
-              );
-            } catch (e) {
-              console.warn(`[WebRTC] Error adding ICE candidate from ${peerId}:`, e);
+              peerState.peer.signal(signal.data);
+            } catch (err) {
+              console.warn(`[WebRTC] Error processing signal for ${peerId}:`, err);
             }
           }
           break;
@@ -412,45 +272,69 @@ export function useWebRTC(
     channel.subscribe((status) => {
       if (status === 'SUBSCRIBED') {
         console.log(`[WebRTC] Joined room: ${roomId}`);
-        // Umumkan ke semua orang di room bahwa kita telah bergabung
+        // Umumkan kehadiran ke semua peer
         sendSignal('peer-joined');
       }
     });
 
-    // Cleanup saat komponen unmount atau roomId berubah
     return () => {
       sendSignal('peer-left');
       channel.unsubscribe();
-      peersRef.current.forEach(ps => ps.connection.close());
+      peersRef.current.forEach(({ peer }) => peer.destroy());
       peersRef.current.clear();
       channelRef.current = null;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [roomId, localUserId]);
+  }, [roomId, localUserId, createPeer, sendSignal, removePeer]);
 
   // ================================================================
-  // Track Replacement: Saat stream lokal berubah (camera/screen share)
-  // Menggunakan replaceTrack (bukan addTrack) untuk menghindari renegosiasi
-  // yang tidak perlu — tapi kalau track baru, perlu addTrack.
+  // Efek: Broadcast Status Update saat mic/video/screen berubah
+  // ================================================================
+  useEffect(() => {
+    if (!channelRef.current) return;
+    sendSignal('status-update', undefined, localStatus);
+  }, [localStatus.isAudioMuted, localStatus.isVideoOff, localStatus.isScreenSharing, sendSignal]);
+
+  // ================================================================
+  // Efek: Replace Track saat Stream Lokal Berubah (Camera <-> Screen)
   // ================================================================
   useEffect(() => {
     if (!localStream) return;
 
-    peersRef.current.forEach(({ connection }) => {
-      const senders = connection.getSenders();
-      localStream.getTracks().forEach(track => {
-        const sender = senders.find(s => s.track?.kind === track.kind);
-        if (sender) {
-          // Track dengan kind yang sama sudah ada → replace (tidak perlu renegosiasi)
-          sender.replaceTrack(track).catch(e =>
-            console.warn('[WebRTC] replaceTrack failed:', e)
-          );
-        } else {
-          // Track baru (misal: screen share punya video track berbeda) → add
-          // Ini akan memicu onnegotiationneeded secara otomatis
-          connection.addTrack(track, localStream);
+    peersRef.current.forEach((peerState, peerId) => {
+      const { peer, currentStream: oldStream } = peerState;
+      if (!oldStream || !peer.connected) {
+        // Jika belum terhubung dengan baik atau stream lama kosong, kita bisa langsung set stream.
+        // Simple-peer akan mengurus onnegotiationneeded.
+        // Tapi umumnya, tambahkan stream baru
+        if (!oldStream && localStream) {
+          peer.addStream(localStream);
+          peerState.currentStream = localStream;
         }
-      });
+        return;
+      }
+
+      // Gunakan replaceTrack untuk mengganti track video/audio tanpa memutus koneksi
+      try {
+        oldStream.getTracks().forEach(oldTrack => {
+          const newTrack = localStream.getTracks().find(t => t.kind === oldTrack.kind);
+          if (newTrack) {
+            peer.replaceTrack(oldTrack, newTrack, oldStream);
+          } else {
+            peer.removeTrack(oldTrack, oldStream);
+          }
+        });
+
+        // Tambahkan track baru jika di stream lama tidak ada
+        localStream.getTracks().forEach(newTrack => {
+          if (!oldStream.getTracks().find(t => t.kind === newTrack.kind)) {
+            peer.addTrack(newTrack, oldStream);
+          }
+        });
+
+        peerState.currentStream = localStream;
+      } catch (err) {
+        console.warn(`[WebRTC] Failed to replace tracks for ${peerId}:`, err);
+      }
     });
   }, [localStream]);
 
