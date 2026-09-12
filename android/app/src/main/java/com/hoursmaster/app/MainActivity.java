@@ -14,6 +14,17 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(CallPlugin.class);
         super.onCreate(savedInstanceState);
         updatePipAutoEnter(false);
+        if (bridge != null && bridge.getWebView() != null) {
+            bridge.getWebView().getSettings().setMediaPlaybackRequiresUserGesture(false);
+        }
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        if (bridge != null && bridge.getWebView() != null) {
+            bridge.getWebView().resumeTimers();
+        }
     }
 
     @Override

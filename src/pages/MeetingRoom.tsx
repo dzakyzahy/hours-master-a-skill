@@ -9,6 +9,8 @@ import { MeetingControls } from '../components/meeting/MeetingControls';
 import { useWebRTC } from '../hooks/useWebRTC';
 import { enterCallPiP, addPiPListener, setCallPipEnabled } from '../utils/native';
 import { clearIncomingCallNotification } from '../utils/callNotifications';
+import { setGlobalActiveRoomId, addCallRoomEventListener, removeCallRoomEventListener, sendSignalGlobal } from '../hooks/useCallSignaling';
+import { playCallEnd } from '../utils/audio';
 import { useCallSessionStore } from '../utils/callSession';
 import { resolveMeetingRoomId } from '../utils/meetingRoute';
 import { createScreenShareBundle, type ScreenShareBundle } from '../utils/screenShare';
@@ -62,14 +64,17 @@ function MeetingRoomInner({ isMeetingRoute, roomId }: MeetingRoomInnerProps) {
   useEffect(() => {
     if (isMeetingRoute && roomId) {
       setCallPipEnabled(true);
+      setGlobalActiveRoomId(roomId);
     } else {
       setCallPipEnabled(false);
       setIsInPiP(false);
       document.body.classList.remove('pip-mode');
+      setGlobalActiveRoomId(null);
     }
 
     return () => {
       setCallPipEnabled(false);
+      setGlobalActiveRoomId(null);
     };
   }, [isMeetingRoute, roomId]);
 
@@ -218,6 +223,88 @@ function MeetingRoomInner({ isMeetingRoute, roomId }: MeetingRoomInnerProps) {
     navigate('/');
   }, [endSession, navigate, stopScreenShare]);
 
+  // Handle Call Signals (Rejected, Busy, Ended)
+  useEffect(() => {
+    const handleRoomEvent = (payload: any) => {
+      if (payload.roomId !== roomId) return;
+      
+      if (payload.type === 'CALL_REJECTED') {
+        toast('Panggilan ditolak');
+        playCallEnd();
+        handleLeave();
+      } else if (payload.type === 'CALL_BUSY') {
+        toast('Rekan sedang sibuk / dalam panggilan lain');
+        playCallEnd();
+        handleLeave();
+      } else if (payload.type === 'CALL_ENDED') {
+        toast('Panggilan diakhiri');
+        playCallEnd();
+        handleLeave();
+      }
+    };
+    
+    addCallRoomEventListener(handleRoomEvent);
+    return () => {
+      removeCallRoomEventListener(handleRoomEvent);
+    };
+  }, [roomId, handleLeave]);
+
+  // Handle 35s timeout if no one joins
+  useEffect(() => {
+    if (remoteParticipants.length > 0) return;
+    
+    const timeout = setTimeout(() => {
+      if (remoteParticipants.length === 0) {
+        toast('Tidak ada jawaban');
+        playCallEnd();
+        
+        // Send CANCELLED to stop ringing on the other side
+        sendSignalGlobal({
+          type: 'CALL_CANCELLED',
+          callerId: userId || '',
+          callerUsername: username || '',
+          callerName: username || '',
+          receiverId: '', // We don't know the exact target here, but broadcast works
+          receiverUsername: '',
+          roomId,
+          timestamp: Date.now()
+        });
+        
+        handleLeave();
+      }
+    }, 35000);
+    
+    return () => clearTimeout(timeout);
+  }, [remoteParticipants.length, roomId, userId, username, handleLeave]);
+
+  // Send CALL_CANCELLED or CALL_ENDED if user leaves manually
+  const onUserLeave = useCallback(() => {
+    if (remoteParticipants.length === 0) {
+      sendSignalGlobal({
+        type: 'CALL_CANCELLED',
+        callerId: userId || '',
+        callerUsername: username || '',
+        callerName: username || '',
+        receiverId: '',
+        receiverUsername: '',
+        roomId,
+        timestamp: Date.now()
+      });
+    } else {
+      sendSignalGlobal({
+        type: 'CALL_ENDED',
+        callerId: userId || '',
+        callerUsername: username || '',
+        callerName: username || '',
+        receiverId: '',
+        receiverUsername: '',
+        roomId,
+        timestamp: Date.now()
+      });
+    }
+    handleLeave();
+  }, [remoteParticipants.length, roomId, userId, username, handleLeave]);
+
   const handleCopyLink = useCallback(async () => {
     const baseUrl = 'https://hours-master-a-skill.vercel.app';
     const hash = `#/meeting/${roomId}${location.search || ''}`;
@@ -285,7 +372,7 @@ function MeetingRoomInner({ isMeetingRoute, roomId }: MeetingRoomInnerProps) {
           <button
             type="button"
             className="btn meeting-header-exit"
-            onClick={handleLeave}
+            onClick={onUserLeave}
             aria-label="Akhiri panggilan"
           >
             <ArrowLeft size={18} aria-hidden="true" />
@@ -363,7 +450,7 @@ function MeetingRoomInner({ isMeetingRoute, roomId }: MeetingRoomInnerProps) {
           onToggleMic={handleToggleMic}
           onToggleVideo={handleToggleVideo}
           onToggleScreenShare={handleToggleScreenShare}
-          onLeave={handleLeave}
+          onLeave={onUserLeave}
           showDevTools={showDevTools}
           onToggleDevTools={() => setShowDevTools(value => !value)}
         />

@@ -65,6 +65,13 @@ export function VideoTile({ participant, isDominant = false, isPiP = false }: Vi
 
   const avatarDisplay = getAvatarDisplay(participant.avatar, initials);
 
+  const hasVideoTrack = Boolean(
+    participant.stream && 
+    participant.stream.getVideoTracks().length > 0
+  );
+  
+  const shouldRenderVideo = hasVideoTrack && !participant.isVideoOff;
+
   return (
     <div
       className={participant.isSpeaking && !isPiP ? 'speaking-pulse' : ''}
@@ -104,7 +111,7 @@ export function VideoTile({ participant, isDominant = false, isPiP = false }: Vi
       )}
 
       {/* Actual Video Stream if Available & Video Enabled */}
-      {participant.stream && !participant.isVideoOff ? (
+      {shouldRenderVideo ? (
         <video
           ref={videoRef}
           autoPlay

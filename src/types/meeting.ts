@@ -3,7 +3,7 @@ import type { CallQualityLevel } from '../utils/callStats';
 export type CallType = 'direct' | 'focus';
 
 export interface CallSignal {
-  type: 'CALL_INVITE' | 'CALL_ACCEPTED' | 'CALL_REJECTED' | 'CALL_BUSY' | 'CALL_CANCELLED';
+  type: 'CALL_INVITE' | 'CALL_ACCEPTED' | 'CALL_REJECTED' | 'CALL_BUSY' | 'CALL_CANCELLED' | 'CALL_ENDED';
   callerId: string;
   callerUsername: string;
   callerName: string;
