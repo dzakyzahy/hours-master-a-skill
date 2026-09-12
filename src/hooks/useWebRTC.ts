@@ -157,7 +157,7 @@ export function useWebRTC(
       peer.on('stream', (remoteStream: any) => {
         setRemoteParticipants(prev =>
           prev.map(p =>
-            p.id === peerId ? { ...p, stream: new MediaStream(remoteStream.getTracks()) } : p
+            p.id === peerId ? { ...p, stream: remoteStream } : p
           )
         );
       });
@@ -166,7 +166,7 @@ export function useWebRTC(
       peer.on('track', (_track: any, stream: any) => {
         setRemoteParticipants(prev =>
           prev.map(p =>
-            p.id === peerId ? { ...p, stream: new MediaStream(stream.getTracks()) } : p
+            p.id === peerId ? { ...p, stream: stream } : p
           )
         );
       });
