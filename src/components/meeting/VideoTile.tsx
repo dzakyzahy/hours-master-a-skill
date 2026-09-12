@@ -45,6 +45,13 @@ export function VideoTile({ participant, isDominant = false, isPiP = false }: Vi
     if (participant.stream && !participant.isVideoOff) {
       if (video.srcObject !== participant.stream) {
         video.srcObject = participant.stream;
+      }
+      // Force properties on DOM node directly to bypass WebView autoplay restrictions
+      video.muted = true;
+      video.defaultMuted = true;
+      video.setAttribute('playsinline', 'true');
+      
+      if (video.paused) {
         video.play().catch(e => {
           if (e.name !== 'AbortError') {
             console.warn('[VideoTile] Video play caught:', e);
