@@ -22,9 +22,8 @@ export const AchievementsSection: React.FC = () => {
       for (const id of newlyUnlocked) {
         const ach = ACHIEVEMENTS.find(a => a.id === id);
         if (ach) {
-          toast.success(`Prestasi Terbuka: ${ach.title}!`, {
-            icon: '🏆',
-            duration: 4500,
+          toast.success(`Pencapaian terbuka: ${ach.title}`, {
+            duration: 4000,
             id: `ach-${ach.id}`
           });
         }
@@ -71,7 +70,7 @@ export const AchievementsSection: React.FC = () => {
                 Prestasi & Pencapaian
               </h2>
               <p style={{ margin: '2px 0 0', fontSize: '11px', color: 'var(--text-secondary)' }}>
-                Buka lencana kehormatan melalui dedikasi jam belajar
+                Daftar pencapaian berdasarkan durasi fokus dan kolaborasi
               </p>
             </div>
           </div>

@@ -19,12 +19,16 @@ import { useGlobalTimer } from '../hooks/useGlobalTimer';
 import { EditProjectModal } from '../components/EditProjectModal';
 import { ThemeSwitcher } from '../components/ThemeSwitcher';
 import { ClashPinnedCard } from '../components/ClashPinnedCard';
+import { getAvatarDisplay } from '../utils/profilePresets';
 
 export function Dashboard() {
-  const { projects, activeProjectId, addHours, toggleTimer, activeTimer, setRemoteTimerState, setTotalHours, deleteProject } = useStore();
+  const { projects, activeProjectId, addHours, toggleTimer, activeTimer, setRemoteTimerState, setTotalHours, deleteProject, username, avatar } = useStore();
   const { elapsedSeconds, formatTime } = useGlobalTimer();
   const navigate = useNavigate();
   
+  const userInitials = (username || 'U').substring(0, 2).toUpperCase();
+  const avatarDisplay = getAvatarDisplay(avatar, userInitials);
+
   const [manualInput, setManualInput] = useState('');
   const [isEditingTotal, setIsEditingTotal] = useState(false);
   const [editTotalInput, setEditTotalInput] = useState('');
@@ -129,6 +133,37 @@ export function Dashboard() {
           </button>
 
           <div className="header-divider" aria-hidden="true" />
+
+          {/* User Profile Avatar Link */}
+          <button 
+            type="button"
+            className="btn-icon"
+            onClick={() => navigate('/profile')} 
+            title={`Profil (${username || 'user'})`}
+            aria-label={`Profil (${username || 'user'})`}
+            style={{ 
+              position: 'relative', 
+              fontWeight: 700, 
+              fontSize: '11px', 
+              fontFamily: 'Geist Mono, monospace',
+              color: avatarDisplay.textColor,
+              background: avatarDisplay.isCustomImage ? 'none' : avatarDisplay.gradient,
+              border: '1px solid var(--border-hairline-strong)',
+              overflow: 'hidden',
+              padding: 0,
+              width: '32px',
+              height: '32px',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              flexShrink: 0
+            }}
+          >
+            {avatarDisplay.isCustomImage ? (
+              <img src={avatarDisplay.imageUrl} alt={username} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            ) : (
+              avatarDisplay.initials
+            )}
+          </button>
 
           {/* Dedicated Isolated Theme Switcher */}
           <ThemeSwitcher compact={true} />

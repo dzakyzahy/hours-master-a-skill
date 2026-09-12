@@ -23,36 +23,41 @@ const TIER_CONFIG: Record<AchievementTier, {
   label: string;
   badgeBg: string;
   borderColor: string;
+  tagBg: string;
   textColor: string;
   glow: string;
 }> = {
   bronze: {
     label: 'Perunggu',
     badgeBg: 'linear-gradient(135deg, #78350f 0%, #b45309 100%)',
-    borderColor: 'rgba(217, 119, 6, 0.4)',
-    textColor: '#f59e0b',
-    glow: '0 0 16px rgba(217, 119, 6, 0.25)',
+    borderColor: 'rgba(217, 119, 6, 0.45)',
+    tagBg: 'rgba(217, 119, 6, 0.14)',
+    textColor: '#b45309',
+    glow: '0 0 16px rgba(217, 119, 6, 0.2)',
   },
   silver: {
     label: 'Perak',
     badgeBg: 'linear-gradient(135deg, #334155 0%, #64748b 100%)',
-    borderColor: 'rgba(148, 163, 184, 0.45)',
-    textColor: '#cbd5e1',
-    glow: '0 0 16px rgba(148, 163, 184, 0.2)',
+    borderColor: 'rgba(100, 116, 139, 0.45)',
+    tagBg: 'rgba(100, 116, 139, 0.16)',
+    textColor: 'var(--badge-silver-text, #334155)',
+    glow: '0 0 16px rgba(148, 163, 184, 0.16)',
   },
   gold: {
     label: 'Emas',
     badgeBg: 'linear-gradient(135deg, #854d0e 0%, #ca8a04 100%)',
-    borderColor: 'rgba(234, 179, 8, 0.5)',
-    textColor: '#fde047',
-    glow: '0 0 20px rgba(234, 179, 8, 0.3)',
+    borderColor: 'rgba(202, 138, 4, 0.45)',
+    tagBg: 'rgba(234, 179, 8, 0.15)',
+    textColor: '#a16207',
+    glow: '0 0 20px rgba(234, 179, 8, 0.25)',
   },
   diamond: {
     label: 'Berlian',
     badgeBg: 'linear-gradient(135deg, #0e7490 0%, #6366f1 100%)',
-    borderColor: 'rgba(6, 182, 212, 0.55)',
-    textColor: '#38bdf8',
-    glow: '0 0 22px rgba(6, 182, 212, 0.35)',
+    borderColor: 'rgba(6, 182, 212, 0.5)',
+    tagBg: 'rgba(6, 182, 212, 0.15)',
+    textColor: '#0284c7',
+    glow: '0 0 22px rgba(6, 182, 212, 0.3)',
   },
 };
 
@@ -84,8 +89,9 @@ export const AchievementCard: React.FC<AchievementCardProps> = ({ achievement, i
   const icon = getIcon(achievement.icon);
 
   return (
-    <div
+    <article
       className="glass-panel"
+      aria-label={`Pencapaian: ${achievement.title} - ${isUnlocked ? 'Terbuka' : 'Terkunci'}`}
       style={{
         padding: '16px',
         position: 'relative',
@@ -115,7 +121,7 @@ export const AchievementCard: React.FC<AchievementCardProps> = ({ achievement, i
             justifyContent: 'center',
             fontSize: '18px',
             flexShrink: 0,
-            boxShadow: isUnlocked ? '0 4px 12px rgba(0,0,0,0.3)' : 'none',
+            boxShadow: isUnlocked ? '0 4px 12px rgba(0,0,0,0.25)' : 'none',
           }}
         >
           <FontAwesomeIcon icon={isUnlocked ? icon : faLock} />
@@ -127,12 +133,12 @@ export const AchievementCard: React.FC<AchievementCardProps> = ({ achievement, i
             style={{
               fontSize: '10px',
               fontFamily: 'Geist Mono, monospace',
-              fontWeight: 600,
+              fontWeight: 700,
               textTransform: 'uppercase',
-              letterSpacing: '0.04em',
-              padding: '2px 8px',
+              letterSpacing: '0.05em',
+              padding: '2.5px 8px',
               borderRadius: 'var(--radius-pill, 9999px)',
-              background: isUnlocked ? `${tier.borderColor}` : 'var(--surface-input)',
+              background: isUnlocked ? tier.tagBg : 'var(--surface-input)',
               color: isUnlocked ? tier.textColor : 'var(--text-secondary)',
               border: `1px solid ${isUnlocked ? tier.borderColor : 'var(--border-hairline)'}`,
             }}
@@ -159,7 +165,7 @@ export const AchievementCard: React.FC<AchievementCardProps> = ({ achievement, i
       <div style={{ flex: 1, minWidth: 0 }}>
         <h3
           style={{
-            margin: '0 0 4px',
+            margin: '0 0 5px',
             fontSize: '14px',
             fontWeight: 600,
             color: isUnlocked ? 'var(--text-primary)' : 'var(--text-secondary)',
@@ -180,25 +186,41 @@ export const AchievementCard: React.FC<AchievementCardProps> = ({ achievement, i
         </p>
       </div>
 
-      {/* Criteria footer */}
+      {/* Criteria footer - Stacked layout to eliminate text collision */}
       <div
         style={{
           marginTop: 'auto',
-          paddingTop: '8px',
+          paddingTop: '10px',
           borderTop: '1px solid var(--border-hairline)',
           display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          fontSize: '11px',
-          fontFamily: 'Geist Mono, monospace',
-          color: 'var(--text-secondary)',
+          flexDirection: 'column',
+          gap: '3px',
         }}
       >
-        <span style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.03em' }}>Syarat</span>
-        <span style={{ color: isUnlocked ? 'var(--text-primary)' : 'var(--text-secondary)', fontWeight: 500 }}>
+        <span
+          style={{
+            fontSize: '9.5px',
+            fontFamily: 'Geist Mono, monospace',
+            textTransform: 'uppercase',
+            letterSpacing: '0.06em',
+            color: 'var(--text-placeholder, #94a3b8)',
+            fontWeight: 600,
+          }}
+        >
+          Syarat
+        </span>
+        <span
+          style={{
+            fontSize: '11.5px',
+            lineHeight: 1.45,
+            color: isUnlocked ? 'var(--text-primary)' : 'var(--text-secondary)',
+            fontWeight: 500,
+            wordBreak: 'break-word',
+          }}
+        >
           {achievement.criteriaText}
         </span>
       </div>
-    </div>
+    </article>
   );
 };

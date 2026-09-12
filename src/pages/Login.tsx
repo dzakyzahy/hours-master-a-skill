@@ -79,23 +79,45 @@ export function Login() {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!regEmail.trim() || !regUsername.trim() || !regPassword) {
+    const cleanEmail = regEmail.trim().toLowerCase();
+    const cleanUser = regUsername.trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
+
+    // Strict security and input validation
+    if (!cleanEmail || !cleanUser || !regPassword) {
       setError('Harap lengkapi semua kolom pendaftaran.');
       return;
     }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(cleanEmail)) {
+      setError('Format email tidak valid.');
+      return;
+    }
+    if (cleanUser.length < 3) {
+      setError('Username minimal 3 karakter (huruf, angka, _).');
+      return;
+    }
+    if (regPassword.length < 6) {
+      setError('Kata sandi minimal 6 karakter.');
+      return;
+    }
+
     setError('');
     setLoading(true);
     try {
-      const res = await register(regEmail.trim(), regUsername.trim(), regPassword);
+      const res = await register(cleanEmail, cleanUser, regPassword);
       if (!res.success) {
         setError(res.error || 'Pendaftaran gagal. Silakan coba lagi.');
       } else {
         if (Capacitor.isNativePlatform()) {
-          await Preferences.set({ key: 'saved_email', value: regEmail.trim() });
+          await Preferences.set({ key: 'saved_email', value: cleanEmail });
           await Preferences.set({ key: 'saved_password', value: regPassword });
         }
-        toast.success(`Selamat datang di Skillo, ${regUsername}!`);
-        setBiometricVerified(true);
+        localStorage.setItem('biometric_enabled', 'true');
+        localStorage.setItem('biometric_user', cleanUser);
+        localStorage.setItem('last_user', cleanUser);
+        useStore.setState({ biometricEnabled: true, biometricVerified: true });
+
+        toast.success(`Selamat datang di Skillo, ${cleanUser}!`);
         const fromState = (location.state as any)?.from;
         const destination = fromState?.pathname ? (fromState.pathname + (fromState.search || '')) : '/';
         navigate(destination);

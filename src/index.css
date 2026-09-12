@@ -34,6 +34,7 @@
   --color-warning: #f59e0b;
   --color-danger: #ef4444;
   --accent-purple: #a855f7;
+  --badge-silver-text: #e2e8f0;
   --border-color: var(--border-hairline);
   --border-highlight: var(--border-hairline-strong);
   --glass-blur: blur(12px);
@@ -86,6 +87,7 @@
   --color-warning: #d97706;
   --color-danger: #dc2626;
   --accent-purple: #7c3aed;
+  --badge-silver-text: #334155;
   --border-color: var(--border-hairline);
   --border-highlight: var(--border-hairline-strong);
   --input-bg: var(--surface-input);

@@ -36,24 +36,31 @@ export async function searchRegisteredUsers(
   if (!query) return [];
 
   try {
-    const { data, error } = await supabase
+    let rawData: any[] | null = null;
+    const initialRes = await supabase
       .from('profiles')
-      .select('id, username, email, total_hours')
+      .select('id, username, email, total_hours, avatar_url, title, bio')
       .or(`username.ilike.%${query}%,email.ilike.%${query}%`)
       .limit(15);
 
-    if (error) {
-      console.warn('[FriendDB] Error searching profiles:', error);
-      return [];
+    if (initialRes.error) {
+      const fallbackRes = await supabase
+        .from('profiles')
+        .select('id, username, email, total_hours')
+        .or(`username.ilike.%${query}%,email.ilike.%${query}%`)
+        .limit(15);
+      rawData = fallbackRes.data;
+    } else {
+      rawData = initialRes.data;
     }
 
-    if (!data || data.length === 0) return [];
+    if (!rawData || rawData.length === 0) return [];
 
     const friendIdSet = new Set(existingFriendIds);
     const pendingSet = new Set(pendingReceiverIds);
     const myName = currentUsername.toLowerCase().replace(/^@+/, '');
 
-    return data
+    return rawData
       .filter(profile => {
         if (!profile.id) return false;
         if (currentUserId && profile.id === currentUserId) return false;
@@ -89,24 +96,31 @@ export async function loadCommunityProfiles(
   pendingReceiverIds: string[] = []
 ): Promise<UserProfileSearchResult[]> {
   try {
-    const { data, error } = await supabase
+    let rawData: any[] | null = null;
+    const initialRes = await supabase
       .from('profiles')
-      .select('id, username, email, total_hours')
+      .select('id, username, email, total_hours, avatar_url, title, bio')
       .order('username', { ascending: true })
       .limit(30);
 
-    if (error) {
-      console.warn('[FriendDB] Error loading community profiles:', error);
-      return [];
+    if (initialRes.error) {
+      const fallbackRes = await supabase
+        .from('profiles')
+        .select('id, username, email, total_hours')
+        .order('username', { ascending: true })
+        .limit(30);
+      rawData = fallbackRes.data;
+    } else {
+      rawData = initialRes.data;
     }
 
-    if (!data || data.length === 0) return [];
+    if (!rawData || rawData.length === 0) return [];
 
     const friendIdSet = new Set(existingFriendIds);
     const pendingSet = new Set(pendingReceiverIds);
     const myName = currentUsername.toLowerCase().replace(/^@+/, '');
 
-    return data
+    return rawData
       .filter(profile => {
         if (!profile.id) return false;
         if (currentUserId && profile.id === currentUserId) return false;

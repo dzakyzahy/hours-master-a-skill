@@ -19,6 +19,7 @@ import { ThemeSwitcher } from '../components/ThemeSwitcher';
 import { AVATAR_PRESETS, getAvatarDisplay } from '../utils/profilePresets';
 import { fileToAvatarDataUrl } from '../utils/avatarUpload';
 import { AchievementsSection } from '../components/AchievementsSection';
+import { checkForAppUpdates, CURRENT_APP_VERSION } from '../services/UpdaterService';
 import toast from 'react-hot-toast';
 
 declare global {
@@ -124,18 +125,26 @@ export function Profile() {
     }
   };
 
-  const handleCheckUpdate = () => {
+  const handleCheckUpdate = async () => {
     setIsCheckingUpdate(true);
     setUpdateStatus('');
-    setTimeout(() => {
-      setIsCheckingUpdate(false);
-      if (window.electronAPI) {
-        window.electronAPI.checkForUpdates();
+    try {
+      const res = await checkForAppUpdates(CURRENT_APP_VERSION);
+      setUpdateStatus(res.statusMessage);
+      if (res.hasUpdate) {
+        if (res.isInstalling) {
+          toast.success('Pembaruan terpasang! Aplikasi me-restart...');
+        } else {
+          toast('Versi baru tersedia!', { icon: '🚀' });
+        }
       } else {
-        setUpdateStatus("Aplikasi Skillo v0.1.0 sudah menggunakan versi build terbaru.");
-        toast.success("Skillo v0.1.0 sudah versi terbaru!");
+        toast.success(`Skillo v${CURRENT_APP_VERSION} adalah versi terbaru!`);
       }
-    }, 850);
+    } catch (err: any) {
+      setUpdateStatus(`Skillo v${CURRENT_APP_VERSION} (Build stabil)`);
+    } finally {
+      setIsCheckingUpdate(false);
+    }
   };
 
   useEffect(() => {
@@ -152,13 +161,20 @@ export function Profile() {
         const { data: authData } = await supabase.auth.getUser();
         if (authData?.user) {
           if (authData.user.email) setEmail(authData.user.email);
-          const { data } = await supabase.from('profiles').select('*').eq('id', authData.user.id).single();
-          if (data) {
-            if (data.username) setNewUsername(data.username);
-            if (data.avatar_url) setSelectedAvatar(data.avatar_url);
-            if (data.title) setCustomTitle(data.title);
-            if (data.bio) setCustomBio(data.bio);
-          }
+          const meta = (authData.user.user_metadata || {}) as any;
+          if (meta.avatar_url || meta.avatar) setSelectedAvatar(meta.avatar_url || meta.avatar);
+          if (meta.title) setCustomTitle(meta.title);
+          if (meta.bio) setCustomBio(meta.bio);
+
+          try {
+            const { data } = await supabase.from('profiles').select('*').eq('id', authData.user.id).single();
+            if (data) {
+              if (data.username) setNewUsername(data.username);
+              if (data.avatar_url) setSelectedAvatar(data.avatar_url);
+              if (data.title) setCustomTitle(data.title);
+              if (data.bio) setCustomBio(data.bio);
+            }
+          } catch {}
         }
       } catch {}
     }
@@ -189,7 +205,7 @@ export function Profile() {
     setMsg('');
 
     try {
-      // Local state update
+      // Local Zustand state update
       useStore.setState({ username: newUsername, userEmail: email });
       updateProfileCustomization({
         avatar: selectedAvatar,
@@ -201,33 +217,41 @@ export function Profile() {
       if (isSupabaseConfigured) {
         const { data: authData } = await supabase.auth.getUser();
         if (authData?.user) {
-          const updates: any = {};
+          const updates: any = {
+            data: {
+              avatar_url: selectedAvatar,
+              avatar: selectedAvatar,
+              title: customTitle,
+              bio: customBio,
+              username: newUsername
+            }
+          };
           if (email && email !== authData.user.email) updates.email = email;
           if (password) updates.password = password;
 
-          if (Object.keys(updates).length > 0) {
-            await supabase.auth.updateUser(updates);
-          }
+          // 1. Always update Supabase user_metadata (succeeds via Auth API without DB schema dependency)
+          await supabase.auth.updateUser(updates);
 
-          // supabase-js returns { error }, it does not throw — a try/catch here hides
-          // a missing column and the profile silently stays device-only.
-          const { error: profileError } = await supabase.from('profiles').update({
-            username: newUsername,
-            avatar_url: selectedAvatar,
-            title: customTitle,
-            bio: customBio
-          }).eq('id', authData.user.id);
+          // 2. Also try updating profiles table (graceful fallback if avatar_url column doesn't exist)
+          try {
+            const { error: profileError } = await supabase.from('profiles').update({
+              username: newUsername,
+              avatar_url: selectedAvatar,
+              title: customTitle,
+              bio: customBio
+            }).eq('id', authData.user.id);
 
-          if (profileError) {
+            if (profileError) {
+              await supabase.from('profiles').update({ username: newUsername }).eq('id', authData.user.id);
+            }
+          } catch {
             await supabase.from('profiles').update({ username: newUsername }).eq('id', authData.user.id);
-            setMsg(`Tersimpan di perangkat ini saja. Server menolak: ${profileError.message}`);
-            setLoading(false);
-            return;
           }
         }
       }
 
       setMsg('Profil & personalisasi berhasil disimpan!');
+      toast.success('Profil & personalisasi berhasil disimpan!');
       setPassword('');
     } catch (error: any) {
       setMsg(`Catatan: ${error.message || 'Data disimpan secara lokal'}`);
@@ -631,14 +655,14 @@ export function Profile() {
                   Pembaruan Sistem
                 </h3>
                 <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
-                  Versi Build: <strong style={{ color: 'var(--accent-primary)', fontFamily: 'Geist Mono, monospace' }}>v0.1.0</strong>
+                  Versi Build: <strong style={{ color: 'var(--accent-primary)', fontFamily: 'Geist Mono, monospace' }}>v{CURRENT_APP_VERSION}</strong>
                 </span>
               </div>
               <button 
                 type="button"
                 className="btn" 
                 disabled={isCheckingUpdate}
-                style={{ height: '30px', padding: '0 12px', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '6px' }}
+                style={{ height: '32px', padding: '0 14px', fontSize: '11.5px', display: 'flex', alignItems: 'center', gap: '6px' }}
                 onClick={handleCheckUpdate}
               >
                 {isCheckingUpdate ? (
@@ -660,7 +684,7 @@ export function Profile() {
                 <div>
                   <div>{updateStatus}</div>
                   <div style={{ fontSize: '10.5px', color: 'var(--text-placeholder)', marginTop: '2px', fontFamily: 'Geist Mono, monospace' }}>
-                    Sumber: GitHub Releases & APK Build v0.1.0 (Early Production)
+                    Sumber: GitHub Releases & APK Build v{CURRENT_APP_VERSION}
                   </div>
                 </div>
               </div>

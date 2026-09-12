@@ -25,6 +25,7 @@ import { saveChatMessage, getChatHistory } from '../services/ChatDB';
 import { searchRegisteredUsers, loadCommunityProfiles } from '../services/FriendDB';
 import type { UserProfileSearchResult } from '../types/friends';
 import { Avatar } from '../components/Avatar';
+import { getAvatarDisplay } from '../utils/profilePresets';
 
 interface LocalChatMessage {
   id: string;
@@ -85,7 +86,7 @@ const saveMessagesToStorage = (msgs: LocalChatMessage[]) => {
 export function Chat() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { username, userId, friends, friendRequests, sentFriendRequests, sendFriendRequest, acceptFriendRequest, rejectFriendRequest, checkFriendsOnlineStatus, projects, fetchFriendRequests, fetchSentFriendRequests, fetchFriends, logout } = useStore();
+  const { username, userId, friends, friendRequests, sentFriendRequests, sendFriendRequest, acceptFriendRequest, rejectFriendRequest, checkFriendsOnlineStatus, projects, fetchFriendRequests, fetchSentFriendRequests, fetchFriends, logout, avatar: myAvatar } = useStore();
   const initialTab = (location.state as any)?.tab;
   const [activeTab, setActiveTab] = useState<'friends' | 'requests' | 'chat' | 'clash'>(() => {
     if (initialTab === 'clash' || initialTab === 'chat' || initialTab === 'requests' || initialTab === 'friends') {
@@ -565,45 +566,55 @@ export function Chat() {
         </div>
 
         <div className="flex items-center gap-2">
-          {username && (
-            <button
-              type="button"
-              onClick={() => navigate('/profile')}
-              title={`Profil Saya (${username}) • Online`}
-              aria-label={`Profil Saya (${username})`}
-              style={{
-                position: 'relative',
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: '34px',
-                height: '34px',
-                borderRadius: '7px',
-                background: 'var(--surface-input)',
-                border: '1px solid var(--border-hairline)',
-                color: 'var(--text-primary)',
-                fontWeight: 700,
-                fontSize: '12px',
-                fontFamily: 'Geist Mono, monospace',
-                cursor: 'pointer',
-                flexShrink: 0
-              }}
-            >
-              {username.substring(0, 2).toUpperCase()}
-              <span 
-                style={{ 
-                  position: 'absolute', 
-                  bottom: '-2px', 
-                  right: '-2px', 
-                  width: '8px', 
-                  height: '8px', 
-                  borderRadius: '50%', 
-                  backgroundColor: 'var(--color-success)', 
-                  border: '1.5px solid var(--surface-card)'
-                }} 
-              />
-            </button>
-          )}
+          {username && (() => {
+            const userInitials = (username || 'U').substring(0, 2).toUpperCase();
+            const avatarDisplay = getAvatarDisplay(myAvatar, userInitials);
+            return (
+              <button
+                type="button"
+                onClick={() => navigate('/profile')}
+                title={`Profil (${username})`}
+                aria-label={`Profil (${username})`}
+                style={{
+                  position: 'relative',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: '34px',
+                  height: '34px',
+                  borderRadius: '8px',
+                  background: avatarDisplay.isCustomImage ? 'none' : avatarDisplay.gradient,
+                  border: '1px solid var(--border-hairline-strong)',
+                  color: avatarDisplay.textColor,
+                  fontWeight: 700,
+                  fontSize: '11.5px',
+                  fontFamily: 'Geist Mono, monospace',
+                  cursor: 'pointer',
+                  flexShrink: 0,
+                  overflow: 'hidden',
+                  padding: 0
+                }}
+              >
+                {avatarDisplay.isCustomImage ? (
+                  <img src={avatarDisplay.imageUrl} alt={username} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : (
+                  avatarDisplay.initials
+                )}
+                <span 
+                  style={{ 
+                    position: 'absolute', 
+                    bottom: '2px', 
+                    right: '2px', 
+                    width: '7px', 
+                    height: '7px', 
+                    borderRadius: '50%', 
+                    backgroundColor: 'var(--color-success)', 
+                    border: '1.5px solid var(--surface-card)'
+                  }} 
+                />
+              </button>
+            );
+          })()}
 
           <button 
             type="button" 

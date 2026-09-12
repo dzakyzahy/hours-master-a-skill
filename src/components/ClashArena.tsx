@@ -13,6 +13,7 @@ import {
 import toast from 'react-hot-toast';
 import { useStore, type FriendUser } from '../store';
 import { playDuelStart } from '../utils/audio';
+import { getAvatarDisplay } from '../utils/profilePresets';
 
 interface ClashArenaProps {
   friends: FriendUser[];
@@ -21,7 +22,7 @@ interface ClashArenaProps {
 }
 
 export function ClashArena({ friends, myUsername, myTotalHours }: ClashArenaProps) {
-  const { clashPinned, toggleClashPinned } = useStore();
+  const { clashPinned, toggleClashPinned, avatar: myAvatar } = useStore();
   const [viewMode, setViewMode] = useState<'leaderboard' | '1v1'>('leaderboard');
   const [selectedOpponent, setSelectedOpponent] = useState<FriendUser | null>(friends[0] || null);
 
@@ -36,12 +37,13 @@ export function ClashArena({ friends, myUsername, myTotalHours }: ClashArenaProp
 
   // Compile all participants including myself
   const allParticipants = [
-    { username: myUsername || 'You', name: myUsername || 'You', totalHours: myTotalHours, isMe: true },
+    { username: myUsername || 'You', name: myUsername || 'You', totalHours: myTotalHours, isMe: true, avatar: myAvatar },
     ...friends.map(f => ({
       username: f.username,
       name: f.name,
       totalHours: f.totalHours || 0,
-      isMe: false
+      isMe: false,
+      avatar: f.avatar
     }))
   ].sort((a, b) => b.totalHours - a.totalHours);
 
@@ -262,23 +264,36 @@ export function ClashArena({ friends, myUsername, myTotalHours }: ClashArenaProp
                 {/* Header: Avatar + Username + Tag */}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <div 
-                      style={{ 
-                        width: '38px', 
-                        height: '38px', 
-                        borderRadius: '10px', 
-                        background: 'rgba(34, 197, 94, 0.12)', 
-                        border: '1.5px solid var(--color-success)', 
-                        color: 'var(--color-success)', 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        justifyContent: 'center', 
-                        fontWeight: 700, 
-                        fontSize: '15px' 
-                      }}
-                    >
-                      {(myUsername || 'Y').slice(0, 1).toUpperCase()}
-                    </div>
+                    {(() => {
+                      const initials = (myUsername || 'U').substring(0, 2).toUpperCase();
+                      const myDisplay = getAvatarDisplay(myAvatar, initials);
+                      return (
+                        <div 
+                          style={{ 
+                            width: '38px', 
+                            height: '38px', 
+                            borderRadius: '10px', 
+                            background: myDisplay.isCustomImage ? 'none' : myDisplay.gradient, 
+                            border: '1px solid var(--border-hairline-strong)', 
+                            color: myDisplay.textColor, 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            justifyContent: 'center', 
+                            fontWeight: 700, 
+                            fontSize: '13px',
+                            fontFamily: 'Geist Mono, monospace',
+                            overflow: 'hidden',
+                            flexShrink: 0
+                          }}
+                        >
+                          {myDisplay.isCustomImage ? (
+                            <img src={myDisplay.imageUrl} alt={myUsername} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          ) : (
+                            myDisplay.initials
+                          )}
+                        </div>
+                      );
+                    })()}
                     <div>
                       <div style={{ fontSize: '15.5px', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.2 }}>
                         {(myUsername || 'You').replace(/^@+/, '')}
@@ -462,23 +477,36 @@ export function ClashArena({ friends, myUsername, myTotalHours }: ClashArenaProp
                 {/* Header: Avatar + Username + Tag */}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <div 
-                      style={{ 
-                        width: '38px', 
-                        height: '38px', 
-                        borderRadius: '10px', 
-                        background: 'rgba(14, 165, 233, 0.12)', 
-                        border: '1.5px solid var(--accent-primary)', 
-                        color: 'var(--accent-primary)', 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        justifyContent: 'center', 
-                        fontWeight: 700, 
-                        fontSize: '15px' 
-                      }}
-                    >
-                      {((opp?.username || 'O').slice(0, 1).toUpperCase())}
-                    </div>
+                    {(() => {
+                      const oppInitials = ((opp?.username || 'O').slice(0, 2)).toUpperCase();
+                      const oppDisplay = getAvatarDisplay(opp?.avatar, oppInitials);
+                      return (
+                        <div 
+                          style={{ 
+                            width: '38px', 
+                            height: '38px', 
+                            borderRadius: '10px', 
+                            background: oppDisplay.isCustomImage ? 'none' : oppDisplay.gradient, 
+                            border: '1px solid var(--border-hairline-strong)', 
+                            color: oppDisplay.textColor, 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            justifyContent: 'center', 
+                            fontWeight: 700, 
+                            fontSize: '13px',
+                            fontFamily: 'Geist Mono, monospace',
+                            overflow: 'hidden',
+                            flexShrink: 0
+                          }}
+                        >
+                          {oppDisplay.isCustomImage ? (
+                            <img src={oppDisplay.imageUrl} alt={opp?.username || 'Opponent'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          ) : (
+                            oppDisplay.initials
+                          )}
+                        </div>
+                      );
+                    })()}
                     <div>
                       <div style={{ fontSize: '15.5px', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.2 }}>
                         {(opp.username || '').replace(/^@+/, '')}

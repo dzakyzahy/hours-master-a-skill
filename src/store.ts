@@ -291,7 +291,12 @@ export const useStore = create<AppState>()(
                 userProjects = loadUserProjects(authData.user.id, finalUser);
               }
 
-              set({ 
+              const meta = (authData.user.user_metadata || {}) as any;
+              const cloudAvatar = meta.avatar_url || meta.avatar || (profile as any)?.avatar_url;
+              const cloudTitle = meta.title || (profile as any)?.title;
+              const cloudBio = meta.bio || (profile as any)?.bio;
+
+              set((state) => ({ 
                 isAuthenticated: true, 
                 biometricVerified: true, 
                 userId: authData.user.id, 
@@ -304,10 +309,10 @@ export const useStore = create<AppState>()(
                 timerProjectId: null,
                 lastTimerTick: null,
                 friends: [],
-                ...((profile as any)?.avatar_url ? { avatar: (profile as any).avatar_url } : {}),
-                ...((profile as any)?.title ? { title: (profile as any).title } : {}),
-                ...((profile as any)?.bio ? { bio: (profile as any).bio } : {})
-              });
+                avatar: cloudAvatar || state.avatar || 'cyber-neon',
+                title: cloudTitle || state.title || 'UI/UX & Mobile Design Lead',
+                bio: cloudBio || state.bio || 'Belajar dan bertumbuh di Skillo'
+              }));
               try {
                 localStorage.setItem('last_user', finalUser);
                 localStorage.setItem(`presence_${finalUser}`, Date.now().toString());
@@ -408,6 +413,7 @@ export const useStore = create<AppState>()(
               set({
                 isAuthenticated: true,
                 biometricVerified: true,
+                biometricEnabled: true,
                 userId: authData.user.id,
                 username: cleanUser,
                 userEmail: cleanEmail,
@@ -417,13 +423,18 @@ export const useStore = create<AppState>()(
                 timerStartedAt: null,
                 timerProjectId: null,
                 lastTimerTick: null,
-                friends: []
+                friends: [],
+                avatar: 'cyber-neon',
+                title: 'UI/UX & Mobile Design Lead',
+                bio: 'Belajar dan bertumbuh di Skillo'
               });
 
               saveUserProjects(authData.user.id, []);
 
               try {
                 localStorage.setItem('last_user', cleanUser);
+                localStorage.setItem('biometric_enabled', 'true');
+                localStorage.setItem('biometric_user', cleanUser);
                 localStorage.setItem(`presence_${cleanUser}`, Date.now().toString());
               } catch {}
 
@@ -442,6 +453,7 @@ export const useStore = create<AppState>()(
         set({
           isAuthenticated: true,
           biometricVerified: true,
+          biometricEnabled: true,
           userId: fallbackUserId,
           username: cleanUser,
           userEmail: cleanEmail,
@@ -451,13 +463,18 @@ export const useStore = create<AppState>()(
           timerStartedAt: null,
           timerProjectId: null,
           lastTimerTick: null,
-          friends: []
+          friends: [],
+          avatar: 'cyber-neon',
+          title: 'UI/UX & Mobile Design Lead',
+          bio: 'Belajar dan bertumbuh di Skillo'
         });
 
         saveUserProjects(fallbackUserId, []);
 
         try {
           localStorage.setItem('last_user', cleanUser);
+          localStorage.setItem('biometric_enabled', 'true');
+          localStorage.setItem('biometric_user', cleanUser);
           localStorage.setItem(`presence_${cleanUser}`, Date.now().toString());
         } catch {}
 
