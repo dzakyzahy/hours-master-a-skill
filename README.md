@@ -11,13 +11,14 @@ Aplikasi produktivitas cross-platform (Web, Desktop Windows, dan Mobile Android)
 - **Mobile First Experience**: Mobile bottom navigation bar, penanganan hardware back button Android, dan sinkronisasi native status bar.
 - **Team Collaboration**: Direct message, chat grup tim, dan sinkronisasi status kehadiran.
 - **AI Task Generator**: Pembuatan rincian tugas cerdas memanfaatkan Google Gemini AI.
-- **Multiplatform**: Berjalan mulus di Browser Web, Desktop (Electron), dan Android (Capacitor 8).
+- **Multiplatform & PWA**: Berjalan mulus di Browser Web (dengan dukungan Progressive Web App penuh), Desktop (Electron), dan Android (Capacitor 8). Instal langsung aplikasi web Skillo ke layar utama desktop atau perangkat iOS/Android.
 
 ### 🚀 Integrasi & Backend Lanjutan (Terbaru)
 - **Sistem Pembayaran / Monetisasi (RevenueCat)**: Dukungan *In-App Purchases* untuk token AI menggunakan plugin `@revenuecat/purchases-capacitor`. Validasi pembelian diwajibkan menggunakan sistem Webhook ke backend (Supabase Edge Functions) demi keamanan.
 - **OTA Updates (Over-The-Air)**: Pembaruan aplikasi *background* tanpa harus lewat Play Store menggunakan `@capgo/capacitor-updater`.
 - **Autentikasi (Google OAuth)**: Menggunakan `@codetrix-studio/capacitor-google-auth` untuk Android Native.
 - **Offline Storage & Backup**: Penyimpanan chat dan progress proyek di lokal (menggunakan *LocalForage*) yang bisa di-*backup* dan di-*restore* secara berkala ke Google Drive.
+- **Web Notifications & Background Sync**: Fitur Web Push Notifications bawaan melalui HTML5 Notification API dan Service Worker untuk menerima panggilan video saat browser *minimize* atau berjalan di latar belakang (mendukung Web dan Android secara native).
 - **CI/CD Automation**: Konfigurasi GitHub Actions untuk *build* APK Android secara otomatis (`.github/workflows/android-build.yml`).
 
 ---

@@ -114,7 +114,11 @@ export async function setupChatNotificationChannel(plugin = LocalNotifications):
 
 export async function requestCallNotificationPermissions(plugin = LocalNotifications): Promise<boolean> {
   try {
-    if (!Capacitor.isNativePlatform()) return false;
+    if (!Capacitor.isNativePlatform()) {
+      if (!('Notification' in window)) return false;
+      const perm = await Notification.requestPermission();
+      return perm === 'granted';
+    }
     const check = await plugin.checkPermissions();
     if (check.display === 'granted') return true;
     const requested = await plugin.requestPermissions();
@@ -132,7 +136,16 @@ export async function showIncomingCallNotification(
 ): Promise<void> {
   try {
     const isNative = Capacitor.isNativePlatform();
-    if (!isNative && typeof (plugin as any).schedule !== 'function') return;
+    if (!isNative && typeof (plugin as any).schedule !== 'function') {
+      if (Notification.permission === 'granted') {
+        new Notification('📞 Panggilan Video Masuk', {
+          body: `${callerUsername} mengajak Anda bergabung ke panggilan video`,
+          icon: '/icon.png',
+          requireInteraction: true
+        });
+      }
+      return;
+    }
 
     // Ensure channel exists first
     await setupCallNotificationChannel(plugin);
@@ -154,7 +167,15 @@ export async function showChatMessageNotification(
 ): Promise<void> {
   try {
     const isNative = Capacitor.isNativePlatform();
-    if (!isNative && typeof (plugin as any).schedule !== 'function') return;
+    if (!isNative && typeof (plugin as any).schedule !== 'function') {
+      if (Notification.permission === 'granted') {
+        new Notification(`💬 Pesan dari ${senderUsername}`, {
+          body: messageText || 'Mengirim pesan baru',
+          icon: '/icon.png'
+        });
+      }
+      return;
+    }
 
     // Ensure chat channel exists first
     await setupChatNotificationChannel(plugin);
@@ -188,7 +209,15 @@ export async function showMissedCallNotification(
 ): Promise<void> {
   try {
     const isNative = Capacitor.isNativePlatform();
-    if (!isNative && typeof (plugin as any).schedule !== 'function') return;
+    if (!isNative && typeof (plugin as any).schedule !== 'function') {
+      if (Notification.permission === 'granted') {
+        new Notification('📵 Panggilan Tak Terjawab', {
+          body: `Panggilan tak terjawab dari ${callerUsername}`,
+          icon: '/icon.png'
+        });
+      }
+      return;
+    }
 
     // Explicitly cancel the ongoing incoming call notification (1001) first
     await clearIncomingCallNotification(plugin);

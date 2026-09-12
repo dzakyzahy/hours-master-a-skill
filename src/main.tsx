@@ -1,5 +1,7 @@
+/// <reference types="vite-plugin-pwa/client" />
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
+import { registerSW } from 'virtual:pwa-register'
 import './index.css'
 import App from './App.tsx'
 import { startCallForeground, stopCallForeground, setScreenKeepAwake, setCallPipEnabled } from './utils/native'
@@ -53,6 +55,10 @@ if (Capacitor.isNativePlatform()) {
     appIsActive = isActive
     if (isActive) syncNativeCallService()
   }).catch(() => {})
+}
+
+if ('serviceWorker' in navigator) {
+  registerSW({ immediate: true })
 }
 
 createRoot(document.getElementById('root')!).render(
