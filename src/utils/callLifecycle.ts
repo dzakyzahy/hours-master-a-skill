@@ -8,3 +8,11 @@ export function getNativeCallMode(
   if (!hasSession || !hasStream) return 'off';
   return hasVideoTrack ? 'video' : 'audio';
 }
+
+export function isPipAllowed(
+  isMeetingRoute: boolean,
+  hasRoomId: boolean,
+  isCallActive: boolean
+): boolean {
+  return Boolean(isMeetingRoute && hasRoomId && isCallActive);
+}

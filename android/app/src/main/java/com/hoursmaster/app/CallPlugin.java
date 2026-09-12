@@ -17,12 +17,19 @@ import com.getcapacitor.annotation.CapacitorPlugin;
 @CapacitorPlugin(name = "CallService")
 public class CallPlugin extends Plugin {
     public static boolean isCallActive = false;
+    public static boolean isPipEnabled = false;
     private static CallPlugin instance;
+
+    public static boolean isPipAllowed() {
+        return isCallActive && isPipEnabled;
+    }
 
     @Override
     public void load() {
         super.load();
         instance = this;
+        isCallActive = false;
+        isPipEnabled = false;
     }
 
     public static void notifyPipMode(boolean isInPiP) {
@@ -31,6 +38,16 @@ public class CallPlugin extends Plugin {
             data.put("isInPiP", isInPiP);
             instance.notifyListeners("pipModeChanged", data);
         }
+    }
+
+    @PluginMethod
+    public void setPipMode(PluginCall call) {
+        boolean enabled = Boolean.TRUE.equals(call.getBoolean("enabled", false));
+        isPipEnabled = enabled;
+        if (getActivity() instanceof MainActivity) {
+            ((MainActivity) getActivity()).updatePipAutoEnter(isPipAllowed());
+        }
+        call.resolve();
     }
 
     @PluginMethod
@@ -59,6 +76,9 @@ public class CallPlugin extends Plugin {
                 getContext().startService(intent);
             }
             isCallActive = true;
+            if (getActivity() instanceof MainActivity) {
+                ((MainActivity) getActivity()).updatePipAutoEnter(isPipAllowed());
+            }
             call.resolve();
         } catch (Exception e) {
             call.reject("Failed to start call service: " + e.getMessage(), e);
@@ -70,10 +90,26 @@ public class CallPlugin extends Plugin {
         try {
             getContext().stopService(new Intent(getContext(), CallService.class));
             isCallActive = false;
+            isPipEnabled = false;
+            if (getActivity() instanceof MainActivity) {
+                ((MainActivity) getActivity()).updatePipAutoEnter(false);
+            }
             call.resolve();
         } catch (Exception e) {
             call.reject("Failed to stop call service: " + e.getMessage(), e);
         }
+    }
+
+    @Override
+    protected void handleOnDestroy() {
+        if (isCallActive) {
+            try {
+                getContext().stopService(new Intent(getContext(), CallService.class));
+            } catch (Exception ignored) {}
+            isCallActive = false;
+            isPipEnabled = false;
+        }
+        super.handleOnDestroy();
     }
 
     @PluginMethod
@@ -87,6 +123,7 @@ public class CallPlugin extends Plugin {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                         builder.setAutoEnterEnabled(true);
                     }
+                    isPipEnabled = true;
                     boolean entered = getActivity().enterPictureInPictureMode(builder.build());
                     if (entered) {
                         call.resolve();

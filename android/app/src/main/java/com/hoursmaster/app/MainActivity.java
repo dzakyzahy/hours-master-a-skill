@@ -1,6 +1,10 @@
 package com.hoursmaster.app;
 
+import android.app.PictureInPictureParams;
+import android.content.res.Configuration;
+import android.os.Build;
 import android.os.Bundle;
+import android.util.Rational;
 
 import com.getcapacitor.BridgeActivity;
 
@@ -9,20 +13,37 @@ public class MainActivity extends BridgeActivity {
     public void onCreate(Bundle savedInstanceState) {
         registerPlugin(CallPlugin.class);
         super.onCreate(savedInstanceState);
+        updatePipAutoEnter(false);
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        updatePipAutoEnter(CallPlugin.isPipAllowed());
+    }
+
+    public void updatePipAutoEnter(boolean enabled) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            try {
+                PictureInPictureParams.Builder builder = new PictureInPictureParams.Builder()
+                        .setAutoEnterEnabled(enabled);
+                if (enabled) {
+                    builder.setAspectRatio(new Rational(9, 16));
+                }
+                setPictureInPictureParams(builder.build());
+            } catch (Exception ignored) {}
+        }
     }
 
     @Override
     protected void onUserLeaveHint() {
         super.onUserLeaveHint();
-        if (CallPlugin.isCallActive) {
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+        if (CallPlugin.isPipAllowed()) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 try {
-                    android.util.Rational aspectRatio = new android.util.Rational(9, 16);
-                    android.app.PictureInPictureParams.Builder builder = new android.app.PictureInPictureParams.Builder()
+                    Rational aspectRatio = new Rational(9, 16);
+                    PictureInPictureParams.Builder builder = new PictureInPictureParams.Builder()
                             .setAspectRatio(aspectRatio);
-                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
-                        builder.setAutoEnterEnabled(true);
-                    }
                     enterPictureInPictureMode(builder.build());
                 } catch (Exception e) {
                     e.printStackTrace();

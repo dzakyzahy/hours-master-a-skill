@@ -7,7 +7,7 @@ import { useStore } from '../store';
 import { VideoTile } from '../components/meeting/VideoTile';
 import { MeetingControls } from '../components/meeting/MeetingControls';
 import { useWebRTC } from '../hooks/useWebRTC';
-import { enterCallPiP, addPiPListener } from '../utils/native';
+import { enterCallPiP, addPiPListener, setCallPipEnabled } from '../utils/native';
 import { clearIncomingCallNotification } from '../utils/callNotifications';
 import { useCallSessionStore } from '../utils/callSession';
 import { resolveMeetingRoomId } from '../utils/meetingRoute';
@@ -60,7 +60,26 @@ function MeetingRoomInner({ isMeetingRoute, roomId }: MeetingRoomInnerProps) {
   }, [isMeetingRoute, roomId, location.search, startSession]);
 
   useEffect(() => {
+    if (isMeetingRoute && roomId) {
+      setCallPipEnabled(true);
+    } else {
+      setCallPipEnabled(false);
+      setIsInPiP(false);
+      document.body.classList.remove('pip-mode');
+    }
+
+    return () => {
+      setCallPipEnabled(false);
+    };
+  }, [isMeetingRoute, roomId]);
+
+  useEffect(() => {
     const removeListener = addPiPListener(inPip => {
+      if (!isMeetingRoute) {
+        setIsInPiP(false);
+        document.body.classList.remove('pip-mode');
+        return;
+      }
       setIsInPiP(inPip);
       document.body.classList.toggle('pip-mode', inPip);
     });
@@ -68,7 +87,7 @@ function MeetingRoomInner({ isMeetingRoute, roomId }: MeetingRoomInnerProps) {
       removeListener();
       document.body.classList.remove('pip-mode');
     };
-  }, []);
+  }, [isMeetingRoute]);
 
   const activeStream = isScreenSharing && screenStream ? screenStream : localStream;
 
@@ -236,7 +255,7 @@ function MeetingRoomInner({ isMeetingRoute, roomId }: MeetingRoomInnerProps) {
     || remoteParticipants[0]
     || localParticipant;
 
-  if (isInPiP) {
+  if (isInPiP && isMeetingRoute && roomId) {
     return (
       <div className="pip-fullscreen-arena">
         <VideoTile participant={primaryParticipant} isPiP />

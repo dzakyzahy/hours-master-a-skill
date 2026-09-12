@@ -48,6 +48,7 @@ interface CallServicePlugin {
   start(options: { video: boolean }): Promise<void>;
   stop(): Promise<void>;
   enterPiP(): Promise<void>;
+  setPipMode(options: { enabled: boolean }): Promise<void>;
   addListener(
     eventName: 'pipModeChanged',
     listenerFunc: (data: { isInPiP: boolean }) => void
@@ -55,6 +56,15 @@ interface CallServicePlugin {
 }
 
 const CallService = registerPlugin<CallServicePlugin>('CallService');
+
+export const setCallPipEnabled = async (enabled: boolean) => {
+  if (!isNative) return;
+  try {
+    await CallService.setPipMode({ enabled });
+  } catch (err) {
+    console.warn('[native] failed to set PiP mode:', err);
+  }
+};
 
 /**
  * Android kills mic/camera a few seconds after the app is backgrounded unless a
