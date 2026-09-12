@@ -111,7 +111,8 @@ export function useWebRTC(
       }
 
       const sourceStream = localStreamRef.current;
-      const senderStream = new MediaStream(sourceStream?.getTracks() || []);
+      // Gunakan original stream, JANGAN di clone dengan new MediaStream
+      const senderStream = sourceStream || new MediaStream();
 
       const peer = new Peer({
         initiator: isInitiator,
