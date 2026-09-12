@@ -3132,3 +3132,12 @@ body.pip-mode video {
 }
 
 
+
+/* Hide Android WebView default video play button overlay */
+video::-webkit-media-controls {
+    display: none !important;
+}
+video::-webkit-media-controls-start-playback-button {
+    display: none !important;
+    -webkit-appearance: none;
+}

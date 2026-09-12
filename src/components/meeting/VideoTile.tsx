@@ -124,6 +124,12 @@ export function VideoTile({ participant, isDominant = false, isPiP = false }: Vi
           autoPlay
           playsInline
           muted
+          onLoadedMetadata={(e) => {
+            (e.target as HTMLVideoElement).play().catch(err => console.warn('Play on loaded metadata failed:', err));
+          }}
+          onCanPlay={(e) => {
+            (e.target as HTMLVideoElement).play().catch(err => console.warn('Play on can play failed:', err));
+          }}
           style={{
             width: '100%',
             height: '100%',
