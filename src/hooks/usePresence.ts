@@ -1,6 +1,10 @@
 import { useEffect } from 'react';
+import { App as CapApp } from '@capacitor/app';
+import { Capacitor } from '@capacitor/core';
 import { useStore } from '../store';
 import { supabase, isSupabaseConfigured } from '../supabaseClient';
+import { useCallSessionStore } from '../utils/callSession';
+import { derivePresenceUpdates, normalizePresenceKey } from '../utils/presenceCore';
 
 export function usePresence() {
   const { isAuthenticated, username, updateFriendStatus, checkFriendsOnlineStatus } = useStore();
@@ -11,153 +15,119 @@ export function usePresence() {
       return;
     }
 
-    const currentUsername = username.toLowerCase();
+    const currentUsername = normalizePresenceKey(username);
+    const currentFriendNames = () => useStore.getState().friends.map(friend => friend.username);
+    const markAllOffline = () => {
+      derivePresenceUpdates(currentFriendNames(), [], Date.now()).forEach(update => {
+        updateFriendStatus(update.username, false);
+      });
+    };
+
+    if (isSupabaseConfigured) {
+      const channel = supabase.channel('global_presence', {
+        config: { presence: { key: currentUsername } },
+      });
+
+      const applySnapshot = () => {
+        const onlineKeys = Object.keys(channel.presenceState())
+          .filter(key => normalizePresenceKey(key) !== currentUsername);
+        derivePresenceUpdates(currentFriendNames(), onlineKeys, Date.now()).forEach(update => {
+          updateFriendStatus(update.username, update.isOnline, update.lastSeen);
+        });
+      };
+
+      const trackPresence = () => channel.track({
+        online_at: new Date().toISOString(),
+        username: currentUsername,
+      }).catch((err: unknown) => console.warn('[presence] Failed to track:', err));
+
+      channel
+        .on('presence', { event: 'sync' }, applySnapshot)
+        .on('presence', { event: 'join' }, applySnapshot)
+        .on('presence', { event: 'leave' }, applySnapshot)
+        .subscribe((status: string) => {
+          if (status === 'SUBSCRIBED') trackPresence();
+          if (status === 'TIMED_OUT' || status === 'CLOSED' || status === 'CHANNEL_ERROR') {
+            markAllOffline();
+          }
+        });
+
+      const handleOffline = () => markAllOffline();
+      const handleOnline = () => trackPresence();
+      window.addEventListener('offline', handleOffline);
+      window.addEventListener('online', handleOnline);
+
+      let appStateListener: Promise<{ remove: () => Promise<void> }> | null = null;
+      if (Capacitor.isNativePlatform()) {
+        appStateListener = CapApp.addListener('appStateChange', ({ isActive }) => {
+          const hasActiveCall = Boolean(useCallSessionStore.getState().session);
+          if (isActive || hasActiveCall) {
+            trackPresence();
+          } else {
+            channel.untrack().catch(() => {});
+            markAllOffline();
+          }
+        });
+      }
+
+      const handleUnload = () => channel.untrack().catch(() => {});
+      window.addEventListener('beforeunload', handleUnload);
+
+      return () => {
+        window.removeEventListener('offline', handleOffline);
+        window.removeEventListener('online', handleOnline);
+        window.removeEventListener('beforeunload', handleUnload);
+        appStateListener?.then(listener => listener.remove()).catch(() => {});
+        channel.untrack().catch(() => {});
+        supabase.removeChannel(channel);
+      };
+    }
+
     let broadcastChannel: BroadcastChannel | null = null;
     try {
-      if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+      if ('BroadcastChannel' in window) {
         broadcastChannel = new BroadcastChannel('skillo_presence_sync');
       }
     } catch {}
 
-    // 1. Initial Heartbeat & Broadcast
     const sendHeartbeat = () => {
-      const now = Date.now();
+      const timestamp = Date.now();
       try {
-        localStorage.setItem(`presence_${currentUsername}`, now.toString());
+        localStorage.setItem(`presence_${currentUsername}`, timestamp.toString());
+        broadcastChannel?.postMessage({ type: 'HEARTBEAT', username: currentUsername, timestamp });
       } catch {}
-
-      if (broadcastChannel) {
-        try {
-          broadcastChannel.postMessage({
-            type: 'HEARTBEAT',
-            username: currentUsername,
-            timestamp: now,
-          });
-        } catch {}
-      }
-
-      // Check current friends' online timestamps
       checkFriendsOnlineStatus();
     };
 
-    sendHeartbeat();
-    const interval = setInterval(sendHeartbeat, 3500);
-
-    // 2. BroadcastChannel Message Listener
     if (broadcastChannel) {
-      broadcastChannel.onmessage = (event) => {
+      broadcastChannel.onmessage = event => {
         const data = event.data;
-        if (!data || typeof data !== 'object') return;
-
-        if (data.type === 'HEARTBEAT' && data.username && data.username !== currentUsername) {
-          const usr = data.username.toLowerCase();
-          try {
-            localStorage.setItem(`presence_${usr}`, (data.timestamp || Date.now()).toString());
-          } catch {}
+        if (!data?.username || normalizePresenceKey(data.username) === currentUsername) return;
+        if (data.type === 'HEARTBEAT' || data.type === 'ACK') {
+          localStorage.setItem(`presence_${normalizePresenceKey(data.username)}`, String(data.timestamp || Date.now()));
           updateFriendStatus(data.username, true, data.timestamp);
-          // Respond back so the other tab knows we are online immediately
-          try {
-            broadcastChannel?.postMessage({
-              type: 'ACK',
-              username: currentUsername,
-              timestamp: Date.now(),
-            });
-          } catch {}
-        } else if (data.type === 'ACK' && data.username && data.username !== currentUsername) {
-          const usr = data.username.toLowerCase();
-          try {
-            localStorage.setItem(`presence_${usr}`, (data.timestamp || Date.now()).toString());
-          } catch {}
-          updateFriendStatus(data.username, true, data.timestamp);
-        } else if (data.type === 'LOGOUT' && data.username && data.username !== currentUsername) {
-          const usr = data.username.toLowerCase();
-          try {
-            localStorage.removeItem(`presence_${usr}`);
-          } catch {}
+          if (data.type === 'HEARTBEAT') {
+            broadcastChannel?.postMessage({ type: 'ACK', username: currentUsername, timestamp: Date.now() });
+          }
+        } else if (data.type === 'LOGOUT') {
           updateFriendStatus(data.username, false, data.timestamp);
         }
       };
     }
 
-    // 3. Optional Supabase Presence (if Supabase is configured)
-    let supabaseChannel: any = null;
-    let supabaseOnlineUsers: Set<string> = new Set();
-    let supabaseInterval: any = null;
-    if (isSupabaseConfigured) {
-      try {
-        supabaseChannel = supabase.channel('global_presence', {
-          config: { presence: { key: currentUsername } },
-        });
-
-        const syncSupabasePresence = () => {
-          const state = supabaseChannel.presenceState();
-          const currentlyOnline = new Set<string>();
-          Object.keys(state).forEach((usr) => {
-            if (usr.toLowerCase() !== currentUsername) {
-              currentlyOnline.add(usr.toLowerCase());
-              updateFriendStatus(usr, true, Date.now());
-            }
-          });
-          
-          // Mark users offline if they are in our previous set but not in the new state
-          supabaseOnlineUsers.forEach(usr => {
-            if (!currentlyOnline.has(usr)) {
-              updateFriendStatus(usr, false, Date.now());
-            }
-          });
-          supabaseOnlineUsers = currentlyOnline;
-        };
-
-        supabaseChannel
-          .on('presence', { event: 'sync' }, syncSupabasePresence)
-          .on('presence', { event: 'join' }, syncSupabasePresence)
-          .on('presence', { event: 'leave' }, syncSupabasePresence)
-          .subscribe(async (status: string) => {
-            if (status === 'SUBSCRIBED') {
-              await supabaseChannel.track({
-                online_at: new Date().toISOString(),
-                username: currentUsername,
-              });
-            }
-          });
-          
-        // Override local check for Supabase users periodically
-        supabaseInterval = setInterval(() => {
-          supabaseOnlineUsers.forEach(usr => {
-            updateFriendStatus(usr, true, Date.now());
-          });
-        }, 3000);
-        
-      } catch (err) {
-        console.warn('Supabase presence error:', err);
-      }
-    }
-
-    // 4. Cleanup on unmount or tab close
+    sendHeartbeat();
+    const heartbeat = window.setInterval(sendHeartbeat, 3500);
     const handleUnload = () => {
-      try {
-        localStorage.removeItem(`presence_${currentUsername}`);
-        broadcastChannel?.postMessage({
-          type: 'LOGOUT',
-          username: currentUsername,
-          timestamp: Date.now(),
-        });
-      } catch {}
+      localStorage.removeItem(`presence_${currentUsername}`);
+      broadcastChannel?.postMessage({ type: 'LOGOUT', username: currentUsername, timestamp: Date.now() });
     };
-
     window.addEventListener('beforeunload', handleUnload);
 
     return () => {
-      clearInterval(interval);
-      if (supabaseInterval) clearInterval(supabaseInterval);
-      handleUnload();
+      window.clearInterval(heartbeat);
       window.removeEventListener('beforeunload', handleUnload);
-      if (broadcastChannel) {
-        broadcastChannel.close();
-      }
-      if (supabaseChannel) {
-        supabase.removeChannel(supabaseChannel);
-      }
+      handleUnload();
+      broadcastChannel?.close();
     };
   }, [isAuthenticated, username, updateFriendStatus, checkFriendsOnlineStatus]);
 }

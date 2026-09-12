@@ -4,6 +4,9 @@ import './index.css'
 import App from './App.tsx'
 import { startCallForeground, stopCallForeground, setScreenKeepAwake } from './utils/native'
 import { useCallSessionStore } from './utils/callSession'
+import { getNativeCallMode, type NativeCallMode } from './utils/callLifecycle'
+import { App as CapacitorApp } from '@capacitor/app'
+import { Capacitor } from '@capacitor/core'
 
 // A fresh JS context can never own a call, so any call service still running is orphaned
 // (webview reload, activity recreation). Clear it before the app renders.
@@ -11,24 +14,44 @@ stopCallForeground()
 
 // The call outlives MeetingRoom — the floating call bar keeps it alive after the page
 // unmounts — so the session store owns the foreground service, not any component.
-let nativeCallState = 'off'
-useCallSessionStore.subscribe((state) => {
-  const stream = state.activeStream
-  const next = !state.session
-    ? 'off'
-    : stream && stream.getVideoTracks().length > 0 ? 'video' : 'audio'
-  if (next === nativeCallState) return
-  nativeCallState = next
+let nativeCallState: NativeCallMode = 'off'
+let appIsActive = true
+let syncQueue = Promise.resolve()
 
-  if (next === 'off') {
-    stopCallForeground()
-    setScreenKeepAwake(false)
-  } else {
-    // Claim the camera service type only once a video track actually exists.
-    startCallForeground(next === 'video')
-    setScreenKeepAwake(true)
-  }
-})
+function syncNativeCallService() {
+  syncQueue = syncQueue.then(async () => {
+    const state = useCallSessionStore.getState()
+    const stream = state.activeStream
+    const next = getNativeCallMode(
+      Boolean(state.session),
+      Boolean(stream),
+      Boolean(stream?.getVideoTracks().length)
+    )
+    if (next === nativeCallState) return
+
+    if (next === 'off') {
+      await stopCallForeground()
+      await setScreenKeepAwake(false)
+      nativeCallState = 'off'
+    } else {
+      if (!appIsActive) return
+      const started = await startCallForeground(next === 'video')
+      if (started) {
+        nativeCallState = next
+        await setScreenKeepAwake(true)
+      }
+    }
+  }).catch(err => console.warn('[native] call service sync failed:', err))
+}
+
+useCallSessionStore.subscribe(syncNativeCallService)
+
+if (Capacitor.isNativePlatform()) {
+  CapacitorApp.addListener('appStateChange', ({ isActive }) => {
+    appIsActive = isActive
+    if (isActive) syncNativeCallService()
+  }).catch(() => {})
+}
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

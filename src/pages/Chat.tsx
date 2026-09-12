@@ -20,6 +20,7 @@ import { ThemeSwitcher } from '../components/ThemeSwitcher';
 import { playMessageSent, playMessageReceived } from '../utils/audio';
 import { useCallSignaling } from '../hooks/useCallSignaling';
 import { showChatMessageNotification, requestCallNotificationPermissions } from '../utils/callNotifications';
+import { isAppVisible, shouldShowChatSystemNotification, type ChatMessageKind } from '../utils/notificationPolicy';
 import { saveChatMessage, getChatHistory } from '../services/ChatDB';
 import { searchRegisteredUsers, loadCommunityProfiles } from '../services/FriendDB';
 import type { UserProfileSearchResult } from '../types/friends';
@@ -31,6 +32,7 @@ interface LocalChatMessage {
   recipient: string;
   text: string;
   timestamp: number;
+  kind?: ChatMessageKind;
 }
 
 const STORAGE_KEY = 'skillo_chat_history_v2';
@@ -218,9 +220,12 @@ export function Chat() {
                     synced: true
                   }).catch(() => {});
                 }
-                if (sender !== myUser) {
-                  playMessageReceived();
-                  showChatMessageNotification(payload.sender, payload.text);
+                if (sender !== myUser && payload.kind !== 'call') {
+                  const visible = isAppVisible();
+                  if (visible) playMessageReceived();
+                  if (shouldShowChatSystemNotification(visible, payload.kind)) {
+                    showChatMessageNotification(payload.sender, payload.text);
+                  }
                 }
                 return next;
               });
@@ -261,8 +266,13 @@ export function Chat() {
                   synced: true
                 }).catch(() => {});
               }
-              playMessageReceived();
-              showChatMessageNotification(msg.payload.sender, msg.payload.text);
+              if (msg.payload.kind !== 'call') {
+                const visible = isAppVisible();
+                if (visible) playMessageReceived();
+                if (shouldShowChatSystemNotification(visible, msg.payload.kind)) {
+                  showChatMessageNotification(msg.payload.sender, msg.payload.text);
+                }
+              }
               return next;
             });
           }
@@ -368,6 +378,7 @@ export function Chat() {
       recipient: (targetFriendUser.username || targetFriendUser.name || '').toLowerCase(),
       text: `📞 Memulai panggilan video dengan ${targetFriendUser.username.replace(/^@+/, '')}...`,
       timestamp: Date.now(),
+      kind: 'call',
     };
 
     setLocalMessages(prev => {
@@ -677,7 +688,7 @@ export function Chat() {
                 </div>
               )}
 
-              <form onSubmit={handleSearchUsers} style={{ display: 'flex', gap: '8px', marginBottom: '18px' }}>
+              <form className="friend-search-form" onSubmit={handleSearchUsers} style={{ display: 'flex', gap: '8px', marginBottom: '18px' }}>
                 <input 
                   type="text" 
                   id="searchUser"
@@ -696,7 +707,7 @@ export function Chat() {
                 />
                 <button 
                   type="submit" 
-                  className="btn-primary" 
+                  className="btn-primary friend-search-submit"
                   style={{ padding: '0 18px', height: '40px', whiteSpace: 'nowrap', fontSize: '12.5px', gap: '6px' }} 
                   disabled={isSearching}
                 >

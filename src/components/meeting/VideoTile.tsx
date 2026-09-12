@@ -28,14 +28,14 @@ export function VideoTile({ participant, isDominant = false, isPiP = false }: Vi
       if (audioRef.current.srcObject !== participant.stream) {
         audioRef.current.srcObject = participant.stream;
       }
-      audioRef.current.muted = participant.isAudioMuted;
+      audioRef.current.muted = false;
       audioRef.current.play().catch(err => {
         if (err.name !== 'AbortError') {
           console.warn('[VideoTile] Remote audio play caught:', err);
         }
       });
     }
-  }, [participant.stream, participant.isLocal, participant.isAudioMuted]);
+  }, [participant.stream, participant.isLocal]);
 
   // Bind video stream to video element when video is on
   useEffect(() => {
@@ -74,7 +74,7 @@ export function VideoTile({ participant, isDominant = false, isPiP = false }: Vi
         height: '100%',
         minHeight: isPiP ? 0 : isDominant ? '240px' : 0,
         backgroundColor: isPiP ? '#000' : 'var(--surface-card)',
-        borderRadius: isPiP ? 0 : '16px',
+        borderRadius: isPiP ? 0 : '8px',
         overflow: 'hidden',
         border: isPiP
           ? 'none'
@@ -98,7 +98,7 @@ export function VideoTile({ participant, isDominant = false, isPiP = false }: Vi
           ref={audioRef}
           autoPlay
           playsInline
-          muted={participant.isAudioMuted}
+          muted={false}
           style={{ position: 'fixed', top: -9999, left: -9999, width: 1, height: 1, opacity: 0.001, pointerEvents: 'none' }}
         />
       )}
@@ -109,7 +109,7 @@ export function VideoTile({ participant, isDominant = false, isPiP = false }: Vi
           ref={videoRef}
           autoPlay
           playsInline
-          muted={participant.isLocal ? true : participant.isAudioMuted}
+          muted
           style={{
             width: '100%',
             height: '100%',
@@ -142,7 +142,7 @@ export function VideoTile({ participant, isDominant = false, isPiP = false }: Vi
               fontSize: isDominant ? '1.5rem' : '1.25rem',
               fontWeight: 700,
               color: 'var(--text-primary)',
-              letterSpacing: '0.05em',
+              letterSpacing: 0,
               overflow: 'hidden',
             }}
           >
@@ -156,7 +156,7 @@ export function VideoTile({ participant, isDominant = false, isPiP = false }: Vi
               initials
             )}
           </div>
-          {participant.isSpeaking && (
+          {participant.isSpeaking && !isPiP && (
             <div
               style={{
                 display: 'inline-flex',

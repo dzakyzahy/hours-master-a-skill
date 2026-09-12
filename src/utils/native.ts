@@ -61,12 +61,15 @@ const CallService = registerPlugin<CallServicePlugin>('CallService');
  * foreground service holds them. Call only once capture permission is already granted —
  * claiming the camera service type without the permission throws on API 34+.
  */
-export const startCallForeground = async (video: boolean) => {
-  if (!isNative) return;
+export const startCallForeground = async (video: boolean): Promise<boolean> => {
+  if (!isNative) return false;
+  if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return false;
   try {
     await CallService.start({ video });
+    return true;
   } catch (err) {
     console.warn('[native] call foreground service failed to start:', err);
+    return false;
   }
 };
 

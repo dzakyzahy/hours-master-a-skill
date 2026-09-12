@@ -1,14 +1,4 @@
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { 
-  faMicrophone, 
-  faMicrophoneSlash, 
-  faVideo, 
-  faVideoSlash, 
-  faDesktop, 
-  faPhoneSlash, 
-  faUsers, 
-  faGear 
-} from '@fortawesome/free-solid-svg-icons';
+import { Mic, MicOff, MonitorUp, PhoneOff, Settings, Users, Video, VideoOff } from 'lucide-react';
 import { canScreenShare } from '../../utils/native';
 
 interface MeetingControlsProps {
@@ -37,157 +27,64 @@ export function MeetingControls({
   onToggleDevTools,
 }: MeetingControlsProps) {
   return (
-    <div className="meeting-controls-dock">
-      {/* Participant Counter Chip */}
-      <div 
-        className="meeting-dock-chip"
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '6px',
-          padding: '0 12px',
-          height: '42px',
-          borderRadius: '9999px',
-          backgroundColor: 'var(--surface-input)',
-          border: '1px solid var(--border-hairline-strong)',
-          fontSize: '0.8125rem',
-          fontWeight: 600,
-          color: 'var(--text-primary)',
-          flexShrink: 0,
-        }}
-      >
-        <FontAwesomeIcon icon={faUsers} style={{ color: 'var(--accent-primary)', fontSize: '12px' }} />
+    <div className="meeting-controls-dock" role="toolbar" aria-label="Kontrol panggilan">
+      <div className="meeting-dock-chip" aria-label={`${participantCount} peserta`}>
+        <Users size={18} aria-hidden="true" />
         <span className="tabular-nums">{participantCount}/4</span>
       </div>
 
-      {/* Mic Toggle */}
       <button
         type="button"
-        className="btn"
+        className={`meeting-control-button ${isMuted ? 'is-danger' : ''}`}
         onClick={onToggleMic}
-        title={isMuted ? 'Unmute microphone' : 'Mute microphone'}
-        style={{
-          width: '44px',
-          height: '44px',
-          minWidth: '44px',
-          padding: 0,
-          borderRadius: '50%',
-          backgroundColor: isMuted ? 'rgba(239, 68, 68, 0.15)' : 'var(--surface-input)',
-          border: isMuted ? '1px solid var(--color-danger)' : '1px solid var(--border-hairline-strong)',
-          color: isMuted ? 'var(--color-danger)' : 'var(--text-primary)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          transition: 'all 0.2s ease',
-          flexShrink: 0,
-        }}
+        aria-label={isMuted ? 'Nyalakan mikrofon' : 'Matikan mikrofon'}
+        aria-pressed={isMuted}
       >
-        <FontAwesomeIcon icon={isMuted ? faMicrophoneSlash : faMicrophone} style={{ fontSize: '15px' }} />
+        {isMuted ? <MicOff size={20} aria-hidden="true" /> : <Mic size={20} aria-hidden="true" />}
       </button>
 
-      {/* Camera Toggle */}
       <button
         type="button"
-        className="btn"
+        className={`meeting-control-button ${isVideoOff ? 'is-danger' : ''}`}
         onClick={onToggleVideo}
-        title={isVideoOff ? 'Turn on camera' : 'Turn off camera'}
-        style={{
-          width: '44px',
-          height: '44px',
-          minWidth: '44px',
-          padding: 0,
-          borderRadius: '50%',
-          backgroundColor: isVideoOff ? 'rgba(239, 68, 68, 0.15)' : 'var(--surface-input)',
-          border: isVideoOff ? '1px solid var(--color-danger)' : '1px solid var(--border-hairline-strong)',
-          color: isVideoOff ? 'var(--color-danger)' : 'var(--text-primary)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          transition: 'all 0.2s ease',
-          flexShrink: 0,
-        }}
+        aria-label={isVideoOff ? 'Nyalakan kamera' : 'Matikan kamera'}
+        aria-pressed={isVideoOff}
       >
-        <FontAwesomeIcon icon={isVideoOff ? faVideoSlash : faVideo} style={{ fontSize: '15px' }} />
+        {isVideoOff ? <VideoOff size={20} aria-hidden="true" /> : <Video size={20} aria-hidden="true" />}
       </button>
 
-      {/* Screen Share Toggle — web only; Android WebView has no getDisplayMedia */}
       {canScreenShare && (
         <button
           type="button"
-          className="btn meeting-control-desktop-only"
+          className={`meeting-control-button meeting-control-desktop-only ${isScreenSharing ? 'is-active' : ''}`}
           onClick={onToggleScreenShare}
-          title={isScreenSharing ? 'Stop sharing screen' : 'Share screen'}
-          style={{
-            width: '44px',
-            height: '44px',
-            minWidth: '44px',
-            padding: 0,
-            borderRadius: '50%',
-            backgroundColor: isScreenSharing ? 'rgba(14, 165, 233, 0.18)' : 'var(--surface-input)',
-            border: isScreenSharing ? '1px solid var(--accent-primary)' : '1px solid var(--border-hairline-strong)',
-            color: isScreenSharing ? 'var(--accent-primary)' : 'var(--text-primary)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            transition: 'all 0.2s ease',
-            flexShrink: 0,
-          }}
+          aria-label={isScreenSharing ? 'Hentikan berbagi layar' : 'Bagikan layar'}
+          aria-pressed={isScreenSharing}
         >
-          <FontAwesomeIcon icon={faDesktop} style={{ fontSize: '15px' }} />
+          <MonitorUp size={20} aria-hidden="true" />
         </button>
       )}
 
       {onToggleDevTools && (
         <button
           type="button"
-          className="btn meeting-control-desktop-only"
+          className={`meeting-control-button meeting-control-desktop-only ${showDevTools ? 'is-active' : ''}`}
           onClick={onToggleDevTools}
-          title="Toggle Mock Simulation Tools"
-          style={{
-            width: '44px',
-            height: '44px',
-            minWidth: '44px',
-            padding: 0,
-            borderRadius: '50%',
-            backgroundColor: showDevTools ? 'rgba(168, 85, 247, 0.2)' : 'var(--surface-input)',
-            border: showDevTools ? '1px solid var(--accent-purple)' : '1px solid var(--border-hairline-strong)',
-            color: showDevTools ? 'var(--accent-purple)' : 'var(--text-secondary)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            transition: 'all 0.2s ease',
-            flexShrink: 0,
-          }}
+          aria-label="Buka diagnostik WebRTC"
+          aria-pressed={showDevTools}
         >
-          <FontAwesomeIcon icon={faGear} style={{ fontSize: '15px' }} />
+          <Settings size={20} aria-hidden="true" />
         </button>
       )}
 
-      {/* End Call / Leave Button */}
       <button
         type="button"
-        className="btn"
+        className="meeting-end-button"
         onClick={onLeave}
-        title="Leave room"
-        style={{
-          padding: '0 16px',
-          height: '44px',
-          borderRadius: '9999px',
-          backgroundColor: '#dc2626',
-          border: '1px solid #ef4444',
-          color: '#ffffff',
-          fontWeight: 600,
-          gap: '6px',
-          display: 'inline-flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          boxShadow: '0 4px 14px rgba(220, 38, 38, 0.4)',
-          transition: 'all 0.2s ease',
-          flexShrink: 0,
-        }}
+        aria-label="Akhiri panggilan"
       >
-        <FontAwesomeIcon icon={faPhoneSlash} style={{ fontSize: '13px' }} />
-        <span className="meeting-btn-text">Leave</span>
+        <PhoneOff size={21} aria-hidden="true" />
+        <span className="meeting-btn-text">Akhiri</span>
       </button>
     </div>
   );

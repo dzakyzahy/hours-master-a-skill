@@ -9,6 +9,7 @@ import {
   showIncomingCallNotification,
   clearIncomingCallNotification
 } from '../src/utils/callNotifications.ts';
+import { shouldShowChatSystemNotification } from '../src/utils/notificationPolicy.ts';
 
 describe('callNotifications', () => {
   it('builds a high-importance channel for heads-up notifications', () => {
@@ -131,4 +132,11 @@ describe('callNotifications', () => {
   });
 });
 
+describe('chat notification policy', () => {
+  it('uses in-app feedback while visible and suppresses call activity notifications', () => {
+    assert.strictEqual(shouldShowChatSystemNotification(true, 'text'), false);
+    assert.strictEqual(shouldShowChatSystemNotification(false, 'call'), false);
+    assert.strictEqual(shouldShowChatSystemNotification(false, 'text'), true);
+  });
+});
 

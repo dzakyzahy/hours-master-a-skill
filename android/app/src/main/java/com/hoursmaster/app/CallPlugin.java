@@ -1,7 +1,12 @@
 package com.hoursmaster.app;
 
+import android.Manifest;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.Build;
+
+import androidx.core.content.ContextCompat;
+import androidx.lifecycle.Lifecycle;
 
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
@@ -30,8 +35,23 @@ public class CallPlugin extends Plugin {
 
     @PluginMethod
     public void start(PluginCall call) {
+        if (getActivity() == null || !getActivity().getLifecycle().getCurrentState().isAtLeast(Lifecycle.State.RESUMED)) {
+            call.reject("Call service can only start while the app is active");
+            return;
+        }
+
+        boolean withVideo = Boolean.TRUE.equals(call.getBoolean("video", false));
+        if (ContextCompat.checkSelfPermission(getContext(), Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            call.reject("Microphone permission is not granted");
+            return;
+        }
+        if (withVideo && ContextCompat.checkSelfPermission(getContext(), Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            call.reject("Camera permission is not granted");
+            return;
+        }
+
         Intent intent = new Intent(getContext(), CallService.class);
-        intent.putExtra(CallService.EXTRA_VIDEO, Boolean.TRUE.equals(call.getBoolean("video", false)));
+        intent.putExtra(CallService.EXTRA_VIDEO, withVideo);
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 getContext().startForegroundService(intent);

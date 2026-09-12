@@ -1,10 +1,20 @@
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
+import { nodePolyfills } from 'vite-plugin-node-polyfills';
 
 // https://vite.dev/config/
 export default defineConfig({
   base: process.env.GITHUB_ACTIONS ? '/skillo/' : './',
-  plugins: [react()],
+  plugins: [
+    react(),
+    nodePolyfills({
+      globals: {
+        Buffer: true,
+        global: true,
+        process: true,
+      },
+    }),
+  ],
   server: {
     host: '0.0.0.0',
     port: 5173,

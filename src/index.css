@@ -1537,7 +1537,7 @@ button, a {
 .community-section {
   margin-bottom: 24px;
   padding: 16px;
-  border-radius: 12px;
+  border-radius: 8px;
   background: var(--surface-input);
   border: 1px solid var(--border-hairline);
 }
@@ -1554,7 +1554,7 @@ button, a {
   font-size: 12.5px;
   font-weight: 600;
   color: var(--text-primary);
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
 }
 
 .community-section-badge {
@@ -1574,7 +1574,7 @@ button, a {
   align-items: center;
   justify-content: space-between;
   padding: 10px 14px;
-  border-radius: 9px;
+  border-radius: 8px;
   background: var(--surface-card);
   border: 1px solid var(--border-hairline-strong);
   gap: 12px;
@@ -1615,6 +1615,42 @@ button, a {
   font-size: 13px;
   font-weight: 600;
   color: var(--text-primary);
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 480px) {
+  .community-section {
+    padding: 12px;
+  }
+
+  .community-section-header {
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .community-card {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .community-card > :first-child {
+    width: 100%;
+  }
+
+  .community-card > button {
+    align-self: flex-end;
+    min-height: 48px !important;
+    height: 48px !important;
+  }
+
+  .friend-search-form .input-field,
+  .friend-search-submit {
+    min-height: 48px;
+    height: 48px !important;
+  }
 }
 
 .community-meta {
@@ -1787,7 +1823,8 @@ button, a {
 
 @media (max-width: 480px) {
   .chat-back-btn {
-    width: 36px;
+    width: 48px;
+    height: 48px;
     padding: 0;
   }
   .chat-back-label {
@@ -1811,7 +1848,7 @@ button, a {
   margin: 0;
   font-size: 17px;
   font-weight: 600;
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
   color: var(--text-primary);
   font-family: 'Geist', sans-serif;
   white-space: nowrap;
@@ -1906,7 +1943,7 @@ button, a {
   margin: 0;
   font-size: 13px;
   font-weight: 600;
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
   color: var(--text-primary);
 }
 
@@ -2108,10 +2145,20 @@ button, a {
     display: none;
   }
   .chat-action-btn {
-    width: 36px;
-    height: 36px;
+    width: 48px;
+    height: 48px;
     padding: 0;
     justify-content: center;
+  }
+
+  .chat-room-back-btn,
+  .chat-send-btn {
+    width: 48px;
+    height: 48px;
+  }
+
+  .chat-room-input {
+    height: 48px;
   }
 }
 
@@ -2590,6 +2637,496 @@ body.pip-mode video {
   width: 100% !important;
   height: 100% !important;
   object-fit: cover !important;
+}
+
+/* Meeting call surface: mobile-first, safe-area aware, and overflow resistant. */
+.meeting-room-shell {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  flex-direction: column;
+  width: 100%;
+  height: 100dvh;
+  min-width: 0;
+  overflow: hidden;
+  background: var(--bg-canvas);
+  color: var(--text-primary);
+}
+
+.meeting-call-header {
+  display: grid;
+  grid-template-areas: "actions title copy";
+  grid-template-columns: auto minmax(0, 1fr) minmax(48px, auto);
+  align-items: center;
+  gap: 12px;
+  min-height: 64px;
+  padding: max(8px, env(safe-area-inset-top, 0px)) 16px 8px;
+  border-bottom: 1px solid var(--border-hairline);
+  background: var(--surface-card);
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+.meeting-header-actions {
+  grid-area: actions;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.meeting-header-actions .btn,
+.meeting-copy-room {
+  min-width: 48px;
+  min-height: 48px;
+  padding: 0 14px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.meeting-header-exit {
+  color: #fff;
+  background: var(--color-danger);
+  border-color: var(--color-danger);
+}
+
+.meeting-title-block {
+  grid-area: title;
+  min-width: 0;
+  text-align: center;
+}
+
+.meeting-title-block h1 {
+  margin: 0;
+  overflow: hidden;
+  color: var(--text-primary);
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.meeting-connection-meta {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  margin-top: 3px;
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+}
+
+.meeting-live-status,
+.meeting-encryption {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+.meeting-live-status {
+  color: var(--color-success);
+}
+
+.meeting-copy-room {
+  grid-area: copy;
+  justify-self: end;
+  max-width: 220px;
+  color: var(--text-secondary);
+  background: var(--surface-input);
+  border: 1px solid var(--border-hairline-strong);
+}
+
+.meeting-copy-room span {
+  overflow: hidden;
+  font-family: 'Geist Mono', monospace;
+  font-size: 0.6875rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.meeting-video-stage {
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  overflow: hidden;
+}
+
+.meeting-adaptive-grid {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  max-width: 1400px;
+  max-height: none;
+  display: grid;
+  gap: 8px;
+}
+
+.meeting-grid-1 {
+  grid-template: minmax(0, 1fr) / minmax(0, 1fr);
+}
+
+.meeting-grid-2 {
+  grid-template: repeat(2, minmax(0, 1fr)) / minmax(0, 1fr);
+}
+
+.meeting-grid-multi {
+  grid-template: repeat(2, minmax(0, 1fr)) / repeat(2, minmax(0, 1fr));
+}
+
+.meeting-share-layout {
+  display: grid;
+  grid-template: minmax(0, 1fr) 112px / minmax(0, 1fr);
+  gap: 8px;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+}
+
+.meeting-share-primary {
+  min-width: 0;
+  min-height: 0;
+}
+
+.meeting-share-participants {
+  display: flex;
+  gap: 8px;
+  min-width: 0;
+  min-height: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+}
+
+.meeting-share-participants::-webkit-scrollbar {
+  display: none;
+}
+
+.meeting-share-participant {
+  width: min(38vw, 150px);
+  min-width: 112px;
+  height: 100%;
+  flex: 0 0 auto;
+}
+
+.meeting-waiting-status {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: calc(100% - 32px);
+  padding: 7px 12px;
+  color: var(--text-secondary);
+  background: var(--surface-card);
+  border: 1px solid var(--border-hairline-strong);
+  border-radius: 8px;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  z-index: 5;
+}
+
+.meeting-waiting-status > span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent-primary);
+  flex: 0 0 auto;
+}
+
+.meeting-call-footer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 8px 12px max(8px, env(safe-area-inset-bottom, 0px));
+  flex-shrink: 0;
+}
+
+.meeting-controls-dock {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  max-width: calc(100vw - 24px);
+  padding: 6px 8px;
+  background: var(--surface-card);
+  border: 1px solid var(--border-hairline-strong);
+  border-radius: 999px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.32);
+  box-sizing: border-box;
+}
+
+.meeting-dock-chip,
+.meeting-control-button,
+.meeting-end-button {
+  height: 48px;
+  min-width: 48px;
+  border: 1px solid var(--border-hairline-strong);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+
+.meeting-dock-chip {
+  gap: 6px;
+  padding: 0 12px;
+  color: var(--text-primary);
+  background: var(--surface-input);
+  border-radius: 999px;
+  font-size: 0.8125rem;
+  font-weight: 650;
+}
+
+.meeting-dock-chip svg {
+  color: var(--accent-primary);
+}
+
+.meeting-control-button {
+  padding: 0;
+  color: var(--text-primary);
+  background: var(--surface-input);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease;
+}
+
+.meeting-control-button:active,
+.meeting-end-button:active,
+.meeting-header-actions .btn:active,
+.meeting-copy-room:active {
+  opacity: 0.78;
+}
+
+.meeting-control-button.is-danger {
+  color: var(--color-danger);
+  background: rgba(239, 68, 68, 0.14);
+  border-color: var(--color-danger);
+}
+
+.meeting-control-button.is-active {
+  color: var(--accent-primary);
+  background: rgba(14, 165, 233, 0.16);
+  border-color: var(--accent-primary);
+}
+
+.meeting-end-button {
+  gap: 7px;
+  padding: 0 16px;
+  color: #fff;
+  background: var(--color-danger);
+  border-color: var(--color-danger);
+  border-radius: 999px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.meeting-debug-panel {
+  position: absolute;
+  right: 12px;
+  bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 10px 12px;
+  color: var(--text-secondary);
+  background: var(--surface-card);
+  border: 1px solid var(--border-hairline-strong);
+  border-radius: 8px;
+  font-size: 0.75rem;
+  z-index: 60;
+}
+
+.pip-fullscreen-arena {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background: #000;
+}
+
+.pip-local-preview {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  width: 27%;
+  aspect-ratio: 9 / 16;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.55);
+}
+
+@media (min-width: 641px) {
+  .meeting-video-stage {
+    padding: 16px;
+  }
+
+  .meeting-grid-2 {
+    grid-template: minmax(0, 1fr) / repeat(2, minmax(0, 1fr));
+  }
+
+  .meeting-share-layout {
+    grid-template: minmax(0, 1fr) / minmax(0, 1fr) 240px;
+    gap: 12px;
+  }
+
+  .meeting-share-participants {
+    flex-direction: column;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  .meeting-share-participant {
+    width: 100%;
+    min-width: 0;
+    height: 150px;
+  }
+}
+
+@media (max-width: 640px) {
+  .meeting-call-header {
+    grid-template-areas:
+      "title title title"
+      "actions actions copy";
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 6px 8px;
+    padding: max(8px, env(safe-area-inset-top, 0px)) 12px 8px;
+  }
+
+  .meeting-title-block {
+    grid-area: title;
+  }
+
+  .meeting-header-actions {
+    grid-area: actions;
+  }
+
+  .meeting-header-exit {
+    display: none !important;
+  }
+
+  .meeting-pip-button span,
+  .meeting-copy-room span,
+  .meeting-encryption {
+    display: none;
+  }
+
+  .meeting-copy-room {
+    grid-area: copy;
+    width: 48px;
+    padding: 0;
+  }
+
+  .meeting-connection-meta {
+    margin-top: 2px;
+  }
+
+  .meeting-video-stage {
+    padding: 8px;
+  }
+
+  .meeting-call-footer {
+    padding-inline: 8px;
+  }
+
+  .meeting-controls-dock {
+    gap: 8px;
+    padding: 6px;
+  }
+
+  .meeting-control-desktop-only {
+    display: none !important;
+  }
+
+  .meeting-dock-chip {
+    padding-inline: 10px !important;
+    height: 48px !important;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 600px) {
+  .meeting-call-header {
+    grid-template-areas: "actions title copy";
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    min-height: 48px;
+    padding: max(4px, env(safe-area-inset-top, 0px)) max(10px, env(safe-area-inset-left, 0px)) 4px;
+  }
+
+  .meeting-header-exit {
+    display: inline-flex !important;
+  }
+
+  .meeting-header-actions .btn,
+  .meeting-copy-room {
+    min-width: 48px;
+    min-height: 48px;
+    height: 48px !important;
+  }
+
+  .meeting-title-block h1 {
+    font-size: 0.875rem;
+  }
+
+  .meeting-connection-meta {
+    display: none;
+  }
+
+  .meeting-grid-2 {
+    grid-template: minmax(0, 1fr) / repeat(2, minmax(0, 1fr)) !important;
+    max-height: none !important;
+  }
+
+  .meeting-share-layout {
+    grid-template: minmax(0, 1fr) / minmax(0, 1fr) 132px;
+  }
+
+  .meeting-share-participants {
+    flex-direction: column;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  .meeting-share-participant {
+    width: 100%;
+    min-width: 0;
+    height: 92px;
+  }
+
+  .meeting-call-footer {
+    padding: 4px max(8px, env(safe-area-inset-right, 0px)) max(4px, env(safe-area-inset-bottom, 0px));
+  }
+
+  .meeting-controls-dock {
+    transform: none;
+    padding: 4px 6px;
+  }
+
+  .meeting-controls-dock button,
+  .meeting-controls-dock .meeting-dock-chip {
+    width: auto !important;
+    min-width: 48px !important;
+    height: 48px !important;
+  }
 }
 
 

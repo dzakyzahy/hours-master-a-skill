@@ -43,9 +43,16 @@ public class CallService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         boolean withVideo = intent != null && intent.getBooleanExtra(EXTRA_VIDEO, false);
 
-        createChannel();
-        ServiceCompat.startForeground(this, NOTIFICATION_ID, buildNotification(), serviceType(withVideo));
-        routeAudioToCall();
+        try {
+            createChannel();
+            ServiceCompat.startForeground(this, NOTIFICATION_ID, buildNotification(), serviceType(withVideo));
+            routeAudioToCall();
+        } catch (RuntimeException e) {
+            // Android 14+ rejects microphone/camera FGS starts when the activity is no
+            // longer eligible. A rejected background enhancement must never kill the app.
+            Log.e(TAG, "Foreground call service rejected", e);
+            stopSelf(startId);
+        }
 
         // A dropped call must not resurrect itself with a stale notification.
         return START_NOT_STICKY;

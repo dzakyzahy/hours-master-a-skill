@@ -4,14 +4,6 @@ import type { Participant } from '../types/meeting';
 import Peer from 'simple-peer';
 import type { Instance as PeerInstance } from 'simple-peer';
 
-// Menggunakan global polyfill workaround jika Vite tidak memiliki 'process' atau 'global'
-if (typeof global === 'undefined') {
-  window.global = window;
-}
-if (typeof process === 'undefined') {
-  window.process = { env: {} } as any;
-}
-
 type SignalType =
   | 'peer-joined'
   | 'peer-left'
@@ -28,7 +20,9 @@ interface SignalPayload {
 
 interface PeerState {
   peer: PeerInstance;
-  currentStream: MediaStream;
+  senderStream: MediaStream;
+  audioTrack?: MediaStreamTrack;
+  videoTrack?: MediaStreamTrack;
 }
 
 // STUN/TURN Servers untuk NAT Traversal
@@ -99,8 +93,8 @@ export function useWebRTC(
   const removePeer = useCallback((peerId: string) => {
     const peerState = peersRef.current.get(peerId);
     if (peerState) {
-      peerState.peer.destroy();
       peersRef.current.delete(peerId);
+      if (!(peerState.peer as any).destroyed) peerState.peer.destroy();
     }
     setRemoteParticipants(prev => prev.filter(p => p.id !== peerId));
   }, []);
@@ -116,12 +110,13 @@ export function useWebRTC(
         peersRef.current.delete(peerId);
       }
 
-      const streamToPass = localStreamRef.current || undefined;
+      const sourceStream = localStreamRef.current;
+      const senderStream = new MediaStream(sourceStream?.getTracks() || []);
 
       const peer = new Peer({
         initiator: isInitiator,
         trickle: true,
-        stream: streamToPass,
+        stream: senderStream,
         config: {
           iceServers: ICE_SERVERS
         }
@@ -130,7 +125,9 @@ export function useWebRTC(
       // Simpan state peer
       peersRef.current.set(peerId, {
         peer,
-        currentStream: streamToPass as MediaStream,
+        senderStream,
+        audioTrack: sourceStream?.getAudioTracks()[0],
+        videoTrack: sourceStream?.getVideoTracks()[0],
       });
 
       // Tambahkan placeholder partisipan
@@ -195,10 +192,11 @@ export function useWebRTC(
   // ================================================================
   useEffect(() => {
     if (!roomId || !localUserId) return;
+    const peers = peersRef.current;
 
     // Bersihkan room sebelumnya
-    peersRef.current.forEach(({ peer }) => peer.destroy());
-    peersRef.current.clear();
+    peers.forEach(({ peer }) => peer.destroy());
+    peers.clear();
     setRemoteParticipants([]);
 
     const channel = supabase.channel(`webrtc_room_${roomId}`, {
@@ -281,8 +279,8 @@ export function useWebRTC(
     return () => {
       sendSignal('peer-left');
       channel.unsubscribe();
-      peersRef.current.forEach(({ peer }) => peer.destroy());
-      peersRef.current.clear();
+      peers.forEach(({ peer }) => peer.destroy());
+      peers.clear();
       channelRef.current = null;
     };
   }, [roomId, localUserId, createPeer, sendSignal, removePeer]);
@@ -292,7 +290,7 @@ export function useWebRTC(
   // ================================================================
   useEffect(() => {
     if (!channelRef.current) return;
-    sendSignal('status-update', undefined, localStatus);
+    sendSignal('status-update', undefined, localStatusRef.current);
   }, [localStatus.isAudioMuted, localStatus.isVideoOff, localStatus.isScreenSharing, sendSignal]);
 
   // ================================================================
@@ -302,37 +300,28 @@ export function useWebRTC(
     if (!localStream) return;
 
     peersRef.current.forEach((peerState, peerId) => {
-      const { peer, currentStream: oldStream } = peerState;
-      if (!oldStream || !peer.connected) {
-        // Jika belum terhubung dengan baik atau stream lama kosong, kita bisa langsung set stream.
-        // Simple-peer akan mengurus onnegotiationneeded.
-        // Tapi umumnya, tambahkan stream baru
-        if (!oldStream && localStream) {
-          peer.addStream(localStream);
-          peerState.currentStream = localStream;
-        }
-        return;
-      }
-
-      // Gunakan replaceTrack untuk mengganti track video/audio tanpa memutus koneksi
+      const { peer, senderStream } = peerState;
       try {
-        oldStream.getTracks().forEach(oldTrack => {
-          const newTrack = localStream.getTracks().find(t => t.kind === oldTrack.kind);
-          if (newTrack) {
-            peer.replaceTrack(oldTrack, newTrack, oldStream);
-          } else {
-            peer.removeTrack(oldTrack, oldStream);
-          }
-        });
+        (['audio', 'video'] as const).forEach(kind => {
+          const currentTrack = kind === 'audio' ? peerState.audioTrack : peerState.videoTrack;
+          const nextTrack = localStream.getTracks().find(track => track.kind === kind);
+          if (currentTrack?.id === nextTrack?.id) return;
 
-        // Tambahkan track baru jika di stream lama tidak ada
-        localStream.getTracks().forEach(newTrack => {
-          if (!oldStream.getTracks().find(t => t.kind === newTrack.kind)) {
-            peer.addTrack(newTrack, oldStream);
+          if (currentTrack && nextTrack) {
+            peer.replaceTrack(currentTrack, nextTrack, senderStream);
+            senderStream.removeTrack(currentTrack);
+            senderStream.addTrack(nextTrack);
+          } else if (currentTrack) {
+            peer.removeTrack(currentTrack, senderStream);
+            senderStream.removeTrack(currentTrack);
+          } else if (nextTrack) {
+            senderStream.addTrack(nextTrack);
+            peer.addTrack(nextTrack, senderStream);
           }
-        });
 
-        peerState.currentStream = localStream;
+          if (kind === 'audio') peerState.audioTrack = nextTrack;
+          else peerState.videoTrack = nextTrack;
+        });
       } catch (err) {
         console.warn(`[WebRTC] Failed to replace tracks for ${peerId}:`, err);
       }

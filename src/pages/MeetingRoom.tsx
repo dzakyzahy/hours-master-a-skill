@@ -1,526 +1,341 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { useNavigate, useParams, useLocation } from 'react-router-dom';
-import { ArrowLeft, Wifi, ShieldCheck, Copy, Minimize2 } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { ArrowLeft, Copy, Minimize2, ShieldCheck, Wifi } from 'lucide-react';
+import { Capacitor } from '@capacitor/core';
 import toast from 'react-hot-toast';
 import { useStore } from '../store';
 import { VideoTile } from '../components/meeting/VideoTile';
 import { MeetingControls } from '../components/meeting/MeetingControls';
 import { useWebRTC } from '../hooks/useWebRTC';
-import { startCallForeground, stopCallForeground, enterCallPiP, addPiPListener } from '../utils/native';
-import { Capacitor } from '@capacitor/core';
-import type { Participant } from '../types/meeting';
-
+import { enterCallPiP, addPiPListener } from '../utils/native';
+import { clearIncomingCallNotification } from '../utils/callNotifications';
 import { useCallSessionStore } from '../utils/callSession';
+import { resolveMeetingRoomId } from '../utils/meetingRoute';
+import { createScreenShareBundle, type ScreenShareBundle } from '../utils/screenShare';
+import type { Participant } from '../types/meeting';
 
 export function MeetingRoom() {
   const location = useLocation();
   const { session } = useCallSessionStore();
-  const isMeetingRoute = location.pathname.startsWith('/meeting');
+  const isMeetingRoute = location.pathname.startsWith('/meeting/');
+  const roomId = resolveMeetingRoomId(location.pathname, session?.roomId);
 
-  if (!isMeetingRoute && !session) {
-    return null;
-  }
+  if ((!isMeetingRoute && !session) || !roomId) return null;
 
-  return <MeetingRoomInner isMeetingRoute={isMeetingRoute} />;
+  return <MeetingRoomInner isMeetingRoute={isMeetingRoute} roomId={roomId} />;
 }
 
-function MeetingRoomInner({ isMeetingRoute }: { isMeetingRoute: boolean }) {
+interface MeetingRoomInnerProps {
+  isMeetingRoute: boolean;
+  roomId: string;
+}
+
+function MeetingRoomInner({ isMeetingRoute, roomId }: MeetingRoomInnerProps) {
   const navigate = useNavigate();
-  const { roomId } = useParams<{ roomId?: string }>();
-  const { username, userId } = useStore();
   const location = useLocation();
-
-  const { startSession, endSession } = useCallSessionStore();
-
-  useEffect(() => {
-    if (roomId) {
-      const searchParams = new URLSearchParams(location.search);
-      const callType = (searchParams.get('type') as 'direct' | 'focus') || 'focus';
-      const withUser = searchParams.get('with') || 'Rekan';
-      
-      startSession({
-        roomId,
-        withUser,
-        callType,
-        startedAt: Date.now()
-      });
-    }
-  }, [roomId, location.search, startSession]);
-
+  const { username, userId, avatar } = useStore();
+  const { startSession, endSession, setActiveStream } = useCallSessionStore();
   const [isInPiP, setIsInPiP] = useState(false);
-
-  useEffect(() => {
-    const removePiPListener = addPiPListener((inPip) => {
-      setIsInPiP(inPip);
-      if (inPip) {
-        document.body.classList.add('pip-mode');
-      } else {
-        document.body.classList.remove('pip-mode');
-      }
-    });
-
-    return () => {
-      removePiPListener();
-      document.body.classList.remove('pip-mode');
-    };
-  }, []);
-
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoOff, setIsVideoOff] = useState(false);
   const [isScreenSharing, setIsScreenSharing] = useState(false);
   const [screenStream, setScreenStream] = useState<MediaStream | null>(null);
   const [showDevTools, setShowDevTools] = useState(false);
-
   const localStreamRef = useRef<MediaStream | null>(null);
+  const screenShareRef = useRef<ScreenShareBundle | null>(null);
 
-  // Menggabungkan stream agar audio tetap menyala saat screen share
-  const activeStream = useMemo(() => {
-    if (!localStream) return null;
-    
-    // Jika tidak screen share, cukup gunakan localStream aslinya (menghindari black screen di Android WebView akibat cloning track)
-    if (!isScreenSharing || !screenStream) {
-      return localStream;
-    }
+  useEffect(() => {
+    if (!isMeetingRoute) return;
+    const current = useCallSessionStore.getState().session;
+    if (current?.roomId === roomId) return;
+    const searchParams = new URLSearchParams(location.search);
+    startSession({
+      roomId,
+      withUser: searchParams.get('with') || 'Rekan',
+      callType: searchParams.get('type') === 'direct' ? 'direct' : 'focus',
+      startedAt: Date.now(),
+    });
+    clearIncomingCallNotification();
+  }, [isMeetingRoute, roomId, location.search, startSession]);
 
-    const stream = new MediaStream();
-    
-    // Bawa track audio dari kamera
-    localStream.getAudioTracks().forEach(t => stream.addTrack(t));
-    // Bawa track video dari screen share
-    screenStream.getVideoTracks().forEach(t => stream.addTrack(t));
-    
-    return stream;
-  }, [localStream, screenStream, isScreenSharing]);
+  useEffect(() => {
+    const removeListener = addPiPListener(inPip => {
+      setIsInPiP(inPip);
+      document.body.classList.toggle('pip-mode', inPip);
+    });
+    return () => {
+      removeListener();
+      document.body.classList.remove('pip-mode');
+    };
+  }, []);
 
-  // WebRTC Hook
+  const activeStream = isScreenSharing && screenStream ? screenStream : localStream;
+
+  useEffect(() => {
+    setActiveStream(activeStream);
+  }, [activeStream, setActiveStream]);
+
   const { remoteParticipants } = useWebRTC(
-    roomId || 'skillo-global-room',
+    roomId,
     userId || 'guest',
     username || 'Guest',
     activeStream,
     { isAudioMuted: isMuted, isVideoOff, isScreenSharing }
   );
 
-  // Request camera and microphone on mount with proper memory leak cleanup
   useEffect(() => {
     let active = true;
 
-    async function setupCamera() {
-      try {
-        if (!navigator.mediaDevices?.getUserMedia) {
-          throw new Error('getUserMedia not supported');
-        }
-
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { 
-            facingMode: 'user'
-          },
-          audio: true,
-        });
-
-        if (!active || !stream) {
-          stream?.getTracks().forEach(t => t.stop());
-          return;
-        }
-
-        localStreamRef.current = stream;
-        setLocalStream(stream);
-        
-        // Mulai foreground service agar mikrofon/kamera tetap hidup di latar belakang
-        startCallForeground(true);
-
-      } catch (err) {
-        console.warn('Camera/mic access unavailable or denied (using avatar fallback):', err);
+    async function setupMedia() {
+      if (!navigator.mediaDevices?.getUserMedia) {
         setIsVideoOff(true);
-        // Tetap nyalakan foreground service audio-only jika fallback jalan
-        startCallForeground(false);
-      }
-    }
-
-    setupCamera();
-
-    // Critical Cleanup Guard: Prevent memory leaks when leaving the room
-    return () => {
-      active = false;
-      stopCallForeground();
-      if (localStreamRef.current) {
-        localStreamRef.current.getTracks().forEach(t => t.stop());
-        localStreamRef.current = null;
-      }
-    };
-  }, []);
-
-  // Toggle Mic
-  const handleToggleMic = useCallback(() => {
-    setIsMuted(prev => {
-      const next = !prev;
-      if (localStreamRef.current) {
-        localStreamRef.current.getAudioTracks().forEach(t => {
-          t.enabled = !next;
-        });
-      }
-      return next;
-    });
-  }, []);
-
-  // Toggle Camera
-  const handleToggleVideo = useCallback(() => {
-    setIsVideoOff(prev => {
-      const next = !prev;
-      if (localStreamRef.current) {
-        localStreamRef.current.getVideoTracks().forEach(t => {
-          t.enabled = !next;
-        });
-      }
-      return next;
-    });
-  }, []);
-
-  // Toggle Screen Share
-  const handleToggleScreenShare = useCallback(async () => {
-    if (!isScreenSharing) {
-      if (!navigator.mediaDevices?.getDisplayMedia) {
-        alert("Screen sharing is not supported on this device/browser.");
         return;
       }
 
       try {
-        const stream = await navigator.mediaDevices.getDisplayMedia({
-          video: true,
-        });
-
-        setIsScreenSharing(true);
-        setScreenStream(stream);
-
-        const videoTrack = stream.getVideoTracks()?.[0];
-        if (videoTrack) {
-          videoTrack.onended = () => {
-            setIsScreenSharing(false);
-            setScreenStream(null);
-          };
+        let stream: MediaStream;
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: 'user' },
+            audio: true,
+          });
+        } catch (cameraError) {
+          console.warn('[meeting] Camera unavailable, trying audio only:', cameraError);
+          stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+          setIsVideoOff(true);
         }
+
+        if (!active) {
+          stream.getTracks().forEach(track => track.stop());
+          return;
+        }
+        localStreamRef.current = stream;
+        setLocalStream(stream);
       } catch (err) {
-        console.warn('Screen share cancelled or failed:', err);
-      }
-    } else {
-      setIsScreenSharing(false);
-      if (screenStream) {
-        screenStream.getTracks().forEach(t => t.stop());
-        setScreenStream(null);
+        console.warn('[meeting] Camera and microphone unavailable:', err);
+        setIsVideoOff(true);
+        toast.error('Kamera atau mikrofon tidak dapat digunakan');
       }
     }
-  }, [isScreenSharing, screenStream]);
 
-  // Leave Room — stream cleanup cukup di sini
-  // useWebRTC cleanup (peer connections) akan handle di unmount-nya sendiri
-  const handleLeave = () => {
-    endSession();
-    if (localStreamRef.current) {
-      localStreamRef.current.getTracks().forEach(t => t.stop());
+    setupMedia();
+    return () => {
+      active = false;
+      screenShareRef.current?.cleanup();
+      screenShareRef.current = null;
+      localStreamRef.current?.getTracks().forEach(track => track.stop());
       localStreamRef.current = null;
-    }
-    if (screenStream) {
-      screenStream.getTracks().forEach(t => t.stop());
-    }
-    navigate('/');
-  };
+    };
+  }, []);
 
-  const localParticipant: Participant = {
+  const handleToggleMic = useCallback(() => {
+    setIsMuted(previous => {
+      const next = !previous;
+      localStreamRef.current?.getAudioTracks().forEach(track => {
+        track.enabled = !next;
+      });
+      return next;
+    });
+  }, []);
+
+  const handleToggleVideo = useCallback(() => {
+    setIsVideoOff(previous => {
+      const next = !previous;
+      localStreamRef.current?.getVideoTracks().forEach(track => {
+        track.enabled = !next;
+      });
+      return next;
+    });
+  }, []);
+
+  const stopScreenShare = useCallback(() => {
+    const bundle = screenShareRef.current;
+    screenShareRef.current = null;
+    bundle?.cleanup();
+    setScreenStream(null);
+    setIsScreenSharing(false);
+  }, []);
+
+  const handleToggleScreenShare = useCallback(async () => {
+    if (isScreenSharing) {
+      stopScreenShare();
+      return;
+    }
+    if (!navigator.mediaDevices?.getDisplayMedia || !localStreamRef.current) {
+      toast.error('Screen share tidak didukung di perangkat ini');
+      return;
+    }
+
+    try {
+      const displayStream = await navigator.mediaDevices.getDisplayMedia({
+        video: true,
+        audio: true,
+        systemAudio: 'include',
+        surfaceSwitching: 'include',
+      } as DisplayMediaStreamOptions);
+      const bundle = await createScreenShareBundle(localStreamRef.current, displayStream);
+      screenShareRef.current = bundle;
+      setScreenStream(bundle.stream);
+      setIsScreenSharing(true);
+
+      if (!bundle.hasDisplayAudio) {
+        toast('Aktifkan "Bagikan audio" agar suara tab ikut terdengar');
+      } else if (bundle.audioMode === 'display-only') {
+        toast('Audio share aktif; mikrofon dijeda selama berbagi layar');
+      }
+      const videoTrack = displayStream.getVideoTracks()[0];
+      if (videoTrack) videoTrack.onended = stopScreenShare;
+    } catch (err) {
+      console.warn('[meeting] Screen share cancelled or failed:', err);
+    }
+  }, [isScreenSharing, stopScreenShare]);
+
+  const handleLeave = useCallback(() => {
+    stopScreenShare();
+    endSession();
+    localStreamRef.current?.getTracks().forEach(track => track.stop());
+    localStreamRef.current = null;
+    navigate('/');
+  }, [endSession, navigate, stopScreenShare]);
+
+  const handleCopyLink = useCallback(async () => {
+    const baseUrl = 'https://hours-master-a-skill.vercel.app';
+    const hash = `#/meeting/${roomId}${location.search || ''}`;
+    const shareLink = window.location.href.startsWith('http') && !window.location.href.includes('localhost')
+      ? window.location.href
+      : `${baseUrl}/${hash}`;
+    try {
+      await navigator.clipboard.writeText(shareLink);
+      toast.success('Link meeting disalin');
+    } catch {
+      toast.error('Link meeting tidak dapat disalin');
+    }
+  }, [roomId, location.search]);
+
+  const localParticipant: Participant = useMemo(() => ({
     id: userId || 'local-user',
-    name: username || 'You',
+    name: username || 'Anda',
+    avatar,
     isAudioMuted: isMuted,
-    isVideoOff: isVideoOff,
-    isScreenSharing: isScreenSharing,
+    isVideoOff,
+    isScreenSharing,
     isSpeaking: false,
     isLocal: true,
-    stream: (isScreenSharing && screenStream) ? screenStream : localStream || undefined,
-  };
+    stream: activeStream || undefined,
+  }), [userId, username, avatar, isMuted, isVideoOff, isScreenSharing, activeStream]);
 
-  const displayParticipants = [localParticipant, ...remoteParticipants];
-  const sharingParticipant = displayParticipants.find(p => p.isScreenSharing);
+  const displayParticipants = useMemo(
+    () => [localParticipant, ...remoteParticipants],
+    [localParticipant, remoteParticipants]
+  );
+  const sharingParticipant = displayParticipants.find(participant => participant.isScreenSharing);
   const participantCount = displayParticipants.length;
+  const primaryParticipant = sharingParticipant
+    || remoteParticipants.find(participant => participant.stream)
+    || remoteParticipants[0]
+    || localParticipant;
 
-  const primaryParticipant = useMemo(() => {
-    if (sharingParticipant) return sharingParticipant;
-    const remoteWithStream = remoteParticipants.find(p => !p.isLocal && p.stream);
-    if (remoteWithStream) return remoteWithStream;
-    if (remoteParticipants.length > 0) return remoteParticipants[0];
-    return localParticipant;
-  }, [sharingParticipant, remoteParticipants, localParticipant]);
-
-  // Clean, Fullscreen Video-Only Arena for Android Picture-in-Picture Mode
-  if (isInPiP && primaryParticipant) {
+  if (isInPiP) {
     return (
-      <div 
-        className="pip-fullscreen-arena"
-        style={{
-          position: 'fixed',
-          inset: 0,
-          width: '100vw',
-          height: '100vh',
-          zIndex: 99999,
-          backgroundColor: '#000',
-          overflow: 'hidden',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <VideoTile participant={primaryParticipant} isPiP={true} />
-        {remoteParticipants.length > 0 && localParticipant && !primaryParticipant.isLocal && (
-          <div 
-            style={{
-              position: 'absolute',
-              bottom: '12px',
-              right: '12px',
-              width: '26%',
-              aspectRatio: '9/16',
-              borderRadius: '8px',
-              overflow: 'hidden',
-              border: '1px solid rgba(255,255,255,0.4)',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.6)',
-              zIndex: 10,
-            }}
-          >
-            <VideoTile participant={localParticipant} isPiP={true} />
+      <div className="pip-fullscreen-arena">
+        <VideoTile participant={primaryParticipant} isPiP />
+        {!primaryParticipant.isLocal && (
+          <div className="pip-local-preview">
+            <VideoTile participant={localParticipant} isPiP />
           </div>
         )}
       </div>
     );
   }
 
+  const gridClass = participantCount === 1
+    ? 'meeting-grid-1'
+    : participantCount === 2
+      ? 'meeting-grid-2'
+      : 'meeting-grid-multi';
+
   return (
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 50,
-        display: isMeetingRoute ? 'flex' : 'none',
-        flexDirection: 'column',
-        backgroundColor: 'var(--bg-canvas)',
-        color: 'var(--text-main)',
-        overflow: 'hidden',
-      }}
-      className="no-drag"
+    <section
+      className="meeting-room-shell no-drag"
+      aria-label="Ruang panggilan video"
+      style={{ display: isMeetingRoute ? 'flex' : 'none' }}
     >
-      {/* Top Header Bar */}
-      <header
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          padding: '12px 16px',
-          paddingTop: 'calc(12px + env(safe-area-inset-top, 0px))',
-          borderBottom: '1px solid var(--border-color)',
-          backgroundColor: 'var(--bg-panel)',
-          backdropFilter: 'var(--glass-blur)',
-          zIndex: 20,
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <button className="btn" onClick={handleLeave} title="Akhiri Panggilan" style={{ padding: '8px 12px', background: '#ef4444', color: 'white', border: 'none' }}>
-              <ArrowLeft size={18} /> Exit
-            </button>
-            <button 
-              className="btn btn-secondary" 
-              onClick={() => {
-                if (Capacitor.isNativePlatform()) {
-                  enterCallPiP();
-                } else {
-                  navigate('/');
-                }
-              }} 
-              title="Layar Mengambang (PiP)" 
-              style={{ padding: '8px 12px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-            >
-              <Minimize2 size={16} /> PiP
-            </button>
-          </div>
-          <div>
-            <h2 style={{ margin: 0, fontSize: '1rem', fontWeight: 700 }}>Mastery Focus Room</h2>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.6875rem', color: 'var(--text-muted)' }}>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: '#4ade80' }}>
-                <Wifi size={11} /> P2P Live
-              </span>
-              <span>•</span>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                <ShieldCheck size={11} className="text-cyan" /> E2E Encrypted
-              </span>
-              <span>•</span>
-              <button 
-                onClick={() => {
-                  const baseUrl = 'https://hours-master-a-skill.vercel.app';
-                  let shareLink = window.location.href;
-                  if (shareLink.includes('localhost') || shareLink.startsWith('capacitor:') || shareLink.startsWith('file:')) {
-                    const hash = window.location.hash || `#/meeting/${roomId || 'focus-community'}${location.search || ''}`;
-                    shareLink = `${baseUrl}/${hash.startsWith('#') ? hash : '#' + hash}`;
-                  }
-                  navigator.clipboard.writeText(shareLink);
-                  toast.success('Link meeting disalin!');
-                }}
-                style={{ 
-                  background: 'var(--surface-input)', 
-                  border: '1px solid var(--border-color)', 
-                  color: 'var(--text-primary)', 
-                  cursor: 'pointer', 
-                  padding: '2px 8px', 
-                  borderRadius: '4px', 
-                  display: 'inline-flex', 
-                  alignItems: 'center', 
-                  gap: '6px',
-                  transition: 'background 0.2s',
-                  fontSize: '0.6875rem',
-                  fontFamily: 'Geist Mono, monospace'
-                }}
-                title="Salin Link"
-                onMouseOver={e => e.currentTarget.style.background = 'var(--surface-hover)'}
-                onMouseOut={e => e.currentTarget.style.background = 'var(--surface-input)'}
-              >
-                <Copy size={11} />
-                {roomId || 'skillo-global-room'}
-              </button>
-            </div>
+      <header className="meeting-call-header">
+        <div className="meeting-header-actions">
+          <button
+            type="button"
+            className="btn meeting-header-exit"
+            onClick={handleLeave}
+            aria-label="Akhiri panggilan"
+          >
+            <ArrowLeft size={18} aria-hidden="true" />
+            <span>Keluar</span>
+          </button>
+          <button
+            type="button"
+            className="btn btn-secondary meeting-pip-button"
+            onClick={() => Capacitor.isNativePlatform() ? enterCallPiP() : navigate('/')}
+            aria-label="Minimalkan panggilan"
+          >
+            <Minimize2 size={18} aria-hidden="true" />
+            <span>PiP</span>
+          </button>
+        </div>
+
+        <div className="meeting-title-block">
+          <h1>Mastery Focus Room</h1>
+          <div className="meeting-connection-meta">
+            <span className="meeting-live-status"><Wifi size={13} aria-hidden="true" /> P2P Live</span>
+            <span className="meeting-encryption"><ShieldCheck size={13} aria-hidden="true" /> Terenkripsi</span>
           </div>
         </div>
 
-        {/* Status Indicator */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '6px 14px',
-              borderRadius: 'var(--radius-pill)',
-              backgroundColor: 'rgba(255, 255, 255, 0.05)',
-              border: '1px solid var(--border-color)',
-              fontSize: '0.8125rem',
-              fontWeight: 600,
-            }}
-          >
-            <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#4ade80' }} />
-            <span className="tabular-nums">24 ms</span>
-          </div>
-        </div>
+        <button
+          type="button"
+          className="btn meeting-copy-room"
+          onClick={handleCopyLink}
+          title="Salin link meeting"
+          aria-label="Salin link meeting"
+        >
+          <Copy size={16} aria-hidden="true" />
+          <span>{roomId}</span>
+        </button>
       </header>
 
-      {/* Main Video Arena */}
-      <main
-        style={{
-          flex: 1,
-          padding: '20px',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          overflow: 'hidden',
-          position: 'relative',
-        }}
-      >
+      <main className="meeting-video-stage">
         {sharingParticipant ? (
-          /* Screen Sharing Asymmetric Layout: Dominant Screen + Strip */
-          <div
-            style={{
-              width: '100%',
-              height: '100%',
-              display: 'grid',
-              gridTemplateColumns: 'minmax(0, 1fr) 280px',
-              gap: '16px',
-            }}
-          >
-            {/* Dominant Screen Share Tile */}
-            <div style={{ height: '100%', minHeight: 0 }}>
+          <div className="meeting-share-layout">
+            <div className="meeting-share-primary">
               <VideoTile participant={sharingParticipant} isDominant />
             </div>
-
-            {/* Side Column of Other Participants */}
-            <div
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '12px',
-                overflowY: 'auto',
-                height: '100%',
-              }}
-            >
+            <div className="meeting-share-participants" aria-label="Peserta panggilan">
               {displayParticipants
-                .filter(p => p.id !== sharingParticipant.id)
-                .map(p => (
-                  <div key={p.id} style={{ height: '160px', flexShrink: 0 }}>
-                    <VideoTile participant={p} />
+                .filter(participant => participant.id !== sharingParticipant.id)
+                .map(participant => (
+                  <div className="meeting-share-participant" key={participant.id}>
+                    <VideoTile participant={participant} />
                   </div>
                 ))}
             </div>
           </div>
         ) : (
-          /* Adaptive 1 - 4 Participants Grid */
-          <div
-            style={{
-              width: '100%',
-              height: '100%',
-              display: 'grid',
-              gap: '16px',
-              gridTemplateColumns:
-                participantCount === 1
-                  ? '1fr'
-                  : participantCount === 2
-                  ? 'repeat(2, 1fr)'
-                  : participantCount <= 4
-                  ? 'repeat(2, 1fr)'
-                  : 'repeat(3, 1fr)',
-              gridTemplateRows:
-                participantCount <= 2
-                  ? '1fr'
-                  : participantCount <= 4
-                  ? 'repeat(2, 1fr)'
-                  : 'repeat(2, 1fr)',
-              maxWidth: participantCount === 1 ? '700px' : participantCount <= 4 ? '1100px' : '1400px',
-              maxHeight: '800px',
-            }}
-          >
-            {displayParticipants.map(p => (
-              <VideoTile key={p.id} participant={p} />
+          <div className={`meeting-adaptive-grid ${gridClass}`}>
+            {displayParticipants.map(participant => (
+              <VideoTile key={participant.id} participant={participant} />
             ))}
           </div>
         )}
 
-        {/* Solo Waiting Badge */}
         {participantCount === 1 && !sharingParticipant && (
-          <div
-            style={{
-              position: 'absolute',
-              top: '40px',
-              backgroundColor: 'rgba(9, 13, 22, 0.85)',
-              backdropFilter: 'var(--glass-blur)',
-              padding: '8px 18px',
-              borderRadius: 'var(--radius-pill)',
-              border: '1px solid var(--border-color)',
-              fontSize: '0.875rem',
-              color: 'var(--text-muted)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              zIndex: 10,
-            }}
-          >
-            <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--accent-cyan)' }} />
-            Menunggu peserta lain bergabung... (salin link untuk mengundang)
+          <div className="meeting-waiting-status" role="status">
+            <span aria-hidden="true" />
+            Menunggu peserta lain
           </div>
         )}
       </main>
 
-      {/* Floating Bottom Controls Dock */}
-      <footer
-        style={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          padding: '16px',
-          zIndex: 30,
-        }}
-      >
+      <footer className="meeting-call-footer">
         <MeetingControls
           isMuted={isMuted}
           isVideoOff={isVideoOff}
@@ -531,34 +346,16 @@ function MeetingRoomInner({ isMeetingRoute }: { isMeetingRoute: boolean }) {
           onToggleScreenShare={handleToggleScreenShare}
           onLeave={handleLeave}
           showDevTools={showDevTools}
-          onToggleDevTools={() => setShowDevTools(s => !s)}
+          onToggleDevTools={() => setShowDevTools(value => !value)}
         />
       </footer>
 
-      {/* Dev Tools Drawer */}
       {showDevTools && (
-        <div
-          style={{
-            position: 'absolute',
-            bottom: '90px',
-            backgroundColor: 'var(--bg-panel)',
-            backdropFilter: 'var(--glass-blur)',
-            border: '1px solid var(--border-color)',
-            borderRadius: 'var(--radius-md)',
-            padding: '14px 20px',
-            boxShadow: '0 16px 32px rgba(0,0,0,0.5)',
-            display: 'flex',
-            gap: '10px',
-            alignItems: 'center',
-            zIndex: 60,
-          }}
-        >
-          <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--accent-purple)' }}>
-            WEBRTC DEBUG:
-          </span>
-          <span style={{ fontSize: '0.75rem' }}>Peers connected: {remoteParticipants.length}</span>
+        <div className="meeting-debug-panel">
+          <strong>WebRTC</strong>
+          <span>Peer terhubung: {remoteParticipants.length}</span>
         </div>
       )}
-    </div>
+    </section>
   );
 }
